@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Gateway</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css"
+        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css"
+        integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+    <nav class="navbar navbar-default">
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/">WhatsApp Gateway</a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li><a href="/">Home</a></li>
+                <li><a href="/settings">Pengaturan</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <style>
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            th,
+            td {
+                padding: 10px;
+                border: 1px solid #ccc;
+                text-align: left;
+            }
+
+            th {
+                background-color: #f4f4f4;
+            }
+
+            .connected {
+                color: green;
+                font-weight: bold;
+            }
+
+            .disconnected {
+                color: red;
+                font-weight: bold;
+            }
+        </style>
+
+        <h1>Session List</h1>
+
+        <!-- Add Session Button -->
+        <button class="btn btn-primary" data-toggle="modal" data-target="#addSessionModal">Add Session</button>
+        <br />
+        <br />
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Session Key</th>
+                    <th class="text-center">Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="sessionTableBody">
+                <tr>
+                    <td colspan="3">Loading...</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Modal for adding session -->
+        <div class="modal fade" id="addSessionModal" tabindex="-1" role="dialog" aria-labelledby="addSessionModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title" id="addSessionModalLabel">Create New Session</h4>
+                    </div>
+                    <div class="modal-body">
+                        <label for="unixKey">Unix Key:</label>
+                        <input type="text" id="unixKey" class="form-control" placeholder="Enter Unix Key" required />
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="createSessionBtn">Create</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal for sending message -->
+        <div class="modal fade" id="sendMessageModal" tabindex="-1" role="dialog"
+            aria-labelledby="sendMessageModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title" id="sendMessageModalLabel">Send Message</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form id="sendMessageForm">
+
+                            <input type="text" id="sessionKey" class="hide" />
+                            <div class="form-group">
+                                <label for="group">Send as Group Message:</label>
+                                <select id="group" class="form-control">
+                                    <option value="false">No</option>
+                                    <option value="true">Yes</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="to">To (Comma-separated numbers or group ID):</label>
+                                <input type="text" id="to" class="form-control" required />
+                            </div>
+                            <div class="form-group">
+                                <label for="text">Message Text:</label>
+                                <textarea id="text" class="form-control" rows="4" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Send</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <script>
+            // Fetch session status and update the table
+            function fetchSessionStatus() {
+                $.ajax({
+                    url: "/session",  // Memanggil semua sesi
+                    method: "GET",
+                    success: function (response) {
+                        if (response.status) {
+                            const sessions = response.data;
+                            const tableBody = $("#sessionTableBody");
+                            tableBody.empty();  // Clear table before adding new data
+
+                            if (sessions.length > 0) {
+                                sessions.forEach(session => {
+                                    const statusClass = session.connected ? "connected" : "disconnected";
+                                    const statusText = session.connected ? "Connected" : "Disconnected";
+
+                                    const actionButton1 = session.connected
+                                        ? `<button class="btn btn-default" onclick="disconnectSession('${session.key}')">Disconnect</button>`
+                                        : `<button class="btn btn-success" onclick="scanSession('${session.key}')">Scan</button>`;
+
+                                    const actionButton2 = session.connected
+                                        ? `<button class="btn btn-success" onclick="sendMessageSession('${session.key}')" data-toggle="modal" data-target="#sendMessageModal">Send Message</button>`
+                                        : ``;
+
+                                    tableBody.append(`
+                                        <tr>
+                                            <td>${session.key}</td>
+                                            <td class="text-center ${statusClass}"><a href="/status?key=${session.key}">${statusText}</a></td>
+                                            <td>
+                                                ${actionButton1}
+                                                <button class="btn btn-danger" onclick="removeSession('${session.key}')">Remove</button>
+                                                ${actionButton2}                                                
+                                            </td>
+                                        </tr>
+                                    `);
+                                });
+                            } else {
+                                tableBody.append('<tr><td colspan="3">No sessions available.</td></tr>');
+                            }
+
+                        } else {
+                            console.log("Failed to fetch session status.");
+                        }
+                    },
+                    error: function () {
+                        console.log("An error occurred while fetching session status.");
+                    }
+                });
+            }
+
+            fetchSessionStatus();
+
+            // Handle 'Create' button click
+            $("#createSessionBtn").click(function () {
+                const unixKey = $("#unixKey").val();
+                if (unixKey) {
+                    // Redirect to /status with the key as a query parameter
+                    window.location.href = `/status?key=${unixKey}`;
+                } else {
+                    alert("Please enter a Unix key.");
+                }
+            });
+
+            // Scan session function
+            function scanSession(key) {
+                // Redirect to the scanning endpoint
+                window.location.href = `/status?key=${key}`;
+            }
+
+            function disconnectSession(key) {
+                alert('Disconnect tidak dapat dilakukkan')
+            }
+
+            function sendMessageSession(key) {
+                $("#sessionKey").val(key);
+            }
+
+
+            // Handle form submission for sending messages
+            $("#sendMessageForm").submit(function (event) {
+                event.preventDefault(); // Prevent the default form submission
+
+                const sessionKey = $("#sessionKey").val();
+                const to = $("#to").val();
+                const text = $("#text").val();
+                const group = $("#group").val() === "true";  // Convert to boolean
+
+                $.ajax({
+                    url: "/message",  // Send the message to this endpoint
+                    method: "POST",
+                    data: {
+                        key: sessionKey,
+                        to: to,
+                        text: text,
+                        group: group,
+                    },
+                    success: function (response) {
+                        if (response.status) {
+                            alert("Message sent successfully!");
+                            $('#sendMessageModal').modal('hide');  // Close the modal
+                        } else {
+                            alert("Failed to send message: " + response.message);
+                        }
+                    },
+                    error: function () {
+                        alert("An error occurred while sending the message.");
+                    }
+                });
+            });
+
+
+
+            // Remove session function
+            function removeSession(key) {
+                if (confirm(`Are you sure you want to remove session with key "${key}"?`)) {
+                    $.ajax({
+                        url: `/session-remove?key=${key}`,
+                        method: "GET",
+                        success: function (response) {
+                            if (response.status) {
+                                alert(response.message);
+                                fetchSessionStatus();  // Refresh the table after removal
+                            } else {
+                                alert("Failed to remove session.");
+                            }
+                        },
+                        error: function () {
+                            alert("An error occurred while removing the session.");
+                        }
+                    });
+                }
+            }
+        </script>
+    </div>
+
+    <!-- Include Bootstrap JS -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Gateway</title>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css"
+        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css"
+        integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+    <nav class="navbar navbar-default">
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/">WhatsApp Gateway</a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li><a href="/">Home</a></li>
+                <li><a href="/settings">Pengaturan</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Status Session <%= key %>
+        </h1>
+        <div id="status">Waiting for QR code...</div>
+        <div id="qrcode"></div>
+
+        <script>
+            const socket = io();
+            const statusDiv = document.getElementById("status");
+            const qrDiv = document.getElementById("qrcode");
+            const key = "<%= key %>"; // Dynamically use the 'key' passed from the server
+
+            // Fetch session status and determine whether QR code is needed
+            function fetchSessionStatus() {
+                $.ajax({
+                    url: `/session?key=${key}`,
+                    method: "GET",
+                    success: function (response) {
+                        console.log(response); // Log the response to inspect its structure
+                        if (response.status) {
+                            const session = response.data;
+                            if (session.connected) {
+                                statusDiv.innerHTML = "WhatsApp Connected!";
+                                qrDiv.innerHTML = "";
+                            } else {
+                                statusDiv.innerHTML = "Session not found or invalid response."
+                                qrDiv.innerHTML = "";
+                                fetchQRCode();
+                            }
+                        } else {
+                            statusDiv.innerHTML = response.message;
+                            qrDiv.innerHTML = "";
+                            fetchQRCode();
+                        }
+                    },
+                    error: function () {
+                        console.log("An error occurred while fetching session status.");
+                    }
+                });
+            }
+
+            // Fetch the QR code for scanning
+            function fetchQRCode() {
+                $.ajax({
+                    url: `/scan?key=${key}`,
+                    method: "GET",
+                    success: function (response) {
+                        if (response.status && response.qr) {
+                            const timestamp = Date.now();
+
+                            //qrDiv.innerHTML = `<img src="${response.qr}" alt="QR Code">`;
+                            qrDiv.innerHTML = `<img src="/sessions/${key}/qr.png?t=${timestamp}" alt="QR Code">`;
+                            statusDiv.innerHTML = "Scan the QR Code below:";
+                        } else {
+                            statusDiv.innerHTML = response.message || "QR code not available.";
+                        }
+                    },
+                    error: function () {
+                        statusDiv.innerHTML = "Failed to retrieve QR code.";
+                    }
+                });
+            }
+
+            // Initialize by fetching session status
+            fetchSessionStatus();
+
+            // Listen for connection status updates via Socket.io
+            socket.on("connection-status", (data) => {
+                if (data.key === key && data.connected) {
+                    statusDiv.innerHTML = "WhatsApp Connected!";
+                    qrDiv.innerHTML = ""; // Clear QR Code if connected
+                }
+            });
+
+            // Listen for QR code updates from the server
+            socket.on("qr-update", (data) => {
+                if (data.key === key && data.qr) {
+                    qrDiv.innerHTML = `<img src="${data.qr}" alt="QR Code">`;
+                    statusDiv.innerHTML = "Scan the QR Code below:";
+                }
+            });
+        </script>
+    </div>
+</body>
+
+</html>
