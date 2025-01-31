@@ -3,8 +3,15 @@ const router = express.Router();
 const { isValidPhoneNumber, isValidGroupId } = require('../lib/Utils.js');
 
 module.exports = (sessionManager) => {
-    
-    router.get("/list", async (req, res) => {
+
+    const authMiddleware = (req, res, next) => {
+        if (!req.session.user) {
+            return res.redirect('/auth/login');
+        }
+        next();
+    };
+
+    router.get("/list", authMiddleware, async (req, res) => {
         const { key } = req.query;
     
         if (!key) {

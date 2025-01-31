@@ -3,7 +3,14 @@ const router = express.Router();
 
 module.exports = (sessionManager) => {
 
-    router.get("/", (req, res) => {
+    const authMiddleware = (req, res, next) => {
+        if (!req.session.user) {
+            return res.redirect('/auth/login');
+        }
+        next();
+    };
+
+    router.get("/", authMiddleware, (req, res) => {
         try {
             const { key } = req.query;
 
@@ -47,7 +54,7 @@ module.exports = (sessionManager) => {
         }
     });
 
-    router.get("/remove", async (req, res) => {
+    router.get("/remove", authMiddleware, async (req, res) => {
         const { key } = req.query;
 
         if (!key) {
@@ -76,7 +83,7 @@ module.exports = (sessionManager) => {
         });
     });
 
-    router.get("/scan", async (req, res) => {
+    router.get("/scan", authMiddleware, async (req, res) => {
         const { key } = req.query;
 
         if (!key) {

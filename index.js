@@ -42,6 +42,16 @@ app.use(cors({
     credentials: true,
 }));
 
+const session = require('express-session');
+
+// Tambahkan setelah middleware bodyParser
+app.use(session({
+    secret: '12345678',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 1 hari
+}));
+
 const folderSession = './.sessions';
 app.use("/asset/sessions", express.static(folderSession));
 
