@@ -5,114 +5,157 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsApp Gateway</title>
-    <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css"
-        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-
-    <!-- Optional theme -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css"
-        integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap 3 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .status-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .qrcode-wrapper {
+            text-align: center;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            background: #fafafa;
+        }
+        #qrcode {
+            max-width: 300px;
+            width: 100%;
+            height: auto;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+        }
+        .status-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status-indicator {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+    </style>
 </head>
 
 <body>
-    <nav class="navbar navbar-default">
+    <nav class="navbar navbar-inverse navbar-static-top">
         <div class="container">
             <div class="navbar-header">
-                <a class="navbar-brand" href="/">WhatsApp Gateway</a>
+                <a class="navbar-brand" href="/"><i class="fa fa-whatsapp"></i> WhatsApp Gateway</a>
             </div>
             <ul class="nav navbar-nav">
-                <li><a href="/">Home</a></li>
-                <li><a href="/settings">Pengaturan</a></li>
+                <li><a href="/"><i class="fa fa-home"></i> Home</a></li>
+                <li><a href="/settings"><i class="fa fa-cog"></i> Pengaturan</a></li>
             </ul>
         </div>
     </nav>
 
     <div class="container">
-        <h1>Status Session <%= key %>
-        </h1>
-        <div id="status">Waiting for QR code...</div>
-        <div id="qrcode"></div>
+        <div class="status-container">
+            <div class="status-header">
+                <h2><%= key %></h2>
+                <p class="text-muted">Status koneksi WhatsApp Gateway Anda</p>
+            </div>
 
-        <script>
-            const socket = io();
-            const statusDiv = document.getElementById("status");
-            const qrDiv = document.getElementById("qrcode");
-            const key = "<%= key %>"; // Dynamically use the 'key' passed from the server
+            <div class="alert alert-info status-indicator" id="status">
+                <i class="fa fa-spinner fa-spin"></i> Menunggu QR Code...
+            </div>
 
-            // Fetch session status and determine whether QR code is needed
-            function fetchSessionStatus() {
-                $.ajax({
-                    url: `/session?key=${key}`,
-                    method: "GET",
-                    success: function (response) {
-                        console.log(response); // Log the response to inspect its structure
-                        if (response.status) {
-                            const session = response.data;
-                            if (session.connected) {
-                                statusDiv.innerHTML = "WhatsApp Connected!";
-                                qrDiv.innerHTML = "";
-                            } else {
-                                statusDiv.innerHTML = "Session not found or invalid response."
-                                qrDiv.innerHTML = "";
-                                fetchQRCode();
-                            }
-                        } else {
-                            statusDiv.innerHTML = response.message;
-                            qrDiv.innerHTML = "";
-                            fetchQRCode();
-                        }
-                    },
-                    error: function () {
-                        console.log("An error occurred while fetching session status.");
-                    }
-                });
-            }
+            <div class="qrcode-wrapper" id="qrcodeDiv" style="display: none;">
+                <img src="#" id="qrcode" class="img-responsive center-block" alt="QR Code">
+                <div class="text-muted mt-3">
+                    <small>Scan QR Code ini melalui aplikasi WhatsApp Anda</small>
+                    <br>
+                    <small>QR Code akan diperbarui setiap 30 detik</small>
+                </div>
+            </div>
 
-            // Fetch the QR code for scanning
-            function fetchQRCode() {
-                $.ajax({
-                    url: `/scan?key=${key}`,
-                    method: "GET",
-                    success: function (response) {
-                        if (response.status && response.qr) {
-                            const timestamp = Date.now();
-
-                            //qrDiv.innerHTML = `<img src="${response.qr}" alt="QR Code">`;
-                            qrDiv.innerHTML = `<img src="/sessions/${key}/qr.png?t=${timestamp}" alt="QR Code">`;
-                            statusDiv.innerHTML = "Scan the QR Code below:";
-                        } else {
-                            statusDiv.innerHTML = response.message || "QR code not available.";
-                        }
-                    },
-                    error: function () {
-                        statusDiv.innerHTML = "Failed to retrieve QR code.";
-                    }
-                });
-            }
-
-            // Initialize by fetching session status
-            fetchSessionStatus();
-
-            // Listen for connection status updates via Socket.io
-            socket.on("connection-status", (data) => {
-                if (data.key === key && data.connected) {
-                    statusDiv.innerHTML = "WhatsApp Connected!";
-                    qrDiv.innerHTML = ""; // Clear QR Code if connected
-                }
-            });
-
-            // Listen for QR code updates from the server
-            socket.on("qr-update", (data) => {
-                if (data.key === key && data.qr) {
-                    qrDiv.innerHTML = `<img src="${data.qr}" alt="QR Code">`;
-                    statusDiv.innerHTML = "Scan the QR Code below:";
-                }
-            });
-        </script>
+        </div>
     </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        const socket = io();
+        const statusDiv = document.getElementById("status");
+        const qrcodeDiv = document.getElementById("qrcodeDiv");
+        const qrDiv = document.getElementById("qrcode");
+        const key = "<%= key %>";
+
+        function updateStatus(type, message) {
+            statusDiv.className = `alert alert-${type} status-indicator`;
+            statusDiv.innerHTML = message;
+        }
+
+        function fetchSessionStatus() {
+            $.ajax({
+                url: `/session?key=${key}`,
+                method: "GET",
+                success: function(response) {
+                    if (response.status && response.data.connected) {
+                        updateStatus('success', '<i class="fa fa-check-circle"></i> WhatsApp Terhubung!');
+                        qrcodeDiv.style.display = 'none';
+                    } else {
+                        qrcodeDiv.style.display = 'block';
+                        updateStatus('warning', '<i class="fa fa-exclamation-triangle"></i> Sesi belum terhubung');
+                        fetchQRCode();
+                    }
+                },
+                error: function() {
+                    qrcodeDiv.style.display = 'block';
+                    updateStatus('danger', '<i class="fa fa-times-circle"></i> Gagal memuat status sesi');
+                }
+            });
+        }
+
+        function fetchQRCode() {
+            $.ajax({
+                url: `/session/scan?key=${key}`,
+                method: "GET",
+                success: function(response) {
+                    if (response.status && response.qr) {
+                        qrDiv.src = response.qr + `?t=${Date.now()}`;
+                        updateStatus('info', '<i class="fa fa-qrcode"></i> Scan QR Code berikut:');
+                        qrcodeDiv.style.display = 'block';
+                    }
+                },
+                error: function() {
+                    updateStatus('danger', '<i class="fa fa-times-circle"></i> Gagal memuat QR Code');
+                }
+            });
+        }
+
+        socket.on("connection-status", (data) => {
+            if (data.key === key && data.connected) {
+                updateStatus('success', '<i class="fa fa-check-circle"></i> WhatsApp Terhubung!');
+                qrcodeDiv.style.display = 'none';
+            }
+        });
+
+        socket.on("qr-update", (data) => {
+            if (data.key === key && data.qr) {
+                qrDiv.src = data.qr + `?t=${Date.now()}`;
+                updateStatus('info', '<i class="fa fa-qrcode"></i> Scan QR Code berikut:');
+                qrcodeDiv.style.display = 'block';
+            }
+        });
+
+        // Initial load
+        fetchSessionStatus();
+    </script>
 </body>
 
 </html>
