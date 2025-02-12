@@ -23,6 +23,8 @@ const fs = require("fs");
 const cors = require('cors');
 const mysql = require('mysql2/promise');
 
+require('dotenv').config();
+
 const dbConfig = require('./config');
 const pool = mysql.createPool(dbConfig);
 
