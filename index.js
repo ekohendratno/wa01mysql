@@ -26,6 +26,7 @@ const mysql = require('mysql2/promise');
 const dbConfig = require('./config');
 const pool = mysql.createPool(dbConfig);
 
+const InitData = require('./lib/InitData.js');
 const SessionManager = require('./lib/SessionsManager.js');
 const CronManager = require('./lib/CronManager.js');
 const MessageManager = require('./lib/MessageManager.js');
@@ -76,6 +77,7 @@ const folderSession = './.sessions';
 app.use("/asset/sessions", express.static(folderSession));
 
 // Inisialisasi manager
+const initData = new InitData(pool);
 const deviceManager = new DeviceManager(pool);
 const sessionManager = new SessionManager(pool, io, deviceManager, folderSession);
 const messageManager = new MessageManager(pool);
