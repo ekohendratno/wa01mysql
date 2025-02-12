@@ -3,7 +3,7 @@ const router = express.Router();
 const { isValidPhoneNumber, isValidGroupId } = require('../lib/Utils.js');
 
 module.exports = (sessionManager) => {
-    
+
     router.get("/list", async (req, res) => {
         const { key } = req.query;
     
