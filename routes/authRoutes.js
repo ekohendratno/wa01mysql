@@ -1,50 +1,74 @@
 const express = require('express');
 const router = express.Router();
 
-module.exports = (sessionManager) => {
+module.exports = ({sessionManager, userManager}) => {
     
     const redirectIfLoggedIn = (req, res, next) => {
         if (req.session.user) {
-            return res.redirect('/device');
+            return res.redirect('/admin');
         }
         next();
     };
 
     router.get('/login', redirectIfLoggedIn, (req, res) => {
-        res.render('auth/login', { error: null });
+        res.render('auth/login', { error: null, title: "Login - w@pi", layout: "layouts/main" });
     });
 
-    router.post('/login', async (req, res) => {
+    router.post('/login', redirectIfLoggedIn, async (req, res) => {
         try {
             const { username, password } = req.body;
-            const user = await sessionManager.loginUser(username, password);
-            
-            req.session.user = user;
-            res.redirect('/device');
+            const user = await userManager.loginUser(username, password);
+    
+            // Simpan data pengguna ke dalam sesi
+            req.session.user = {
+                uid: user.uid,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                api_key: user.api_key // Pastikan api_key disimpan di sesi
+            };
+    
+            res.redirect('/admin');
         } catch (error) {
             res.render('auth/login', { 
-                error: error.message || 'Login gagal' 
+                error: error.message || 'Login gagal',
+                title: "Login - w@pi",
+                layout: "layouts/main"
             });
         }
     });
 
     router.get('/register', redirectIfLoggedIn, (req, res) => {
-        res.render('auth/register', { error: null });
+        res.render('auth/register', { error: null, title: "Registrasi - w@pi", layout: "layouts/main" });
     });
 
-    router.post('/register', async (req, res) => {
+    router.post('/register', redirectIfLoggedIn, async (req, res) => {
         try {
-            const { name, username, password } = req.body;
-            const user = await sessionManager.registerUser(name, username, password);
+            const { name, email, phone, ref, password, repassword } = req.body;
+    
+            if (!password || !repassword) {
+                throw new Error("Password dan Konfirmasi Password harus diisi");
+            }
+            if (password.length < 6) {
+                throw new Error("Password harus memiliki minimal 6 karakter");
+            }
+            if (password !== repassword) {
+                throw new Error("Konfirmasi Password tidak cocok");
+            }
+    
+            const user = await userManager.registerUser(name, email, phone, ref, password, repassword);
             
             req.session.user = user;
-            res.redirect('/device');
+            res.redirect('/admin');
         } catch (error) {
             res.render('auth/register', { 
-                error: error.message || 'Registrasi gagal' 
+                error: error.message || 'Registrasi gagal', 
+                title: "Registrasi - w@pi", 
+                layout: "layouts/main"
             });
         }
     });
+    
 
     // Logout
     router.get('/logout', (req, res) => {

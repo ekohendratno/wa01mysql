@@ -1,0 +1,237 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="text-success"><i class="fa fa-reply me-2"></i>Manajemen Auto-Reply</h4>
+</div>
+<!-- Statistik Auto-Reply -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="stat-card">
+            <h5>Total Auto-Reply Aktif</h5>
+            <h2 class="text-success"><%= autoReplies.counts.active || 0 %>/<%= autoReplies.autoreplies.length || 0 %></h2>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="stat-card">
+            <h5>Auto-Reply Digunakan Hari Ini</h5>
+            <h2 class="text-primary"><%= autoReplies.counts.totalUsed || 0%></h2>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="stat-card">
+            <h5 class="mb-4"><i class="fa fa-list me-2"></i>Daftar Auto-Reply</h5>
+            <!-- Tabel Auto-Reply -->
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Kata Kunci</th>
+                        <th>Respon</th>
+                        <th>Status</th>
+                        <th>Personal</th>
+                        <th>Group</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (!autoReplies.autoreplies || autoReplies.autoreplies.length === 0) { %>
+                        <tr>
+                            <td colspan="7" class="text-center">Tidak ada autoreply terdaftar</td>
+                        </tr>
+                    <% } else { %>
+                        <% autoReplies.autoreplies.forEach(autoreply => { %>
+                            <tr>
+                                <td><%= autoreply.id %></td>
+                                <td><%= autoreply.keyword %></td>
+                                <td><%= autoreply.response %></td>
+                                <td>
+                                    <% if (autoreply.status === 'active') { %>
+                                        <span class="badge bg-success">Aktif</span>
+                                    <% } else { %>
+                                        <span class="badge bg-danger">Nonaktif</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <input 
+                                        class="form-check-input" 
+                                        type="checkbox" 
+                                        <%= autoreply.is_for_personal ? 'checked' : '' %> 
+                                        disabled
+                                    >
+                                </td>
+                                <td>
+                                    <input 
+                                        class="form-check-input" 
+                                        type="checkbox" 
+                                        <%= autoreply.is_for_group ? 'checked' : '' %> 
+                                        disabled
+                                    >
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning btn-action" data-bs-toggle="modal" data-bs-target="#formAutoReply"
+                                                            onclick="editAutoReply(<%= autoreply.id %>)">
+                                                            <i class="fa fa-pen"></i>
+                                                        </button>
+                                    <button class="btn btn-sm btn-danger btn-action"
+                                                            onclick="hapusAutoReply(<%= autoreply.id %>)">
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } %>
+                </tbody>
+            </table>
+            
+        </div>
+    </div>
+</div>
+
+<!-- Floating Button -->
+<button class="floating-button" data-bs-toggle="modal" data-bs-target="#formAutoReply" onclick="bukaFormTambahAutoReply()">+</button>
+<!-- Form Dialog Tambah/Edit Auto-Reply -->
+<div id="formAutoReply" class="modal" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tambah/Edit Auto-Reply</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="autoReplyForm">
+                    <input type="hidden" id="autoreplyId"/>
+                    <div class="mb-3">
+                        <label>Kata Kunci</label>
+                        <input type="text" id="autoreplyKeyword" class="form-control" placeholder="Masukkan kata kunci">
+                    </div>
+                    <div class="mb-3">
+                        <label>Respon</label>
+                        <textarea id="autoreplyRespon" class="form-control" rows="3" placeholder="Masukkan respon"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label>Status</label>
+                        <select id="autoreplyStatus" class="form-control">
+                            <option value="active">Aktif</option>
+                            <option value="inactive">Nonaktif</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Pilih Target</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="personalCheck">
+                            <label class="form-check-label" for="personalCheck">Personal</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="groupCheck">
+                            <label class="form-check-label" for="groupCheck">Group</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <a class="btn btn-secondary" data-bs-dismiss="modal">Batalkan</a>
+                <button id="autoReplyButton" class="btn btn-success" type="button" onclick="submitAutoReplyForm()">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+<input type="hidden" id="apiKey" value="<%= apiKey %>">
+
+<script>
+    function bukaFormTambahAutoReply() {
+        $('#autoreplyId').val(0);
+        $('#autoreplyKeyword').val('');
+        $('#autoreplyRespon').val('');
+        $('#autoreplyStatus').val('active');
+        $('#personalCheck').prop('checked', false);
+        $('#groupCheck').prop('checked', false);
+    }
+    
+    function editAutoReply(id) {
+        $.ajax({
+            url: `/admin/autoreply/${id}`,
+            method: "GET",
+            success: function(response) {
+                if (response.status) {
+                    const data = response.data;
+                    $('#autoreplyId').val(data.id);
+                    $('#autoreplyKeyword').val(data.keyword);
+                    $('#autoreplyRespon').val(data.response);
+                    $('#autoreplyStatus').val(data.status);
+                    $('#personalCheck').prop('checked', data.is_for_personal === 1);
+                    $('#groupCheck').prop('checked', data.is_for_group === 1);
+                }
+            },
+            error: function() {
+                alert("Gagal memuat data Auto-Reply.");
+            }
+        });
+    }
+    
+    function submitAutoReplyForm() {
+        const apiKey = $("#apiKey").val();
+        const autoreplyId = $("#autoreplyId").val().trim();
+        const autoreplyKeyword = $("#autoreplyKeyword").val().trim();
+        const autoreplyRespon = $("#autoreplyRespon").val().trim();
+        const autoreplyStatus = $("#autoreplyStatus").val().trim();
+        const isForPersonal = $('#personalCheck').is(':checked') ? 1 : 0;
+        const isForGroup = $('#groupCheck').is(':checked') ? 1 : 0;
+
+        const autoReplyButton = $("#autoReplyButton");
+        autoReplyButton.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Memproses...');
+    
+        if (!autoreplyKeyword || !autoreplyRespon) {
+            alert("Keyword dan response harus diisi!");
+            return;
+        }
+    
+        $.ajax({
+            url: "/admin/autoreply/register",
+            method: "POST",
+            data: {
+                apiKey: apiKey,
+                id: autoreplyId,
+                keyword: autoreplyKeyword,
+                response: autoreplyRespon,
+                status: autoreplyStatus,
+                is_for_personal: isForPersonal,
+                is_for_group: isForGroup,
+            },
+            success: function(response) {
+                if (response.status) {
+                    alert("AutoReply berhasil disimpan!");
+                    location.reload(); // Refresh halaman setelah berhasil
+                } else {
+                    alert(`Gagal menyimpan AutoReply: ${response.message}`);
+                }
+            },
+            error: function() {
+                alert("Terjadi kesalahan saat menyimpan AutoReply.");
+            },
+            complete: function () {
+                autoReplyButton.prop("disabled", false).html('Tambah Device');
+            }
+        });
+    }
+    
+    function hapusAutoReply(id) {
+        if (confirm("Apakah Anda yakin ingin menghapus Auto-Reply ini?")) {
+            const apiKey = document.getElementById('apiKey').value;
+            $.ajax({
+                url: `/admin/autoreply/remove?apiKey=${encodeURIComponent(apiKey)}&id=${encodeURIComponent(id)}`,
+                method: "DELETE",
+                success: function(response) {
+                    if (response.status) {
+                        alert("Auto-Reply berhasil dihapus.");
+                        location.reload();
+                    } else {
+                        alert(`Gagal menghapus Auto-Reply: ${response.message}`);
+                    }
+                },
+                error: function() {
+                    alert("Terjadi kesalahan saat menghapus Auto-Reply.");
+                }
+            });
+        }
+    }
+</script>

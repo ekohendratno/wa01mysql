@@ -10,7 +10,7 @@ module.exports = (sessionManager) => {
         next();
     };
 
-    router.get("/", authMiddleware, (req, res) => {
+    router.get("/", (req, res) => {
         try {
             const { key } = req.query;
 
@@ -83,7 +83,7 @@ module.exports = (sessionManager) => {
         });
     });
 
-    router.get("/scan", authMiddleware, async (req, res) => {
+    router.get("/scan", async (req, res) => {
         const { key } = req.query;
 
         if (!key) {

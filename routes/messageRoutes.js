@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { isValidPhoneNumber, isValidGroupId } = require('../lib/Utils.js');
 
-module.exports = (sessionManager) => {
+module.exports = ({sessionManager, messageManager}) => {
     router.post("/send", async (req, res) => {
         const { key, to, text, group } = req.body;
     
