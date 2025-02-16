@@ -6,8 +6,6 @@ module.exports = ({sessionManager, messageManager}) => {
     router.post("/send", async (req, res) => {
         const { key, to, text, group } = req.body;
 
-
-        console.log({ key, to, text, group });
     
         if (!key || !to || !text) {
             return res.status(400).json({
@@ -32,6 +30,7 @@ module.exports = ({sessionManager, messageManager}) => {
             for (const recipient of recipients) {
                 try {
                     if (group) {
+                        
                         if (!isValidGroupId(recipient)) {
                             invalidRecipients.push(recipient);
                             results.push({

@@ -122,7 +122,7 @@ app.use('/group', groupRoutes);
 
 sessionManager.initSessions();
 cronManager.initCrons();
-const PORT = 3000;
+const PORT = process.env.SERVERPORT;
 server.listen(PORT, () => {
     console.log(`WhatsApp Gateway running on http://localhost:${PORT}`);
 });
