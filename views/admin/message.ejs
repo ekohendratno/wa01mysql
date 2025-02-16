@@ -249,6 +249,7 @@
         // Disable tombol dan ubah teks jadi "Memproses..."
         sendMessageButton.disabled = true;
         sendMessageButton.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Memproses...';
+        
 
         $.ajax({
             url: "/bot/message",
