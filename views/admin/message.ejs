@@ -56,14 +56,13 @@
             <div class="row mb-3">
                 <div class="col-md-12">
                     <input type="text" id="searchInput" class="form-control"
-                        placeholder="Cari Role, Nomor Tujuan, Isi Pesan, Tipe, atau Status..." onkeyup="filterPesan()">
+                        placeholder="Cari Nomor Tujuan, Isi Pesan, Tipe, atau Status..." onkeyup="filterPesan()">
                 </div>
             </div>
             <!-- Tabel Pesan -->
             <table class="table table-striped table-hover" id="pesanTable">
                 <thead>
                     <tr>
-                        <th>Role</th>
                         <th>Nomor Tujuan</th>
                         <th>Isi Pesan</th>
                         <th>Tipe</th>
@@ -84,9 +83,6 @@
                                     : 'danger' , 'pending' : 'secondary' }[message.status] || 'default' %>
 
                                     <tr data-status="<%= message.status %>">
-                                        <td>
-                                            <%= message.role %>
-                                        </td>
                                         <td>
                                             <%= message.number %>
                                         </td>
@@ -162,16 +158,6 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Role:</label>
-                        <select id="role" class="form-control" required>
-                            <option value="group">Group</option>
-                            <option value="guru">Guru</option>
-                            <option value="siswa">Siswa</option>
-                            <option value="wali">Wali</option>
-                            <option value="ortu">Ortu</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
                         <label>Tujuan:</label>
                         <input type="text" id="to" class="form-control"
                             placeholder="Nomor telepon atau ID grup (pisahkan dengan koma)" required>
@@ -200,7 +186,6 @@
         const rows = document.querySelectorAll('#pesanTable tbody tr');
 
         rows.forEach(row => {
-            const role = row.cells[0].innerText.toLowerCase();
             const number = row.cells[1].innerText.toLowerCase();
             const message = row.cells[2].innerText.toLowerCase();
             const type = row.cells[3].innerText.toLowerCase();
@@ -210,7 +195,6 @@
             const statusMatch = status === 'all' || rowStatus === status;
 
             const keywordMatch =
-                role.includes(searchKeyword) ||
                 number.includes(searchKeyword) ||
                 message.includes(searchKeyword) ||
                 type.includes(searchKeyword) ||
@@ -235,7 +219,6 @@
 
         const apiKey = $("#apiKey").val();
         const deviceKey = $("#device").val();
-        const role = $("#role").val().trim();
         const to = $("#to").val().trim();
         const text = $("#text").val().trim();
         const group = $("#group").val() === "true";
@@ -258,7 +241,6 @@
             data: JSON.stringify({
                 apiKey: apiKey,
                 deviceKey: deviceKey,
-                role: role,
                 to: to,
                 text: text,
                 isGroup: group
