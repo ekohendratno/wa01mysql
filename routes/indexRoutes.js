@@ -45,7 +45,7 @@ module.exports = (sessionManager) => {
             return res.json({
                 success: true,
                 hasPending: !!pendingTransaction,
-                paymentUrl: pendingTransaction?.paymentUrl || null,
+                reference: pendingTransaction?.reference || null,
                 message: pendingTransaction ? 'Transaksi pending ditemukan.' : 'Tidak ada transaksi pending.',
             });
         } catch (error) {
@@ -145,7 +145,7 @@ module.exports = (sessionManager) => {
                 await sessionManager.addTransaction(
                     req.session.user.api_key,
                     merchantOrderId,
-                    paymentUrl,
+                    reference,
                     description,
                     amount,
                     status
@@ -154,8 +154,7 @@ module.exports = (sessionManager) => {
                 // Response ke frontend
                 res.json({
                     success: true,
-                    reference: reference,
-                    paymentUrl: paymentUrl,
+                    reference: reference
                 });
             } else {
                 throw new Error(statusMessage || 'Failed to create invoice');
