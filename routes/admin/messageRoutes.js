@@ -13,12 +13,25 @@ module.exports = ({sessionManager, messageManager, deviceManager}) => {
     router.get("/", authMiddleware, async (req, res) => {
         try {
             const apiKey = req.session.user.api_key;
-            const messages = await messageManager.getMessages(apiKey);
             const devices = await deviceManager.getDevices(apiKey, { status: 'connected' });
-            res.render("admin/message", { apiKey, messages: messages || [], devices: devices || [], title: "Messages - w@pi", layout: "layouts/admin" });
+            res.render("admin/message", { apiKey, devices: devices || [], title: "Messages - w@pi", layout: "layouts/admin" });
         } catch (error) {
             console.error('Error:', error);
             res.status(500).send("Internal Server Error");
+        }
+    });
+
+
+    router.get('/data', async (req, res) => {
+        try {
+            const { status } = req.query;            
+            const apiKey = req.session.user.api_key;
+            const messages = await messageManager.getMessages(apiKey, status);
+    
+            res.json({ success: true, messages: messages.messages || [], counts: messages.counts || [] });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ success: false, message: 'Terjadi kesalahan' });
         }
     });
     
