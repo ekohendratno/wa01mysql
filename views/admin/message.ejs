@@ -30,6 +30,9 @@
     </div>
 </div>
 
+
+
+
 <div class="row">
     <div class="col-md-12">
         <div class="stat-card">
@@ -81,16 +84,6 @@
         </div>
     </div>
 
-    <!-- <div class="col-md-4">
-        <div class="stat-card">
-            <h5 class="mb-4"><i class="fa fa-history me-2"></i>Riwayat Pesan</h5>
-            <ul class="list-group">
-                <li class="list-group-item">Pesan ke +6281234567890 terkirim - 5 menit lalu</li>
-                <li class="list-group-item">Pesan ke +6289876543210 pending - 10 menit lalu</li>
-                <li class="list-group-item">Pesan ke +6281122334455 gagal - 15 menit lalu</li>
-            </ul>
-        </div>
-    </div> -->
 </div>
 
 
@@ -208,11 +201,17 @@
     }
 
     document.addEventListener("DOMContentLoaded", function () {
-        filterPesan('all'); // Load semua pesan saat halaman pertama kali dibuka
-
-        // Mulai interval untuk memperbarui tabel setiap 15 detik
-        startAutoRefresh();
+        filterPesan('all');
     });
+
+    function toggleAutoRefresh() {
+        const autoRefreshCheckbox = document.getElementById('autoRefreshCheckbox');
+        if (autoRefreshCheckbox.checked) {
+            startAutoRefresh();
+        } else {
+            stopAutoRefresh();
+        }
+    }
 
     function startAutoRefresh() {
         refreshInterval = setInterval(() => {
@@ -220,6 +219,10 @@
             const activeStatus = activeTab ? activeTab.getAttribute('data-status') : 'all';
             filterPesan(activeStatus); // Panggil filterPesan berdasarkan tab yang aktif
         }, 15000); // 15 detik
+    }
+
+    function stopAutoRefresh() {
+        clearInterval(refreshInterval);
     }
 
     $("#sendMessageForm").submit(async function (event) {
@@ -306,3 +309,12 @@
         clearInterval(refreshInterval);
     });
 </script>
+
+
+<!-- HTML untuk Judul Daftar Pesan -->
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h3></h3>
+    <label style="margin-right: 10px;">
+        <input type="checkbox" id="autoRefreshCheckbox" onchange="toggleAutoRefresh()"> Auto Refresh
+    </label>
+</div>

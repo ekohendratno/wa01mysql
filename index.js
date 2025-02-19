@@ -31,6 +31,7 @@ const pool = mysql.createPool(dbConfig);
 const InitData = require('./lib/InitData.js');
 const SessionManager = require('./lib/SessionsManager.js');
 const CronManager = require('./lib/CronManager.js');
+const CronGroupManager = require('./lib/CronGroupManager.js');
 const MessageManager = require('./lib/MessageManager.js');
 const DeviceManager = require('./lib/DeviceManager.js');
 const AutoReplyManager = require('./lib/AutoReplyManager.js');
@@ -87,6 +88,7 @@ const messageManager = new MessageManager(pool);
 const userManager = new UserManager(pool);
 const autoreplyManager = new AutoReplyManager(pool);
 const cronManager = new CronManager(pool);
+const cronGroupManager = new CronGroupManager(pool, sessionManager);
 
 // Routes
 const indexAdminRoutes = require('./routes/admin/indexRoutes')({sessionManager, deviceManager});
@@ -121,7 +123,8 @@ app.use('/group', groupRoutes);
 
 
 sessionManager.initSessions();
-cronManager.initCrons();
+// cronManager.initCrons();
+// cronGroupManager.initCrons();
 const PORT = process.env.SERVERPORT;
 server.listen(PORT, () => {
     console.log(`WhatsApp Gateway running on http://localhost:${PORT}`);

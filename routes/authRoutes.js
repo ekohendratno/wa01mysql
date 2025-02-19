@@ -1,14 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const { redirectIfLoggedIn } = require('../lib/Utils.js');
 
 module.exports = ({sessionManager, userManager}) => {
-    
-    const redirectIfLoggedIn = (req, res, next) => {
-        if (req.session.user) {
-            return res.redirect('/admin');
-        }
-        next();
-    };
 
     router.get('/login', redirectIfLoggedIn, (req, res) => {
         res.render('auth/login', { error: null, title: "Login - w@pi", layout: "layouts/main" });

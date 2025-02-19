@@ -1,14 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const { authMiddleware } = require('../../lib/Utils.js');
 
 module.exports = ({sessionManager, messageManager, deviceManager}) => {
-
-    const authMiddleware = (req, res, next) => {
-        if (!req.session.user) {
-            return res.redirect('/auth/login');
-        }
-        next();
-    };
 
     router.get("/", authMiddleware, async (req, res) => {
         try {
@@ -22,7 +16,7 @@ module.exports = ({sessionManager, messageManager, deviceManager}) => {
     });
 
 
-    router.get('/data', async (req, res) => {
+    router.get('/data', authMiddleware, async (req, res) => {
         try {
             const { status } = req.query;            
             const apiKey = req.session.user.api_key;
