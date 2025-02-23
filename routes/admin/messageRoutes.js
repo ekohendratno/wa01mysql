@@ -17,8 +17,8 @@ module.exports = ({sessionManager, messageManager, deviceManager}) => {
 
 
     router.get('/data', authMiddleware, async (req, res) => {
-        try {
-            const { status } = req.query;            
+        const { status } = req.query;   
+        try {         
             const apiKey = req.session.user.api_key;
             const messages = await messageManager.getMessages(apiKey, status);
     
@@ -43,6 +43,23 @@ module.exports = ({sessionManager, messageManager, deviceManager}) => {
             });
         }
     });
+
+    
+    router.post('/retry', authMiddleware, async (req, res) => {
+        try {
+            const { apiKey, id } = req.query;
+            const result = await messageManager.retryMessage(apiKey, id);
+            res.json({ status: true, message: 'Message retry successfully' });
+        } catch (error) {
+            console.error('Retry message error:', error);
+            const statusCode = error.output?.statusCode || 500;
+            res.status(statusCode).json({
+                status: false,
+                message: error.message
+            });
+        }
+    });
+
 
     return router;
 };

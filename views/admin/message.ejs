@@ -177,8 +177,8 @@
                         <td>${message.type}</td>
                         <td><span class="badge bg-${statusClass}">${message.status}</span></td>
                         <td>
-                            <button class="btn btn-sm btn-warning btn-action" onclick="confirmDeleteRetry('${message.id}')">
-                                <i class="fa fa-repeat"></i>
+                            <button class="btn btn-sm btn-secondary btn-action" onclick="confirmRetry('${message.id}')">
+                                <i class="fa fa-undo"></i>
                             </button>
                             <button class="btn btn-sm btn-danger btn-action" onclick="confirmDelete('${message.id}')">
                                 <i class="fa fa-trash"></i>
@@ -261,6 +261,8 @@
                 const activeTab = document.querySelector('.nav-tabs .nav-link.active');
                 const activeStatus = activeTab ? activeTab.getAttribute('data-status') : 'all';
 
+                $("#to").val('');
+                $("#text").val('');
                 // Filter pesan berdasarkan status tab yang aktif
                 filterPesan(activeStatus);
             },
@@ -297,6 +299,36 @@
                 filterPesan(activeStatus);
             } else {
                 throw new Error(result.message || 'Gagal menghapus pesan');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert(`Error: ${error.message}`);
+        }
+    }
+
+    
+    async function confirmRetry(id) {
+        if (!confirm(`Apakah Anda yakin ingin retry pesan ${id}?`)) return;
+        const apiKey = document.getElementById('apiKey').value;
+        try {
+            const response = await fetch(`/admin/message/retry?apiKey=${encodeURIComponent(apiKey)}&id=${encodeURIComponent(id)}`, {
+                method: 'POST',
+            });
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const result = await response.json();
+            if (result.status) {
+                alert('Pesan berhasil diretry!');
+
+                // Ambil status tab yang aktif
+                const activeTab = document.querySelector('.nav-tabs .nav-link.active');
+                const activeStatus = activeTab ? activeTab.getAttribute('data-status') : 'all';
+
+                // Filter pesan berdasarkan status tab yang aktif
+                filterPesan(activeStatus);
+            } else {
+                throw new Error(result.message || 'Gagal retry pesan');
             }
         } catch (error) {
             console.error('Error:', error);

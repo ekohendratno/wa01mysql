@@ -4,7 +4,7 @@ const axios = require('axios');
 const router = express.Router();
 const duitkuConfig = require('../config-duitku'); // Konfigurasi Duitku
 
-module.exports = (sessionManager) => {
+module.exports = ({sessionManager,billingManager}) => {
     /**
      * Route untuk halaman utama.
      */
@@ -13,7 +13,7 @@ module.exports = (sessionManager) => {
         let packages = [];  // Gunakan let karena akan diubah dalam try
     
         try {
-            packages = await sessionManager.getPackages();  // Tambahkan await
+            packages = await billingManager.getPackages();  // Tambahkan await
         } catch (error) {
             console.error("Error fetching packages:", error);
         }
@@ -40,7 +40,7 @@ module.exports = (sessionManager) => {
                 return res.status(401).json({ success: false, message: 'API key tidak ditemukan.' });
             }
     
-            const pendingTransaction = await sessionManager.getPendingTransactions(apiKey, merchantOrderId);
+            const pendingTransaction = await billingManager.getPendingTransactions(apiKey, merchantOrderId);
     
             return res.json({
                 success: true,
@@ -54,26 +54,6 @@ module.exports = (sessionManager) => {
         }
     });
 
-    router.get('/success', async (req, res) => {
-        try {
-            const { resultCode, merchantOrderId, reference } = req.query;
-    
-            if (!resultCode || !merchantOrderId || !reference) {
-                return res.status(400).json({ success: false, message: 'Parameter tidak lengkap.' });
-            }
-    
-            const status = resultCode === '00' ? 'success' : resultCode === '01' ? 'pending' : 'failed';
-            await sessionManager.updateTransactionStatus(
-                merchantOrderId,
-                status
-            );
-
-            return res.redirect(`/admin/billing`);
-        } catch (error) {
-            console.error('Error processing callback:', error.message);
-            res.status(500).json({ success: false, message: error.message });
-        }
-    });
     
     
     /**
@@ -142,7 +122,7 @@ module.exports = (sessionManager) => {
                 const amount = parseFloat(paymentAmount);
                 const status = 'pending';
 
-                await sessionManager.addTransaction(
+                await billingManager.addTransaction(
                     req.session.user.api_key,
                     merchantOrderId,
                     reference,
@@ -165,25 +145,39 @@ module.exports = (sessionManager) => {
         }
     });
 
-    router.post('/callback', async (req, res) => {
+    router.get('/success', async (req, res) => {
         try {
-            const { merchantCode, amount, merchantOrderId, resultCode, reference, signature } = req.body;
-            const merchantKey = duitkuConfig.merchantKey;
+            const { resultCode, merchantOrderId, reference } = req.query;
     
-            // Hitung tanda tangan yang diharapkan
-            const expectedSignature = crypto.createHash('md5')
-                .update(`${merchantCode}${amount}${merchantOrderId}${merchantKey}`)
-                .digest('hex');
-    
-            if (signature !== expectedSignature) {
-                return res.status(400).json({ success: false, message: 'Invalid signature' });
+            if (!resultCode || !merchantOrderId || !reference) {
+                return res.status(400).json({ success: false, message: 'Parameter tidak lengkap.' });
             }
     
-            // Tentukan status berdasarkan resultCode
+            const status = resultCode === '00' ? 'success' : resultCode === '01' ? 'pending' : 'failed';
+            await billingManager.updateTransactionStatus(
+                merchantOrderId,
+                status
+            );
+    
+            return res.redirect(`/admin/billing`);
+        } catch (error) {
+            console.error('Error processing callback:', error.message);
+            res.status(500).json({ success: false, message: error.message });
+        }
+    });
+    
+    router.post('/callback', async (req, res) => {
+        console.log("Callback received:", req.body);
+        try {
+            const { merchantCode, amount, merchantOrderId, resultCode, reference, signature } = req.body;
+            
+            if (!resultCode || !merchantOrderId || !reference) {
+                return res.status(400).json({ success: false, message: 'Parameter tidak lengkap.' });
+            }
+    
             const status = resultCode === '00' ? 'success' : resultCode === '01' ? 'pending' : 'failed';
     
-            // Perbarui transaksi
-            await sessionManager.updateTransaction(
+            await billingManager.updateTransaction(
                 merchantOrderId,
                 `Top-Up via Duitku (${merchantOrderId})`,
                 parseFloat(amount),
