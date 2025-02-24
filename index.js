@@ -86,10 +86,10 @@ const initData = new InitData(pool);
 const deviceManager = new DeviceManager(pool);
 const sessionManager = new SessionManager(pool, io, deviceManager, folderSession);
 const billingManager = new BillingManager(pool);
-const messageManager = new MessageManager(pool);
+const messageManager = new MessageManager(pool, sessionManager);
 const userManager = new UserManager(pool);
 const autoreplyManager = new AutoReplyManager(pool);
-const cronManager = new CronManager(pool);
+const cronManager = new CronManager(pool, messageManager);
 const cronGroupManager = new CronGroupManager(pool, sessionManager);
 
 // Routes
