@@ -1,13 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const { authMiddleware } = require('../../lib/Utils.js');
 
-module.exports = ({sessionManager, deviceManager}) => {
-    const authMiddleware = (req, res, next) => {
-        if (!req.session.user) {
-            return res.redirect('/auth/login');
-        }
-        next();
-    };
+module.exports = ({sessionManager, deviceManager, messageManager, billingManager}) => {
 
     router.get("/", authMiddleware, async (req, res) => {
         const sessions = sessionManager.getAllSessions();
@@ -16,11 +11,12 @@ module.exports = ({sessionManager, deviceManager}) => {
 
         
         const countDeviceLast = await deviceManager.getDevicesWithLastActive(apiKey);
-        const countMessage = await sessionManager.getMessageCounts(apiKey);
+        const countMessage = await messageManager.getMessageCounts(apiKey);
         const countDevice = await deviceManager.getActiveDeviceCount(apiKey);
-        const countSummary = await sessionManager.getBalanceSummary(apiKey);
+        const countSummary = await billingManager.getBalanceSummary(apiKey);
+        const messageStatistics = await messageManager.getMessageStatistics(apiKey);
 
-        res.render("admin/index", { countDeviceLast, countMessage, countDevice, countSummary, devices: devices || [], apiKey: apiKey, sessions, title: "Home - w@pi", layout: "layouts/admin" });
+        res.render("admin/index", { messageStatistics, countDeviceLast, countMessage, countDevice, countSummary, devices: devices || [], apiKey: apiKey, sessions, title: "Home - w@pi", layout: "layouts/admin" });
     });
 
 

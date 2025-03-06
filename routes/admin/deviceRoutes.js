@@ -1,21 +1,15 @@
 const express = require('express');
 const router = express.Router();
+const { authMiddleware } = require('../../lib/Utils.js');
 
-module.exports = ({sessionManager, deviceManager}) => {
-
-    const authMiddleware = (req, res, next) => {
-        if (!req.session.user) {
-            return res.redirect('/auth/login');
-        }
-        next();
-    };
+module.exports = ({sessionManager, deviceManager, billingManager}) => {
 
     router.get("/", authMiddleware, async (req, res) => {
         try {
             const apiKey = req.session.user.api_key;
     
             const devices = await deviceManager.getDevices(apiKey);  
-            const packages = await sessionManager.getPackages();
+            const packages = await billingManager.getPackages();
             const devicesWithLastActive = await deviceManager.getDevicesWithLastActive(apiKey);
             const activeDeviceCount = await deviceManager.getActiveDeviceCount(apiKey);
 

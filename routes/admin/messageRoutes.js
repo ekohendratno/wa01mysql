@@ -1,14 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const { authMiddleware } = require('../../lib/Utils.js');
 
 module.exports = ({sessionManager, messageManager, deviceManager}) => {
-
-    const authMiddleware = (req, res, next) => {
-        if (!req.session.user) {
-            return res.redirect('/auth/login');
-        }
-        next();
-    };
 
     router.get("/", authMiddleware, async (req, res) => {
         try {
@@ -22,9 +16,9 @@ module.exports = ({sessionManager, messageManager, deviceManager}) => {
     });
 
 
-    router.get('/data', async (req, res) => {
-        try {
-            const { status } = req.query;            
+    router.get('/data', authMiddleware, async (req, res) => {
+        const { status } = req.query;   
+        try {         
             const apiKey = req.session.user.api_key;
             const messages = await messageManager.getMessages(apiKey, status);
     
@@ -49,6 +43,23 @@ module.exports = ({sessionManager, messageManager, deviceManager}) => {
             });
         }
     });
+
+    
+    router.post('/retry', authMiddleware, async (req, res) => {
+        try {
+            const { apiKey, id } = req.query;
+            const result = await messageManager.retryMessage(apiKey, id);
+            res.json({ status: true, message: 'Message retry successfully' });
+        } catch (error) {
+            console.error('Retry message error:', error);
+            const statusCode = error.output?.statusCode || 500;
+            res.status(statusCode).json({
+                status: false,
+                message: error.message
+            });
+        }
+    });
+
 
     return router;
 };

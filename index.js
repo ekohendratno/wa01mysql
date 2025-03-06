@@ -10,7 +10,7 @@ process.on("uncaughtExceptionMonitor", (error) => {
     console.error("[Critical Error]", error);
 });
 
-const path = require('path')
+const path = require('path');
 const { Boom } = require('@hapi/boom');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require("@whiskeysockets/baileys");
 const pino = require("pino");
@@ -30,7 +30,9 @@ const pool = mysql.createPool(dbConfig);
 
 const InitData = require('./lib/InitData.js');
 const SessionManager = require('./lib/SessionsManager.js');
+const BillingManager = require('./lib/BillingManager');
 const CronManager = require('./lib/CronManager.js');
+const CronGroupManager = require('./lib/CronGroupManager.js');
 const MessageManager = require('./lib/MessageManager.js');
 const DeviceManager = require('./lib/DeviceManager.js');
 const AutoReplyManager = require('./lib/AutoReplyManager.js');
@@ -83,21 +85,24 @@ app.use("/asset/sessions", express.static(folderSession));
 const initData = new InitData(pool);
 const deviceManager = new DeviceManager(pool);
 const sessionManager = new SessionManager(pool, io, deviceManager, folderSession);
-const messageManager = new MessageManager(pool);
+const billingManager = new BillingManager(pool);
+const messageManager = new MessageManager(pool, sessionManager);
 const userManager = new UserManager(pool);
 const autoreplyManager = new AutoReplyManager(pool);
-const cronManager = new CronManager(pool);
+const cronManager = new CronManager(pool, messageManager);
+const cronGroupManager = new CronGroupManager(pool, sessionManager);
 
 // Routes
-const indexAdminRoutes = require('./routes/admin/indexRoutes')({sessionManager, deviceManager});
-const billingAdminRoutes= require('./routes/admin/billingRoutes')(sessionManager);
-const deviceAdminRoutes = require('./routes/admin/deviceRoutes')({sessionManager, deviceManager});
+const indexAdminRoutes = require('./routes/admin/indexRoutes')({sessionManager, deviceManager, messageManager, billingManager});
+const packageAdminRoutes= require('./routes/admin/packageRoutes')(billingManager);
+const billingAdminRoutes= require('./routes/admin/billingRoutes')(billingManager);
+const deviceAdminRoutes = require('./routes/admin/deviceRoutes')({sessionManager, deviceManager, billingManager});
 const messageAdminRoutes= require('./routes/admin/messageRoutes')({sessionManager, messageManager, deviceManager});
 const autoreplyAdminRoutes= require('./routes/admin/autoreplyRoutes')({sessionManager, autoreplyManager});
 const dokumentasiAdminRoutes= require('./routes/admin/dokumentasiRoutes')(sessionManager);
 
 
-const indexRoutes = require('./routes/indexRoutes')(sessionManager);
+const indexRoutes = require('./routes/indexRoutes')({sessionManager,billingManager});
 const botRoutes = require('./routes/botRoutes')({sessionManager, messageManager});
 const authRoutes = require('./routes/authRoutes')({sessionManager, userManager});
 const sessionRoutes = require('./routes/sessionRoutes')(sessionManager);
@@ -106,6 +111,7 @@ const groupRoutes = require('./routes/groupRoutes')(sessionManager);
 
 
 app.use('/admin', indexAdminRoutes);
+app.use('/admin/package', packageAdminRoutes);
 app.use('/admin/billing', billingAdminRoutes);
 app.use('/admin/device', deviceAdminRoutes);
 app.use('/admin/message', messageAdminRoutes);
@@ -122,6 +128,7 @@ app.use('/group', groupRoutes);
 
 sessionManager.initSessions();
 cronManager.initCrons();
+// cronGroupManager.initCrons();
 const PORT = process.env.SERVERPORT;
 server.listen(PORT, () => {
     console.log(`WhatsApp Gateway running on http://localhost:${PORT}`);

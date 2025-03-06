@@ -104,7 +104,7 @@
             <div class="text-center my-4">
                 <i class="fab fa-whatsapp fa-3x text-success mb-3"></i>
                 <h4>Connected</h4>
-                <small class="text-muted">Terhubung ke 3 device</small>
+                <small class="text-muted">Terhubung ke <%= devices.length %> device</small>
             </div>
         </div>
         <div class="stat-card">
@@ -123,38 +123,77 @@
     </div>
 </div>
 
-<script>
+<style>
+    /* Pastikan chart-container fleksibel */
+    .chart-container {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        min-height: 300px; /* Sesuaikan sesuai kebutuhan */
+    }
 
-    // Chart Statistik Pengiriman Pesan
+    canvas {
+        width: 100% !important;
+        height: auto !important;
+    }
+</style>
+
+
+<script>
+    // Data Statistik Pengiriman Pesan dari Server
+    const messageStatistics = <%- JSON.stringify(messageStatistics) %>;
+
+    // Ekstrak data untuk chart
+    const labels = messageStatistics.daily.map(item => item.date);
+    const sentData = messageStatistics.daily.map(item => item.sent);
+    const pendingData = messageStatistics.daily.map(item => item.pending);
+    const failedData = messageStatistics.daily.map(item => item.failed);
+
+    // Pastikan Chart.js menyesuaikan ukuran box
     const ctx = document.getElementById('messageChart').getContext('2d');
     const messageChart = new Chart(ctx, {
-        type: 'bar',
+        type: 'line',
         data: {
-            labels: ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4'],
-            datasets: [{
-                label: 'Jumlah Pesan Terkirim',
-                data: [120, 200, 150, 180],
-                backgroundColor: [
-                    'rgba(75, 192, 192, 0.6)',
-                    'rgba(54, 162, 235, 0.6)',
-                    'rgba(255, 206, 86, 0.6)',
-                    'rgba(153, 102, 255, 0.6)'
-                ],
-                borderColor: [
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(54, 162, 235, 1)',
-                    'rgba(255, 206, 86, 1)',
-                    'rgba(153, 102, 255, 1)'
-                ],
-                borderWidth: 1
-            }]
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Terkirim',
+                    data: sentData,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: true
+                },
+                {
+                    label: 'Pending',
+                    data: pendingData,
+                    borderColor: 'rgba(255, 206, 86, 1)',
+                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                    fill: true
+                },
+                {
+                    label: 'Gagal',
+                    data: failedData,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    fill: true
+                }
+            ]
         },
         options: {
+            responsive: true, // Chart menyesuaikan ukuran container
+            maintainAspectRatio: false, // Jangan pertahankan rasio aspek bawaan
             scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Tanggal'
+                    }
+                },
                 y: {
                     beginAtZero: true,
-                    ticks: {
-                        stepSize: 50
+                    title: {
+                        display: true,
+                        text: 'Jumlah Pesan'
                     }
                 }
             },
@@ -167,3 +206,4 @@
         }
     });
 </script>
+

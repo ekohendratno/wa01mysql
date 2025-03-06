@@ -1,18 +1,13 @@
 const express = require('express');
 const router = express.Router();
+const { authMiddleware } = require('../../lib/Utils.js');
 
-module.exports = (sessionManager) => {
-    const authMiddleware = (req, res, next) => {
-        if (!req.session.user) {
-            return res.redirect('/auth/login');
-        }
-        next();
-    };
+module.exports = (billingManager) => {
 
     router.get("/", authMiddleware, async (req, res) => {
         try {
             const apiKey = req.session.user.api_key;
-            const billingData = await sessionManager.getTransactions(apiKey);
+            const billingData = await billingManager.getTransactions(apiKey, 'all');
             res.render("admin/billing", {
                 apiKey,
                 title: "Billing - w@pi",
@@ -25,6 +20,24 @@ module.exports = (sessionManager) => {
         }
     });
 
+    router.get("/data", async (req, res) => {
+        const { status } = req.query;   
+        try {
+            const apiKey = req.session.user.api_key;
+            const billingData = await billingManager.getTransactions(apiKey, status);
+
+            res.json({
+                success: true,
+                data: billingData
+            });
+        } catch (error) {
+            console.error('Error fetching billing data:', error.message);
+            res.status(500).json({
+                success: false,
+                message: 'Internal Server Error'
+            });
+        }
+    });
 
     return router;
 };
