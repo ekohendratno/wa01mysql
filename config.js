@@ -12,5 +12,6 @@ module.exports = {
   port: process.env.MYSQLPORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  timezone: 'Z'
 };

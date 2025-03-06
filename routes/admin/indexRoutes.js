@@ -14,8 +14,9 @@ module.exports = ({sessionManager, deviceManager, messageManager, billingManager
         const countMessage = await messageManager.getMessageCounts(apiKey);
         const countDevice = await deviceManager.getActiveDeviceCount(apiKey);
         const countSummary = await billingManager.getBalanceSummary(apiKey);
+        const messageStatistics = await messageManager.getMessageStatistics(apiKey);
 
-        res.render("admin/index", { countDeviceLast, countMessage, countDevice, countSummary, devices: devices || [], apiKey: apiKey, sessions, title: "Home - w@pi", layout: "layouts/admin" });
+        res.render("admin/index", { messageStatistics, countDeviceLast, countMessage, countDevice, countSummary, devices: devices || [], apiKey: apiKey, sessions, title: "Home - w@pi", layout: "layouts/admin" });
     });
 
 
