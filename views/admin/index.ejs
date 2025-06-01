@@ -110,16 +110,24 @@
         <div class="stat-card">
             <h5>Pesan Terakhir</h5>
             <div class="mt-3">
-                <div class="d-flex align-items-center mb-3">
-                    <i class="fa fa-user-circle fa-2x me-3"></i>
-                    <div>
-                        <h6>08123456789</h6>
-                        <small class="text-muted">Pesan: Tolong info...</small>
-                    </div>
-                </div>
-                <!-- Tambahkan pesan lain -->
+                <% if (messagesLast.length > 0) { %>
+                    <% messagesLast.forEach(message => { %>
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="fa fa-user-circle fa-2x me-3"></i>
+                            <div>
+                                <h6><%= message.number %></h6>
+                                <small class="text-muted">Pesan: <%= message.message %></small>
+                                <br>
+                                <small class="text-muted"><i class="fa fa-clock"></i> <%= moment(message.created_at).format("DD MMM YYYY, HH:mm") %></small>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <p class="text-muted">Tidak ada pesan terbaru.</p>
+                <% } %>
             </div>
         </div>
+        
     </div>
 </div>
 
@@ -130,11 +138,13 @@
         max-width: 100%;
         height: auto;
         min-height: 300px; /* Sesuaikan sesuai kebutuhan */
+        max-height: 400px;
     }
 
     canvas {
         width: 100% !important;
         height: auto !important;
+        max-height: 400px;
     }
 </style>
 
