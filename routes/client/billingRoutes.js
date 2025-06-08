@@ -8,10 +8,10 @@ module.exports = (billingManager) => {
         try {
             const apiKey = req.session.user.api_key;
             const billingData = await billingManager.getTransactions(apiKey, 'all');
-            res.render("admin/billing", {
+            res.render("client/billing", {
                 apiKey,
                 title: "Billing - w@pi",
-                layout: "layouts/admin",
+                layout: "layouts/client",
                 ...billingData
             });
         } catch (error) {

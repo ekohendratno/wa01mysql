@@ -88,7 +88,7 @@
 
 
 <!-- Floating Button -->
-<button class="floating-button" data-bs-toggle="modal" data-bs-target="#formKirimPesan">+</button>
+<button class="floating-button" data-bs-toggle="modal" data-bs-target="#formKirimPesan"><i class="fas fa-plus"></i></button>
 
 <!-- Form Dialog Kirim Pesan -->
 <div id="formKirimPesan" class="modal" style="display: none;">
@@ -148,7 +148,7 @@
     async function filterPesan(status = 'all') {
         try {
             const searchKeyword = document.getElementById('searchInput').value.toLowerCase();
-            const response = await fetch(`/admin/message/data?status=${status}`);
+            const response = await fetch(`/client/message/data?status=${status}`);
             const data = await response.json();
             console.log(data);
             if (!data.success) {
@@ -281,7 +281,7 @@
         if (!confirm(`Apakah Anda yakin ingin menghapus pesan ${id}?`)) return;
         const apiKey = document.getElementById('apiKey').value;
         try {
-            const response = await fetch(`/admin/message/remove?apiKey=${encodeURIComponent(apiKey)}&id=${encodeURIComponent(id)}`, {
+            const response = await fetch(`/client/message/remove?apiKey=${encodeURIComponent(apiKey)}&id=${encodeURIComponent(id)}`, {
                 method: 'DELETE',
             });
             if (!response.ok) {
@@ -311,7 +311,7 @@
         if (!confirm(`Apakah Anda yakin ingin retry pesan ${id}?`)) return;
         const apiKey = document.getElementById('apiKey').value;
         try {
-            const response = await fetch(`/admin/message/retry?apiKey=${encodeURIComponent(apiKey)}&id=${encodeURIComponent(id)}`, {
+            const response = await fetch(`/client/message/retry?apiKey=${encodeURIComponent(apiKey)}&id=${encodeURIComponent(id)}`, {
                 method: 'POST',
             });
             if (!response.ok) {

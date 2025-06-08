@@ -19,10 +19,11 @@ module.exports = ({sessionManager, userManager}) => {
                 name: user.name,
                 email: user.email,
                 phone: user.phone,
-                api_key: user.api_key // Pastikan api_key disimpan di sesi
+                role: user.role,
+                api_key: user.api_key
             };
     
-            res.redirect('/admin');
+            res.redirect(`/${user.role}`);
         } catch (error) {
             res.render('auth/login', { 
                 error: error.message || 'Login gagal',
@@ -53,7 +54,7 @@ module.exports = ({sessionManager, userManager}) => {
             const user = await userManager.registerUser(name, email, phone, ref, password, repassword);
             
             req.session.user = user;
-            res.redirect('/admin');
+            res.redirect('/client');
         } catch (error) {
             res.render('auth/register', { 
                 error: error.message || 'Registrasi gagal', 

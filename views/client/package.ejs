@@ -3,9 +3,9 @@
 </div>
 
 <!-- Statistik Saldo -->
-<div class="row mb-12">
+<div class="row gy-4">
     <% packages.forEach(pkg => { %>
-        <div class="col-md-3">
+        <div class="col-12 col-md-6 col-lg-4 col-xl-3">
             <div class="card h-100 pricing-card position-relative shadow-sm 
                 <%= pkg.recomended ? 'border-warning bg-warning bg-opacity-25' : 'border-secondary bg-light' %>">
                 
@@ -47,6 +47,7 @@
         </div>
     <% }) %>
 </div>
+
 <style>
 /* Styling Umum */
 .pricing-card {

@@ -1,5 +1,5 @@
 {
-  "name": "whatsapp-gateway",
+  "name": "w@pi",
   "version": "1.0.0",
   "description": "WhatsApp Gateway using Express.js and Baileys for handling single-user sessions and message interactions.",
   "main": "index.js",
@@ -36,7 +36,7 @@
     "moment": "^2.30.1",
     "moment-timezone": "^0.5.47",
     "mysql2": "^3.12.0",
-    "node-cron": "^3.0.3",
+    "node-cron": "^4.1.0",
     "nodemon": "^3.1.9",
     "path": "^0.12.7",
     "pino": "^9.6.0",

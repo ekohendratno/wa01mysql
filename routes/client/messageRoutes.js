@@ -8,7 +8,7 @@ module.exports = ({sessionManager, messageManager, deviceManager}) => {
         try {
             const apiKey = req.session.user.api_key;
             const devices = await deviceManager.getDevices(apiKey, { status: 'connected' });
-            res.render("admin/message", { apiKey, devices: devices || [], title: "Messages - w@pi", layout: "layouts/admin" });
+            res.render("client/message", { apiKey, devices: devices || [], title: "Messages - w@pi", layout: "layouts/client" });
         } catch (error) {
             console.error('Error:', error);
             res.status(500).send("Internal Server Error");

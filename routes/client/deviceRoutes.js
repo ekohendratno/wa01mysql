@@ -13,14 +13,14 @@ module.exports = ({sessionManager, deviceManager, billingManager}) => {
             const devicesWithLastActive = await deviceManager.getDevicesWithLastActive(apiKey);
             const activeDeviceCount = await deviceManager.getActiveDeviceCount(apiKey);
 
-            res.render("admin/device", {
+            res.render("client/device", {
                 countDeviceLast: devicesWithLastActive,
                 countDevice: activeDeviceCount,
                 devices: devices || [],
                 packages: packages || [],
                 apiKey: apiKey,
                 title: "Device - w@pi",
-                layout: "layouts/admin"
+                layout: "layouts/client"
             });
         } catch (error) {
             console.error('Error:', error);
@@ -35,13 +35,12 @@ module.exports = ({sessionManager, deviceManager, billingManager}) => {
             const apiKey = req.session.user.api_key;
             const device = await deviceManager.getDevice(apiKey, deviceKey);
 
-            res.render("admin/device-status", { device: device|| [], apiKey: apiKey, deviceKey: deviceKey, title: "Device Status", layout: "layouts/admin" });
+            res.render("client/device-status", { device: device|| [], apiKey: apiKey, deviceKey: deviceKey, title: "Device Status", layout: "layouts/client" });
         } catch (error) {
             console.error('Error:', error);
             res.status(500).send("Internal Server Error");
         }
     });
-
 
     router.post('/register', authMiddleware, async (req, res) => {
         const { apiKey, deviceName, phoneNumber, packageId } = req.body;
@@ -57,7 +56,7 @@ module.exports = ({sessionManager, deviceManager, billingManager}) => {
                 return res.status(400).json({
                     status: false,
                     message: error.message,
-                    redirect: '/admin/billing'
+                    redirect: '/client/billing'
                 });
             }
             res.status(500).json({
@@ -79,6 +78,21 @@ module.exports = ({sessionManager, deviceManager, billingManager}) => {
                 status: false,
                 message: error.message
             });
+        }
+    });
+
+
+    router.get("/group", authMiddleware, async (req, res) => {
+        const {deviceKey} = req.query;
+        try {
+            const apiKey = req.session.user.api_key;
+            const device = await deviceManager.getDevice(apiKey, deviceKey);
+            const groups = await deviceManager.getGroups(apiKey, deviceKey);  
+
+            res.render("client/device-group", { groups: groups|| [], device: device|| [], apiKey: apiKey, deviceKey: deviceKey, title: "Device Group", layout: "layouts/client" });
+        } catch (error) {
+            console.error('Error:', error);
+            res.status(500).send("Internal Server Error");
         }
     });
 
