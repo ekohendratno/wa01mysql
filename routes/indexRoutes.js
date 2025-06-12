@@ -20,6 +20,7 @@ module.exports = ({ sessionManager, billingManager }) => {
     }
 
     res.render("index", {
+      path: req.originalUrl,
       sessions,
       packages,
       title: "Selamat Datang di w@pi",

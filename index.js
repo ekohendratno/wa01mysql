@@ -104,12 +104,16 @@ const billingManager = new BillingManager(pool);
 const messageManager = new MessageManager(pool, sessionManager);
 const userManager = new UserManager(pool);
 const autoreplyManager = new AutoReplyManager(pool);
-const cronManager = new CronManager(pool, messageManager);
+const cronManager = new CronManager(pool, messageManager, sessionManager);
 const cronGroupManager = new CronGroupManager(pool, sessionManager);
 
 // Routes Admin
 const indexAdminRoutes = require("./routes/admin/indexRoutes.js")();
+const packageAdminRoutes = require("./routes/admin/packageRoutes.js")();
+const billingAdminRoutes = require("./routes/admin/billingRoutes.js")();
 app.use("/admin", requireRole("admin"), indexAdminRoutes);
+app.use("/admin/package", requireRole("admin"), packageAdminRoutes);
+app.use("/admin/billing", requireRole("admin"), billingAdminRoutes);
 
 // Routes Client
 const indexClientRoutes = require("./routes/client/indexRoutes")({

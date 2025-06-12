@@ -20,7 +20,7 @@
   <pre><code>{
   "apiKey"    : "9b0a811f5d511d91b630a93ad882064b0ced925ffb46d188df920c339e824e82",
   "deviceKey" : "c6b6cc17",
-  "role"      : "group",
+  "tags"      : "group",
   "to"        : "PFZOTK",
   "text"      : "Halo! Ini adalah pesan otomatis dari WhatsApp Gateway",
   "isGroup"   : 1
@@ -48,16 +48,16 @@
           <td>Kode perangkat yang sudah terhubung ke WhatsApp Gateway.</td>
         </tr>
         <tr>
-          <td><code>role</code></td>
+          <td><code>tags</code></td>
           <td><code>string</code></td>
           <td>
-            <em>Optional</em>. Keterangan bebas untuk menandai kategori pesan (misalnya: <code>group</code>, <code>personal</code>, <code>marketing</code>, dll). Tidak berpengaruh pada logika pengiriman.
+            <em>Optional</em>. Keterangan bebas untuk menandai pesan, bisa pakai koma <code>,</code> untuk tanda lebih dari 1 (misalnya: <code>Group</code>, <code>Personal</code>, <code>Marketing</code>, dll). Tidak berpengaruh pada logika pengiriman.
           </td>
         </tr>
         <tr>
           <td><code>to</code></td>
           <td><code>string</code></td>
-          <td>Nomor tujuan (untuk <code>personal</code>) atau ID grup (untuk <code>group</code>).</td>
+          <td>Nomor tujuan (untuk <code>personal</code>) atau Group Key (untuk <code>group</code>).</td>
         </tr>
         <tr>
           <td><code>text</code></td>

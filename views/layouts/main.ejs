@@ -9,7 +9,109 @@
     
 </head>
 <body>
+<style>
+    #features {
+        background-color: #f2f2f2;
+    }
 
+    .feature-card {
+        transition: transform 0.3s;
+        border: none;
+        border-radius: 15px;
+        padding-top: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .feature-card:hover {
+        transform: translateY(-10px);
+    }
+
+    .provider-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 0.8rem;
+        background: rgba(0, 0, 0, 0.1);
+        padding: 3px 8px;
+        border-radius: 20px;
+    }
+
+    .hero-section {
+        background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+        color: white;
+        padding: 100px 0;
+    }
+
+    .icon-feature {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+        color: #128C7E;
+    }
+
+    .pricing-card {
+        border: 2px solid #128C7E;
+        border-radius: 15px;
+        min-height: 400px;
+        transition: all 0.3s ease-in-out;
+        background: #fff;
+    }
+    
+    .pricing-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .pricing-card .badge {
+        font-size: 0.9rem;
+        font-weight: bold;
+        border-radius: 30px;
+    }
+    
+
+    footer {
+        background: #0a3d2d;
+        color: white;
+        padding: 50px 0 20px;
+    }
+
+    .navbar .btn-login {
+        background-color: #128C7E;
+        color: white !important;
+        border-radius: 8px;
+        transition: background-color 0.3s ease;
+        font-weight: 500;
+    }
+
+    .navbar .btn-login:hover {
+        background-color: #0e6e63;
+        color: white !important;
+    }
+    
+</style>
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold text-success" href="/">
+            <i class="fab fa-whatsapp"></i> w@pi
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="/#features">Fitur</a></li>
+                <li class="nav-item"><a class="nav-link" href="/#pricing">Harga</a></li>
+                <li class="nav-item"><a class="nav-link" href="/#contact">Kontak</a></li>
+                <% if (path === '/' || path === '/auth/signup') { %>
+                <li class="nav-item">
+                    <a class="nav-link btn btn-sm btn-login text-white" href="/auth/login">Login</a>
+                </li>
+                <% } %>
+            </ul>
+        </div>
+    </div>
+</nav>
 
 <%- body %>
 
