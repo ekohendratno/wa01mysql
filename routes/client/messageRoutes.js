@@ -22,15 +22,13 @@ module.exports = ({ sessionManager, messageManager, deviceManager }) => {
   });
 
   router.get("/data", authMiddleware, async (req, res) => {
-    const { status = "all", page = 1, limit = 30 } = req.query;
+    const { status = "all", page, limit } = req.query;
+    const p = parseInt(page) || 1;
+    const l = parseInt(limit) || 30;
+
     try {
       const apiKey = req.session.user.api_key;
-      const messages = await messageManager.getMessages(
-        apiKey,
-        status,
-        parseInt(page),
-        parseInt(limit)
-      );
+      const messages = await messageManager.getMessages(apiKey, status, p, l);
 
       res.json({
         success: true,

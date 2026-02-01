@@ -1,0 +1,124 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="text-success">
+    <i class="fa fa-address-book me-2"></i>Daftar Kontak
+  </h4>
+  <div class="text-muted small">
+    Kontak disinkronkan otomatis dari perangkat yang terhubung.
+  </div>
+</div>
+
+<div class="stat-card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle" id="tableContacts">
+      <thead>
+        <tr>
+          <th>Nama</th>
+          <th>Nomor / JID</th>
+          <th>Device</th>
+          <th>Terakhir Update</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="contactBody">
+        <tr>
+          <td colspan="5" class="text-center py-4">
+            <div
+              class="spinner-border spinner-border-sm text-success me-2"
+            ></div>
+            Memuat data kontak...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <nav class="mt-4">
+    <ul class="pagination justify-content-center" id="pagination"></ul>
+  </nav>
+</div>
+
+<script>
+  let currentPage = 1;
+
+  function loadContacts(page = 1) {
+    currentPage = page;
+    const body = $("#contactBody");
+
+    $.ajax({
+      url: `/client/contact/data?page=${page}&limit=50`,
+      method: "GET",
+      success: function (res) {
+        if (res.contacts && res.contacts.length > 0) {
+          let html = "";
+          res.contacts.forEach((c) => {
+            html += `
+                            <tr>
+                                <td><strong>${c.name || "Tanpa Nama"}</strong></td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">${c.phone || c.jid.split("@")[0]}</span>
+                                    <br><small class="text-muted">${c.jid}</small>
+                                </td>
+                                <td><span class="badge bg-info text-white">${c.device_name || "System"}</span></td>
+                                <td><small class="text-muted">${new Date(c.updated_at).toLocaleString("id-ID")}</small></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-success" onclick="sendMessageTo('${c.phone || c.jid.split("@")[0]}')">
+                                        <i class="fa fa-paper-plane"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+          });
+          body.html(html);
+          renderPagination(res.pagination);
+        } else {
+          body.html(
+            '<tr><td colspan="5" class="text-center py-4">Belum ada data kontak. Hubungkan device untuk melakukan sinkronisasi.</td></tr>',
+          );
+          $("#pagination").empty();
+        }
+      },
+      error: function () {
+        body.html(
+          '<tr><td colspan="5" class="text-center py-4 text-danger">Gagal memuat data kontak.</td></tr>',
+        );
+      },
+    });
+  }
+
+  function renderPagination(pg) {
+    const pag = $("#pagination");
+    pag.empty();
+
+    if (pg.totalPages <= 1) return;
+
+    // Previous
+    pag.append(
+      `<li class="page-item ${pg.page === 1 ? "disabled" : ""}"><a class="page-link" href="javascript:void(0)" onclick="loadContacts(${pg.page - 1})">Previous</a></li>`,
+    );
+
+    // Pages (limited range)
+    for (
+      let i = Math.max(1, pg.page - 2);
+      i <= Math.min(pg.totalPages, pg.page + 2);
+      i++
+    ) {
+      pag.append(
+        `<li class="page-item ${i === pg.page ? "active" : ""}"><a class="page-link" href="javascript:void(0)" onclick="loadContacts(${i})">${i}</a></li>`,
+      );
+    }
+
+    // Next
+    pag.append(
+      `<li class="page-item ${pg.page === pg.totalPages ? "disabled" : ""}"><a class="page-link" href="javascript:void(0)" onclick="loadContacts(${pg.page + 1})">Next</a></li>`,
+    );
+  }
+
+  function sendMessageTo(number) {
+    window.location.href = `/client/message?to=${number}`;
+  }
+
+  $(document).ready(function () {
+    loadContacts(1);
+  });
+</script>

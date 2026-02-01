@@ -69,7 +69,7 @@ app.use(
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type"],
     credentials: true,
-  })
+  }),
 );
 
 const session = require("express-session");
@@ -95,7 +95,7 @@ app.use(
     },
     rolling: true,
     name: "wapi.sid", // Opsional: ganti nama cookie
-  })
+  }),
 );
 
 const moment = require("moment");
@@ -125,7 +125,7 @@ const sessionManager = new SessionManager(
   pool,
   io,
   deviceManager,
-  folderSession
+  folderSession,
 );
 const billingManager = new BillingManager(pool);
 const messageManager = new MessageManager(pool, sessionManager);
@@ -135,7 +135,7 @@ const cronManager = new CronManager(
   pool,
   messageManager,
   sessionManager,
-  billingManager
+  billingManager,
 );
 const cronGroupManager = new CronGroupManager(pool, sessionManager);
 const SessionWatcher = require("./lib/SessionWatcher");
@@ -152,10 +152,10 @@ const indexAdminRoutes = require("./routes/admin/indexRoutes.js")({
 });
 const packageAdminRoutes = require("./routes/admin/packageRoutes.js")(
   billingManager,
-  pool
+  pool,
 );
 const billingAdminRoutes = require("./routes/admin/billingRoutes.js")(
-  billingManager
+  billingManager,
 );
 const userAdminRoutes = require("./routes/admin/userRoutes.js")({ pool });
 app.use("/admin", requireRole("admin"), indexAdminRoutes);
@@ -171,10 +171,10 @@ const indexClientRoutes = require("./routes/client/indexRoutes")({
   billingManager,
 });
 const packageClientRoutes = require("./routes/client/packageRoutes")(
-  billingManager
+  billingManager,
 );
 const billingClientRoutes = require("./routes/client/billingRoutes")(
-  billingManager
+  billingManager,
 );
 const deviceClientRoutes = require("./routes/client/deviceRoutes")({
   sessionManager,
@@ -197,12 +197,24 @@ const autoreplyClientRoutes = require("./routes/client/autoreplyRoutes")({
   deviceManager,
 });
 const bantuinClientRoutes = require("./routes/client/bantuinRoutes")(
-  sessionManager
+  sessionManager,
 );
 const dokumentasiClientRoutes = require("./routes/client/dokumentasiRoutes")(
-  sessionManager
+  sessionManager,
 );
 const profileClientRoutes = require("./routes/client/profileRoutes")({ pool });
+const subSessionClientRoutes = require("./routes/client/subSessionRoutes")({
+  sessionManager,
+  deviceManager,
+  billingManager,
+});
+const optinClientRoutes = require("./routes/client/optinRoutes")({
+  messageManager,
+  deviceManager,
+});
+const contactClientRoutes = require("./routes/client/contactRoutes")({
+  deviceManager,
+});
 
 app.use("/client", requireRole("client"), indexClientRoutes);
 app.use("/client/package", requireRole("client"), packageClientRoutes);
@@ -214,6 +226,9 @@ app.use("/client/autoreply", requireRole("client"), autoreplyClientRoutes);
 app.use("/client/bantuin", requireRole("client"), bantuinClientRoutes);
 app.use("/client/dokumentasi", requireRole("client"), dokumentasiClientRoutes);
 app.use("/client/profile", requireRole("client"), profileClientRoutes);
+app.use("/client/optin", requireRole("client"), optinClientRoutes);
+app.use("/client/contact", requireRole("client"), contactClientRoutes);
+app.use("/client/sub-session", requireRole("client"), subSessionClientRoutes);
 
 // Routes Main
 const indexRoutes = require("./routes/indexRoutes")({
@@ -251,7 +266,7 @@ app.get("/health", async (req, res) => {
     // Cek minimal 1 session aktif
     const sessions = sessionManager.getAllSessions();
     const activeSessions = Object.values(sessions).filter(
-      (s) => s.connected
+      (s) => s.connected,
     ).length;
 
     res.json({

@@ -178,6 +178,13 @@
               placeholder="Tulis pesan Anda..."
               required
             ></textarea>
+            <div class="form-group mt-2">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="isOptInInvitation">
+                <label class="form-check-label" for="isOptInInvitation">Kirim sebagai Undangan Opt-In (Lewati blokir)</label>
+              </div>
+              <small class="text-muted">Gunakan ini hanya untuk mengajak user menyetujui notifikasi.</small>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -344,6 +351,16 @@
     clearInterval(refreshInterval);
   }
 
+  $("#isOptInInvitation").change(function() {
+    if (this.checked) {
+      const oldText = $("#text").val().trim();
+      const template = "Halo, ini adalah layanan notifikasi otomatis. Balas pesan ini dengan ketik 'SETUJU' untuk menerima informasi dan pembaruan dari kami secara otomatis melalui WhatsApp. Balas 'STOP' jika ingin berhenti berlangganan. Terima kasih!";
+      if (oldText === "") {
+        $("#text").val(template);
+      }
+    }
+  });
+
   $("#sendMessageForm").submit(async function (event) {
     event.preventDefault();
     const apiKey = $("#apiKey").val();
@@ -372,6 +389,7 @@
         to: to,
         text: text,
         isGroup: group,
+        tags: $("#isOptInInvitation").is(":checked") ? "opt-in" : "",
       }),
       success: function (response) {
         showToast(response.message, "success");
@@ -382,7 +400,12 @@
         filterPesan();
       },
       error: function (xhr, status, error) {
-        showToast("Terjadi kesalahan saat mengirim pesan.", "danger");
+        let errorMsg = "Terjadi kesalahan saat mengirim pesan.";
+        try {
+          const response = JSON.parse(xhr.responseText);
+          if (response && response.message) errorMsg = response.message;
+        } catch (e) {}
+        showToast(errorMsg, "danger");
         console.error("Gagal mengirim pesan:", xhr.responseText || error);
       },
       complete: function () {
@@ -468,6 +491,20 @@
   // Hentikan interval saat halaman ditutup atau tidak digunakan lagi
   window.addEventListener("beforeunload", function () {
     clearInterval(refreshInterval);
+  });
+
+  $(document).ready(function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const to = urlParams.get('to');
+      if (to) {
+          $("#to").val(to);
+          const contactModal = new bootstrap.Modal(document.getElementById('formKirimPesan'));
+          contactModal.show();
+          
+          // Clean URL without refresh
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+      }
   });
 </script>
 

@@ -50,11 +50,22 @@
                 Tidak ada device terdaftar
               </td>
             </tr>
-            <% } else { %> <% devices.forEach(device=> { %>
-
+            <% } else { %> <% // Separate main devices and sub-sessions const
+            mainDevices = devices.filter(d => !d.session_parent); const
+            subDevices = devices.filter(d => d.session_parent);
+            mainDevices.forEach(device => { %>
+            <!-- Main Device Row -->
             <tr>
               <td><code><%= device.device_key %></code></td>
-              <td><%= device.name %></td>
+              <td>
+                <strong><%= device.name %></strong>
+                <% if (subDevices.some(s => s.session_parent ===
+                device.device_key)) { %>
+                <br /><small class="text-info"
+                  ><i class="fa fa-link me-1"></i>Memiliki Sub Session</small
+                >
+                <% } %>
+              </td>
               <td><%= device.phone %></td>
               <td><%= (device.life_time || 0) %> hari</td>
               <td>
@@ -75,42 +86,54 @@
                 </span>
               </td>
               <td>
-                <% if (['connecting', 'disconnected' ].includes(device.status))
-                { %>
+                <% if (['connecting', 'disconnected'].includes(device.status)) { %>
                 <a
                   href="/client/device/status?deviceKey=<%= device.device_key %>"
                   class="btn btn-sm btn-success btn-action"
+                  title="Scan QR Code"
                 >
                   <i class="fa fa-qrcode"></i> Scan QR
                 </a>
                 <% } else { %>
+                <a
+                  title="Lihat Detail / Kirim Pesan"
+                  href="/client/device/status?deviceKey=<%= device.device_key %>"
+                  class="btn btn-sm btn-success btn-action"
+                >
+                  <i class="fa fa-eye"></i>
+                </a>
                 <button
                   class="btn btn-sm btn-info btn-action"
                   onclick="addDeviceSession('<%= device.device_key %>')"
                   data-bs-toggle="modal"
                   data-bs-target="#formKirimPesan"
+                  title="Kirim Pesan"
                 >
                   <i class="fa fa-envelope"></i>
                 </button>
                 <% } %>
 
                 <a
-                  title="Group"
+                  title="Manajemen Grup"
                   href="/client/device/group?deviceKey=<%= device.device_key %>"
                   class="btn btn-sm btn-secondary btn-action"
                 >
                   <i class="fas fa-user-group"></i>
                 </a>
-                <a
-                  title="Lihat"
-                  href="/client/device/status?deviceKey=<%= device.device_key %>"
-                  class="btn btn-sm btn-success btn-action"
+
+                <% if (device.status === 'connected') { %>
+                <button
+                  class="btn btn-sm btn-warning btn-action"
+                  onclick="confirmDisconnect('<%= device.device_key %>')"
+                  title="Disconnect (Logout)"
                 >
-                  <i class="fa fa-eye"></i>
-                </a>
+                  <i class="fa fa-power-off"></i>
+                </button>
+                <% } %>
+
                 <a
                   href="javascript:void()"
-                  title="Hapus"
+                  title="Hapus Perangkat"
                   class="btn btn-sm btn-danger btn-action"
                   onclick="confirmDelete('<%= device.device_key %>')"
                 >
@@ -119,6 +142,159 @@
               </td>
             </tr>
 
+            <!-- Nested Sub Sessions -->
+            <% subDevices.filter(s => s.session_parent ===
+            device.device_key).forEach(sub => { %>
+            <tr class="table-light">
+              <td class="ps-4">
+                <i class="fa fa-level-up-alt fa-rotate-90 text-muted me-2"></i>
+                <code><%= sub.device_key %></code>
+              </td>
+              <td>
+                <%= sub.name %>
+                <br /><span
+                  class="badge bg-info text-white"
+                  style="font-size: 0.65rem"
+                  >Sub Session</span
+                >
+              </td>
+              <td><%= sub.phone %></td>
+              <td><%= (sub.life_time || 0) %> hari</td>
+              <td>
+                <%= (sub.message_count_today.total || 0) %>/<%= (sub.limit_daily
+                || 0) %> pesan
+              </td>
+              <td>
+                <% const subStatusClass={ 'connected' : 'connected' ,
+                'disconnected' : 'disconnected' , 'connecting' : 'connecting'
+                }[sub.status] || 'disconnected' %>
+                <span class="status-badge <%= subStatusClass %>">
+                  <i
+                    class="fa fa-<%= subStatusClass === 'connected' ? 'check' : 'times' %>-circle"
+                    style="color:<%= subStatusClass === 'connected' ? 'green' : 'red' %>"
+                  ></i>
+                  <%= sub.status.charAt(0).toUpperCase() + sub.status.slice(1)
+                  %>
+                </span>
+              </td>
+              <td>
+                <% if (['connecting', 'disconnected'].includes(sub.status)) { %>
+                <a
+                  title="Scan QR Code"
+                  href="/client/device/status?deviceKey=<%= sub.device_key %>"
+                  class="btn btn-sm btn-success btn-action"
+                >
+                  <i class="fa fa-qrcode"></i> Scan
+                </a>
+                <% } else { %>
+                <a
+                  title="Lihat Detail"
+                  href="/client/device/status?deviceKey=<%= sub.device_key %>"
+                  class="btn btn-sm btn-success btn-action"
+                >
+                  <i class="fa fa-eye"></i>
+                </a>
+                <% } %>
+
+                <a
+                  title="Manajemen Grup"
+                  href="/client/device/group?deviceKey=<%= sub.device_key %>"
+                  class="btn btn-sm btn-secondary btn-action"
+                >
+                  <i class="fas fa-user-group"></i>
+                </a>
+
+                <% if (sub.status === 'connected') { %>
+                <button
+                  class="btn btn-sm btn-warning btn-action"
+                  onclick="confirmDisconnect('<%= sub.device_key %>')"
+                  title="Disconnect (Logout)"
+                >
+                  <i class="fa fa-power-off"></i>
+                </button>
+                <% } %>
+
+                <a
+                  href="javascript:void()"
+                  title="Hapus Perangkat"
+                  class="btn btn-sm btn-danger btn-action"
+                  onclick="confirmDelete('<%= sub.device_key %>')"
+                >
+                  <i class="fa fa-trash"></i>
+                </a>
+              </td>
+            </tr>
+            <% }) %> <% }) %> <% const orphanSubs = subDevices.filter(s =>
+            !mainDevices.some(m => m.device_key === s.session_parent));
+            orphanSubs.forEach(sub => { %>
+            <tr class="table-warning">
+              <td><code><%= sub.device_key %></code></td>
+              <td>
+                <%= sub.name %>
+                <br /><span
+                  class="badge bg-warning text-dark"
+                  style="font-size: 0.65rem"
+                  >Orphan Sub Session</span
+                >
+              </td>
+              <td><%= sub.phone %></td>
+              <td><%= (sub.life_time || 0) %> hari</td>
+              <td>
+                <%= (sub.message_count_today.total || 0) %>/<%= (sub.limit_daily
+                || 0) %> pesan
+              </td>
+              <td>
+                <% const subStatusClass={ 'connected' : 'connected' ,
+                'disconnected' : 'disconnected' , 'connecting' : 'connecting'
+                }[sub.status] || 'disconnected' %>
+                <span class="status-badge <%= subStatusClass %>">
+                  <i
+                    class="fa fa-<%= subStatusClass === 'connected' ? 'check' : 'times' %>-circle"
+                    style="color:<%= subStatusClass === 'connected' ? 'green' : 'red' %>"
+                  ></i>
+                  <%= sub.status.charAt(0).toUpperCase() + sub.status.slice(1)
+                  %>
+                </span>
+              </td>
+              <td>
+                <% if (['connecting', 'disconnected'].includes(sub.status)) { %>
+                <a
+                  title="Scan QR Code"
+                  href="/client/device/status?deviceKey=<%= sub.device_key %>"
+                  class="btn btn-sm btn-success btn-action"
+                >
+                  <i class="fa fa-qrcode"></i> Scan
+                </a>
+                <% } else { %>
+                <a
+                  title="Lihat Detail"
+                  href="/client/device/status?deviceKey=<%= sub.device_key %>"
+                  class="btn btn-sm btn-success btn-action"
+                >
+                  <i class="fa fa-eye"></i>
+                </a>
+                <% } %>
+
+                <% if (sub.status === 'connected') { %>
+                <button
+                  class="btn btn-sm btn-warning btn-action"
+                  onclick="confirmDisconnect('<%= sub.device_key %>')"
+                  title="Disconnect (Logout)"
+                >
+                  <i class="fa fa-power-off"></i>
+                </button>
+                <% } %>
+
+                <a
+                  href="javascript:void()"
+                  title="Hapus Perangkat"
+                  class="btn btn-sm btn-danger btn-action"
+                  onclick="confirmDelete('<%= sub.device_key %>')"
+                >
+                  <i class="fa fa-trash"></i>
+                </a>
+              </td>
+            </tr>
             <% }) %> <% } %>
           </tbody>
         </table>
@@ -128,22 +304,23 @@
   <div class="col-md-12">
     <div class="stat-card">
       <h5 class="mb-4"><i class="fa fa-history me-2"></i>Riwayat Perangkat</h5>
-        <ul class="list-group">
-          <% if (typeof deviceHistory !== 'undefined' && deviceHistory.length>0) { %>
-            <% deviceHistory.forEach(h => { %>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                  <strong><%= h.device_key %></strong>
-                  <div class="text-muted small"><%= h.note %></div>
-                  <div>Status: <em><%= h.status %></em></div>
-                </div>
-                <div class="text-end text-muted small"><%= h.when %></div>
-              </li>
-            <% }) %>
-          <% } else { %>
-              <li class="list-group-item">Belum ada riwayat perangkat.</li>
-          <% } %>
-        </ul>
+      <ul class="list-group">
+        <% if (typeof deviceHistory !== 'undefined' && deviceHistory.length>0) {
+        %> <% deviceHistory.forEach(h => { %>
+        <li
+          class="list-group-item d-flex justify-content-between align-items-center"
+        >
+          <div>
+            <strong><%= h.device_key %></strong>
+            <div class="text-muted small"><%= h.note %></div>
+            <div>Status: <em><%= h.status %></em></div>
+          </div>
+          <div class="text-end text-muted small"><%= h.when %></div>
+        </li>
+        <% }) %> <% } else { %>
+        <li class="list-group-item">Belum ada riwayat perangkat.</li>
+        <% } %>
+      </ul>
     </div>
   </div>
 </div>
@@ -261,6 +438,13 @@
               placeholder="Tulis pesan Anda..."
               required
             ></textarea>
+            <div class="form-group mt-2">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="isOptInInvitation">
+                <label class="form-check-label" for="isOptInInvitation">Kirim sebagai Undangan Opt-In (Lewati blokir)</label>
+              </div>
+              <small class="text-muted">Gunakan ini hanya untuk mengajak user menyetujui notifikasi.</small>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -281,6 +465,16 @@
   function addDeviceSession(key) {
     $("#deviceKey").val(key);
   }
+
+  $("#isOptInInvitation").change(function() {
+    if (this.checked) {
+      const oldText = $("#text").val().trim();
+      const template = "Halo, ini adalah layanan notifikasi otomatis. Balas pesan ini dengan ketik 'SETUJU' untuk menerima informasi dan pembaruan dari kami secara otomatis melalui WhatsApp. Balas 'STOP' jika ingin berhenti berlangganan. Terima kasih!";
+      if (oldText === "") {
+        $("#text").val(template);
+      }
+    }
+  });
 
   $("#sendMessageForm").submit(function (event) {
     event.preventDefault();
@@ -310,6 +504,7 @@
         to: to,
         text: text,
         group: group,
+        tags: $("#isOptInInvitation").is(":checked") ? "opt-in" : "",
       }),
       success: function (response) {
         showToast("Pesan berhasil dikirim:", "success");
@@ -319,7 +514,12 @@
         $("#text").val("");
       },
       error: function (xhr, status, error) {
-        showToast("Terjadi kesalahan saat mengirim pesan.", "danger");
+        let errorMsg = "Terjadi kesalahan saat mengirim pesan.";
+        try {
+          const response = JSON.parse(xhr.responseText);
+          if (response && response.message) errorMsg = response.message;
+        } catch (e) {}
+        showToast(errorMsg, "danger");
         console.error("Gagal mengirim pesan:", xhr.responseText || error);
       },
       complete: function () {
@@ -362,7 +562,7 @@
       }),
       success: function (result) {
         if (!result.status) {
-          showToast(response.message, "danger");
+          showToast(result.message, "danger");
           if (result.redirect) {
             window.location.href = result.redirect;
           }
@@ -373,7 +573,7 @@
       },
       error: function (xhr) {
         let response = xhr.responseJSON;
-        if (xhr.status === 400 && response) {
+        if (response && response.message) {
           showToast(response.message, "danger");
           if (response.redirect) {
             window.location.href = response.redirect;
@@ -416,6 +616,26 @@
         window.location.reload();
       } else {
         throw new Error(result.message || "Gagal menghapus perangkat");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      showToast(`Error: ${error.message}`, "danger");
+    }
+  }
+
+  async function confirmDisconnect(deviceKey) {
+    if (!confirm(`Apakah Anda yakin ingin memutuskan (disconnect) perangkat ${deviceKey}?`))
+      return;
+
+    try {
+      const response = await fetch(`/client/device/disconnect?deviceKey=${encodeURIComponent(deviceKey)}`);
+      const result = await response.json();
+
+      if (result.status) {
+        showToast("Perangkat berhasil diputuskan!", "success");
+        window.location.reload();
+      } else {
+        throw new Error(result.message || "Gagal memutuskan perangkat");
       }
     } catch (error) {
       console.error("Error:", error);

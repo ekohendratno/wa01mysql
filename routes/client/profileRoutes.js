@@ -7,7 +7,7 @@ module.exports = ({ pool }) => {
   async function getUser(uid) {
     const [rows] = await pool.query(
       "SELECT * FROM users WHERE uid = ? LIMIT 1",
-      [uid]
+      [uid],
     );
     return rows.length ? rows[0] : null;
   }
@@ -29,7 +29,7 @@ module.exports = ({ pool }) => {
   });
 
   router.post("/update", authMiddleware, async (req, res) => {
-    const { name, phone, password } = req.body;
+    const { name, phone, password, template_invitation } = req.body;
     const uid = req.session.user.uid;
 
     if (!name) return res.json({ status: false, message: "Nama wajib diisi" });
@@ -41,11 +41,12 @@ module.exports = ({ pool }) => {
 
         if (password && password.trim().length > 0) {
           query =
-            "UPDATE users SET name = ?, phone = ?, password = ? WHERE uid = ?";
-          params = [name, phone, password, uid];
+            "UPDATE users SET name = ?, phone = ?, password = ?, template_invitation = ? WHERE uid = ?";
+          params = [name, phone, password, template_invitation, uid];
         } else {
-          query = "UPDATE users SET name = ?, phone = ? WHERE uid = ?";
-          params = [name, phone, uid];
+          query =
+            "UPDATE users SET name = ?, phone = ?, template_invitation = ? WHERE uid = ?";
+          params = [name, phone, template_invitation, uid];
         }
 
         await connection.query(query, params);

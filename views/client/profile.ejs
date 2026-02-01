@@ -52,6 +52,17 @@
           />
         </div>
 
+        <div class="mb-3">
+            <label class="form-label">Template Undangan Opt-In</label>
+            <textarea
+              class="form-control"
+              id="template_invitation"
+              rows="4"
+              placeholder="Contoh: Halo! Silakan balas SETUJU..."
+            ><%= user.template_invitation || '' %></textarea>
+            <small class="text-muted">Pesan ini akan dikirim otomatis jika nomor belum melakukan Opt-In (jika fitur Otomatis aktif di .env).</small>
+        </div>
+
         <hr />
 
         <div class="mb-3">
@@ -142,6 +153,7 @@
         name: document.getElementById("name").value,
         phone: document.getElementById("phone").value,
         password: document.getElementById("password").value,
+        template_invitation: document.getElementById("template_invitation").value,
       };
 
       fetch("/client/profile/update", {
