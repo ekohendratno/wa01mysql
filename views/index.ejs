@@ -29,15 +29,30 @@
   }
   .badge-rating {
     background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 5px 15px;
+    padding: 8px 20px;
     border-radius: 50px;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.9rem;
-    margin-bottom: 24px;
-    color: #ddd;
+    gap: 10px;
+    font-size: 0.85rem;
+    margin-bottom: 32px;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    animation: fadeInUp 0.8s ease-out;
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
+  .floating-icon {
+    animation: float 3s ease-in-out infinite;
   }
 
   /* How it Works */
@@ -132,16 +147,25 @@
 
   @media (max-width: 768px) {
     .display-3 {
-      font-size: 2.5rem;
+      font-size: 2.2rem;
+      line-height: 1.2;
     }
     .display-4 {
-      font-size: 2.2rem;
+      font-size: 2rem;
     }
     .display-5 {
-      font-size: 1.8rem;
+      font-size: 1.6rem;
     }
     .hero-section {
-      padding: 60px 0 40px;
+      padding: 80px 0 60px;
+    }
+    .hero-btns {
+      flex-direction: column;
+      width: 100%;
+      padding: 0 20px;
+    }
+    .hero-btns .btn {
+      width: 100%;
     }
     .cut-costs-section {
       padding: 60px 0;
@@ -160,37 +184,60 @@
 <section class="hero-section text-center">
   <div class="container hero-content">
     <div class="badge-rating">
-      <span class="text-warning">★★★★★</span>
-      <span>Dipercaya oleh 5000+ developer di seluruh dunia</span>
+      <div class="d-flex text-warning">
+        <i class="fas fa-star"></i>
+        <i class="fas fa-star"></i>
+        <i class="fas fa-star"></i>
+        <i class="fas fa-star"></i>
+        <i class="fas fa-star"></i>
+      </div>
+      <span class="fw-medium">Solusi WA Gateway #1 untuk Developer</span>
     </div>
 
-    <h1 class="display-3 fw-bold mb-4">
-      WhatsApp API Hemat<br />Untuk Developer
+    <h1 class="display-3 fw-bold mb-4 px-2" style="letter-spacing: -1px;">
+      WhatsApp API <span class="text-brand">Powerfull</span><br />Untuk Skala Bisnis Anda
     </h1>
-    <p class="lead text-white-50 mb-5 px-md-5">
-      Kirim pesan tanpa batas, sesi WhatsApp multi-device, dukungan webhook, dan
-      API ramah developer — semua tanpa biaya per pesan.
+    <p class="lead text-white-50 mb-5 px-md-5 mx-auto" style="max-width: 700px;">
+      Kirim notifikasi OTP, broadcast promo, dan integrasikan Chatbot dalam hitungan menit. 
+      Hemat biaya operasional tanpa biaya per-pesan yang mahal.
     </p>
 
-    <div class="d-flex justify-content-center gap-3">
-      <a href="/auth/register" class="btn btn-brand btn-lg"
-        >Mulai Gratis Selamanya</a
+    <div class="hero-btns d-flex justify-content-center gap-3 mb-5">
+      <a href="/auth/register" class="btn btn-brand btn-lg px-4 py-3 shadow-lg"
+        ><i class="fas fa-rocket me-2"></i>Mulai Secara Gratis</a
       >
       <a
-        href="https://documenter.getpostman.com/view/11867160/2sA35D628Y"
-        target="_blank"
-        class="btn btn-outline-light btn-lg px-4"
+        href="/dokumentasi"
+        class="btn btn-outline-light btn-lg px-4 py-3"
         style="border-radius: 8px; font-weight: 600"
-        >Baca Dokumentasi API</a
+        ><i class="fas fa-book me-2"></i>Dokumentasi API</a
       >
     </div>
 
-    <div class="mt-4 text-white-50 small">
-      <i class="fas fa-check-circle text-success me-1"></i> Tidak Butuh Kartu
-      Kredit &nbsp;
-      <i class="fas fa-check-circle text-success me-1"></i> Pengaturan Instan
-      &nbsp; <i class="fas fa-check-circle text-success me-1"></i> Dukungan 24/7
+    <div class="row justify-content-center g-3 mt-4 px-3">
+      <div class="col-auto">
+        <div class="text-white-50 small d-flex align-items-center bg-white bg-opacity-10 px-3 py-2 rounded-pill">
+          <i class="fas fa-check-circle text-success me-2"></i> Tanpa Kartu Kredit
+        </div>
+      </div>
+      <div class="col-auto">
+        <div class="text-white-50 small d-flex align-items-center bg-white bg-opacity-10 px-3 py-2 rounded-pill">
+          <i class="fas fa-check-circle text-success me-2"></i> Aktif Seketika
+        </div>
+      </div>
+      <div class="col-auto">
+        <div class="text-white-50 small d-flex align-items-center bg-white bg-opacity-10 px-3 py-2 rounded-pill">
+          <i class="fas fa-check-circle text-success me-2"></i> Dukungan 24/7
+        </div>
+      </div>
     </div>
+  </div>
+
+  <!-- Decorative floating icons for desktop -->
+  <div class="d-none d-lg-block">
+    <i class="fab fa-whatsapp floating-icon text-success opacity-25" style="position: absolute; top: 20%; left: 10%; font-size: 4rem;"></i>
+    <i class="fas fa-code floating-icon text-white opacity-25" style="position: absolute; top: 40%; right: 12%; font-size: 3rem; animation-delay: 1s;"></i>
+    <i class="fas fa-bolt floating-icon text-warning opacity-25" style="position: absolute; bottom: 15%; left: 15%; font-size: 2.5rem; animation-delay: 0.5s;"></i>
   </div>
 </section>
 
@@ -276,10 +323,11 @@
             >
           </div>
           <pre class="mb-0 text-dark small" style="white-space: pre-wrap">
-<span class="text-primary">curl</span> --location 'https://api.wapi.jasaedukasi.com/message/text' \
+<span class="text-primary">curl</span> --location 'https://wapi.jasaedukasi.com/v1/message' \
 --header <span class="text-success">'Content-Type: application/json'</span> \
 --data-raw '{
-    "sessionId": "session_1",
+    "apiKey": "9b0a811f5d511...",
+    "deviceKey": "c6b6cc17",
     "to": "6281234567890",
     "text": "Halo Dunia! Dikirim via w@pi 🚀"
 }'</pre>
@@ -293,65 +341,87 @@
 <section id="pricing" class="cut-costs-section">
   <div class="container">
     <div class="row align-items-center">
-      <div class="col-lg-5 mb-5 mb-lg-0">
-        <h2 class="display-4 fw-bold mb-4">Hemat Biaya<br />dengan w@pi</h2>
-        <p class="lead text-white-50 mb-5">
-          Berhenti membayar biaya per pesan. w@pi menawarkan harga tetap bulanan
-          dengan kemungkinan tak terbatas.
+      <div class="col-lg-12 text-center mb-5">
+        <h2 class="display-4 fw-bold mb-4 text-white">Paket Harga Yang Sangat Terjangkau</h2>
+        <p class="lead text-white-50">
+          Mulai gratis selamanya atau upgrade ke Pro untuk fitur tanpa batas.
         </p>
-        <a
-          href="/auth/register"
-          class="text-success fw-bold text-decoration-none"
-          >Lihat harga lengkap →</a
-        >
       </div>
-      <div class="col-lg-6 offset-lg-1">
-        <div class="comparison-card shadow-lg">
+    </div>
+    <div class="row g-4 justify-content-center">
+      <!-- Free Plan -->
+      <div class="col-lg-4">
+        <div class="comparison-card shadow-lg h-100">
           <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-              <i
-                class="fab fa-whatsapp text-success mb-2"
-                style="font-size: 2rem"
-              ></i>
-              <h4 class="fw-bold">w@pi Pro</h4>
+              <i class="fas fa-seedling text-muted mb-2" style="font-size: 2rem"></i>
+              <h4 class="fw-bold">Gratis</h4>
             </div>
-            <span
-              class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill"
-              >Rekomendasi</span
-            >
           </div>
 
           <div class="mb-4">
-            <span class="h1 fw-bold text-dark"
-              >Rp <%= new Intl.NumberFormat('id-ID').format(packages[0] ?
-              packages[0].price : 50000) %></span
-            >
+            <span class="h1 fw-bold text-dark">Rp 0</span>
+            <span class="text-muted">/selamanya</span>
+          </div>
+
+          <ul class="list-unstyled mb-4">
+            <li class="mb-3 d-flex align-items-center">
+              <i class="fas fa-check text-success me-3"></i> 1 Perangkat Aktif
+            </li>
+            <li class="mb-3 d-flex align-items-center">
+              <i class="fas fa-check text-success me-3"></i> 50 Pesan / Hari
+            </li>
+            <li class="mb-3 d-flex align-items-center">
+              <i class="fas fa-check text-success me-3"></i> Akses API Dasar
+            </li>
+            <li class="mb-3 d-flex align-items-center text-muted">
+              <i class="fas fa-times text-danger me-3"></i> Unggah Media & File
+            </li>
+            <li class="mb-3 d-flex align-items-center text-muted">
+              <i class="fas fa-times text-danger me-3"></i> Webhook & Balas Otomatis
+            </li>
+          </ul>
+
+          <a href="/auth/register" class="btn btn-outline-success w-100 py-3">Daftar Gratis</a>
+        </div>
+      </div>
+
+      <!-- Pro Plan -->
+      <div class="col-lg-5">
+        <div class="comparison-card shadow-lg h-100 border-success" style="border-width: 2px; position: relative;">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <i class="fab fa-whatsapp text-success mb-2" style="font-size: 2rem"></i>
+              <h4 class="fw-bold">w@pi Pro</h4>
+            </div>
+            <span class="badge bg-success text-white px-3 py-2 rounded-pill shadow-sm" style="font-size: 0.75rem;">REKOMENDASI</span>
+          </div>
+
+          <div class="mb-4">
+            <span class="h1 fw-bold text-dark">Rp <%= new Intl.NumberFormat('id-ID').format(packages[0] ? packages[0].price : 50000) %></span>
             <span class="text-muted">/bulan</span>
           </div>
 
           <ul class="list-unstyled mb-4">
             <li class="mb-3 d-flex align-items-center">
-              <i class="fas fa-check text-success me-3"></i> Upload media tanpa
-              batas
+              <i class="fas fa-check text-success me-3"></i> Perangkat Tanpa Batas*
             </li>
             <li class="mb-3 d-flex align-items-center">
               <i class="fas fa-check text-success me-3"></i> Pesan Tanpa Batas
             </li>
             <li class="mb-3 d-flex align-items-center">
-              <i class="fas fa-check text-success me-3"></i> Akses API & Webhook
+              <i class="fas fa-check text-success me-3"></i> Unggah Media & File
             </li>
             <li class="mb-3 d-flex align-items-center">
-              <i class="fas fa-check text-success me-3"></i> Balas Otomatis &
-              Penjadwalan
+              <i class="fas fa-check text-success me-3"></i> Webhook & Balas Otomatis
             </li>
             <li class="mb-3 d-flex align-items-center">
-              <i class="fas fa-check text-success me-3"></i> Dukungan Prioritas
+              <i class="fas fa-check text-success me-3"></i> Dukungan Prioritas 24/7
             </li>
           </ul>
 
-          <a href="/auth/register" class="btn btn-brand w-100 py-3"
-            >Mulai Sekarang</a
-          >
+          <a href="/auth/register" class="btn btn-brand w-100 py-3">Upgrade Sekarang</a>
+          <p class="text-muted small mt-2 text-center">*Sesuai kapasitas server</p>
         </div>
       </div>
     </div>

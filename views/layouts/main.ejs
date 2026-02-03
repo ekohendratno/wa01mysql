@@ -98,6 +98,10 @@
         text-align: center;
         padding: 8px 15px;
       }
+
+      .top-banner.hide{
+        display:none;
+      }
       @media (max-width: 576px) {
         .top-banner {
           font-size: 0.75rem;
@@ -146,7 +150,7 @@
   <body>
     <% if (typeof path !== 'undefined' && !path.startsWith('/auth')) { %>
     <!-- Top Banner -->
-    <div class="top-banner">🔥 Akses API Lebih Awal Telah Tersedia!</div>
+    <div class="top-banner hide">🔥 Akses API Lebih Awal Telah Tersedia!</div>
 
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg sticky-top shadow-sm">
@@ -175,8 +179,7 @@
             <li class="nav-item">
               <a
                 class="nav-link"
-                href="https://documenter.getpostman.com/view/11867160/2sA35D628Y"
-                target="_blank"
+                href="/dokumentasi"
                 >Dokumentasi API</a
               >
             </li>

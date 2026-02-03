@@ -230,6 +230,11 @@ app.use("/client/optin", requireRole("client"), optinClientRoutes);
 app.use("/client/contact", requireRole("client"), contactClientRoutes);
 app.use("/client/sub-session", requireRole("client"), subSessionClientRoutes);
 
+const webhookClientRoutes = require("./routes/client/webhookRoutes")({
+  deviceManager,
+});
+app.use("/client/webhook", requireRole("client"), webhookClientRoutes);
+
 // Routes Main
 const indexRoutes = require("./routes/indexRoutes")({
   sessionManager,
