@@ -2,14 +2,9 @@
     <h4 class="text-success">
         <i class="fa fa-user-check me-2"></i>Daftar Opt-In (Persetujuan)
     </h4>
-    <div class="d-flex gap-2">
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalImport">
-            <i class="fa fa-file-import me-1"></i> Import Bulk
-        </button>
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAdd">
-            <i class="fa fa-plus-circle me-1"></i> Tambah Nomor
-        </button>
-    </div>
+    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalImport">
+        <i class="fa fa-file-import me-1"></i> Import Bulk
+    </button>
 </div>
 
 <div class="stat-card">
@@ -57,6 +52,10 @@
         </table>
     </div>
 </div>
+
+<button class="floating-button" data-bs-toggle="modal" data-bs-target="#modalAdd" title="Tambah Nomor Opt-In">
+    <i class="fas fa-plus"></i>
+</button>
 
 <!-- Modal Add -->
 <div class="modal fade" id="modalAdd" tabindex="-1">
@@ -239,7 +238,7 @@
 
         $.ajax({
             url: '/client/optin/remove/' + id,
-            method: 'DELETE',
+            method: 'POST',
             success: function(res) {
                 if (res.status) {
                     showToast('Berhasil dihapus', 'success');

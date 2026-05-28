@@ -1,527 +1,629 @@
-<style>
-  /* Hero Section */
-  .hero-section {
-    background-color: var(--bg-hero);
-    color: white;
-    padding: 100px 0 80px;
-    position: relative;
-    overflow: hidden;
-  }
-  .hero-section::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(
-      circle at 50% -20%,
-      #0d5546 0%,
-      transparent 60%
-    );
-    opacity: 0.6;
-  }
-  .hero-content {
-    position: relative;
-    z-index: 1;
-    max-width: 800px;
-    margin: 0 auto;
-  }
-  .badge-rating {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 8px 20px;
-    border-radius: 50px;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.85rem;
-    margin-bottom: 32px;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    animation: fadeInUp 0.8s ease-out;
-  }
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
-  }
-  .floating-icon {
-    animation: float 3s ease-in-out infinite;
-  }
+<%
+  const visiblePackages = (packages || []).filter(function(pkg) {
+    return Number(pkg.active) !== 0;
+  });
+  const paidPackages = visiblePackages.filter(function(pkg) {
+    return Number(pkg.price || 0) > 0;
+  });
+  const highlightPackage = paidPackages[0] || visiblePackages[0] || null;
+  const formatPrice = function(value) {
+    return new Intl.NumberFormat('id-ID').format(Number(value || 0));
+  };
+%>
 
-  /* How it Works */
-  .step-card {
-    border: 1px solid #eee;
-    border-radius: 12px;
-    padding: 24px;
-    transition: 0.3s;
-    margin-bottom: 24px;
-    background: #fff;
-  }
-  .step-card:hover {
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-    border-color: transparent;
-    transform: translateY(-5px);
-  }
-  .step-icon {
-    width: 50px;
-    height: 50px;
-    background: #f0fdf4;
-    border-radius: 12px;
+<style>
+  .home-hero {
+    min-height: calc(100vh - 76px);
+    background:
+      linear-gradient(90deg, rgba(92, 13, 20, 0.95) 0%, rgba(0, 49, 38, 0.88) 50%, rgba(92, 13, 20, 0.58) 100%),
+      url("https://images.unsplash.com/photo-1556745757-8d76bdb6984b?auto=format&fit=crop&w=1800&q=80");
+    background-size: cover;
+    background-position: center;
+    color: #fff;
     display: flex;
     align-items: center;
-    justify-content: center;
-    color: var(--wa-brand);
-    font-size: 1.5rem;
-    margin-bottom: 16px;
-  }
-
-  /* Cut Costs Section */
-  .cut-costs-section {
-    background-color: var(--bg-hero);
-    color: white;
-    padding: 100px 0;
-    position: relative;
-  }
-  .comparison-card {
-    background: white;
-    border-radius: 16px;
-    padding: 30px;
-    color: var(--text-dark);
-  }
-  .price-value {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: var(--wa-brand);
-  }
-
-  /* Integrations */
-  .integration-icon {
-    font-size: 2.5rem;
-    color: #ccc;
-    transition: 0.3s;
-  }
-  .integration-icon:hover {
-    color: var(--wa-brand);
-    transform: scale(1.1);
-  }
-
-  /* Testimonials */
-  .review-card {
-    background: #fff;
-    border: 1px solid #eee;
-    padding: 24px;
-    border-radius: 12px;
-    height: 100%;
-  }
-  .stars {
-    color: #ffc107;
-    font-size: 0.9rem;
-    margin-bottom: 12px;
-  }
-
-  /* Bottom CTA */
-  .bottom-cta {
-    background: radial-gradient(circle at center, #1b4d3e 0%, #003126 100%);
-    padding: 80px 0;
-    color: white;
-    text-align: center;
     position: relative;
     overflow: hidden;
   }
-  .bottom-cta::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 100px;
-    background: linear-gradient(to top, rgba(37, 211, 102, 0.2), transparent);
+
+  .hero-copy {
+    max-width: 760px;
+    padding: 72px 0;
+  }
+
+  .hero-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 0.9rem;
+    margin-bottom: 22px;
+  }
+
+  .indonesia-ribbon {
+    display: inline-flex;
+    width: 58px;
+    height: 12px;
+    border-radius: 999px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.24);
+  }
+
+  .indonesia-ribbon span:first-child {
+    background: #e11d2e;
+    flex: 1;
+  }
+
+  .indonesia-ribbon span:last-child {
+    background: #fff;
+    flex: 1;
+  }
+
+  .hero-title {
+    font-size: clamp(2.35rem, 5vw, 4.9rem);
+    line-height: 1.04;
+    font-weight: 800;
+    letter-spacing: 0;
+    margin-bottom: 24px;
+  }
+
+  .hero-lead {
+    max-width: 660px;
+    font-size: 1.15rem;
+    color: rgba(255, 255, 255, 0.78);
+    margin-bottom: 30px;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 30px;
+  }
+
+  .hero-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+    max-width: 620px;
+    gap: 12px;
+  }
+
+  .hero-metric {
+    border-left: 1px solid rgba(255, 255, 255, 0.24);
+    padding-left: 14px;
+  }
+
+  .hero-metric strong {
+    display: block;
+    font-size: 1.35rem;
+  }
+
+  .hero-metric span {
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 0.88rem;
+  }
+
+  .product-strip {
+    margin-top: -86px;
+    position: relative;
+    z-index: 3;
+  }
+
+  .product-window {
+    background: #111b1a;
+    color: #dbe7e3;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+    overflow: hidden;
+  }
+
+  .window-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #0b1413;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .window-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+  }
+
+  .preview-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 18px;
+    padding: 18px;
+  }
+
+  .preview-panel {
+    background: #172523;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .preview-stat {
+    background: #203330;
+    border-radius: 8px;
+    padding: 14px;
+    min-height: 92px;
+  }
+
+  .preview-stat small {
+    color: #9fb0ac;
+  }
+
+  .preview-stat strong {
+    display: block;
+    font-size: 1.4rem;
+    color: #25d366;
+  }
+
+  .nusantara-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff5f5;
+    color: #9f1239;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+
+  .message-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .section-heading {
+    max-width: 760px;
+    margin: 0 auto 42px;
+    text-align: center;
+  }
+
+  .feature-tile {
+    height: 100%;
+    background: #fff;
+    border: 1px solid #e8eeec;
+    border-radius: 8px;
+    padding: 24px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .feature-tile:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 50px rgba(4, 38, 31, 0.08);
+  }
+
+  .feature-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: #e9f8ef;
+    color: var(--wa-dark);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+  }
+
+  .workflow-band {
+    background: #f4f8f6;
+  }
+
+  .workflow-step {
+    border-left: 3px solid #25d366;
+    padding-left: 18px;
+  }
+
+  .code-panel {
+    background: #0d1514;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(5, 25, 22, 0.18);
+  }
+
+  .code-panel pre {
+    color: #d7e7e2;
+    margin: 0;
+    padding: 22px;
+    font-size: 0.88rem;
+  }
+
+  .pricing-band {
+    background:
+      linear-gradient(135deg, rgba(157, 23, 38, 0.96), rgba(11, 34, 30, 0.98));
+    color: #fff;
+  }
+
+  .pricing-card {
+    background: #fff;
+    color: var(--text-dark);
+    border: 1px solid #e8eeec;
+    border-radius: 8px;
+    padding: 28px;
+    height: 100%;
+  }
+
+  .pricing-card.highlight {
+    border: 2px solid #25d366;
+    box-shadow: 0 24px 80px rgba(37, 211, 102, 0.2);
+  }
+
+  .usecase-card {
+    background: #fff;
+    border: 1px solid #e8eeec;
+    border-radius: 8px;
+    padding: 22px;
+    height: 100%;
+  }
+
+  .cta-band {
+    background:
+      linear-gradient(90deg, rgba(157, 23, 38, 0.94), rgba(7, 94, 84, 0.94)),
+      url("https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1600&q=80");
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+  }
+
+  @media (max-width: 992px) {
+    .product-strip {
+      margin-top: 0;
+      background: #0b221e;
+      padding-top: 24px;
+    }
+
+    .preview-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   @media (max-width: 768px) {
-    .display-3 {
-      font-size: 2.2rem;
-      line-height: 1.2;
+    .home-hero {
+      min-height: auto;
     }
-    .display-4 {
-      font-size: 2rem;
+
+    .hero-copy {
+      padding: 56px 0;
     }
-    .display-5 {
-      font-size: 1.6rem;
-    }
-    .hero-section {
-      padding: 80px 0 60px;
-    }
-    .hero-btns {
-      flex-direction: column;
-      width: 100%;
-      padding: 0 20px;
-    }
-    .hero-btns .btn {
+
+    .hero-actions .btn {
       width: 100%;
     }
-    .cut-costs-section {
-      padding: 60px 0;
-    }
-    .step-card {
-      padding: 16px;
-    }
-    pre {
-      font-size: 0.75rem;
-      overflow-x: auto;
+
+    .hero-metrics {
+      grid-template-columns: 1fr;
     }
   }
 </style>
 
-<!-- Hero Section -->
-<section class="hero-section text-center">
-  <div class="container hero-content">
-    <div class="badge-rating">
-      <div class="d-flex text-warning">
-        <i class="fas fa-star"></i>
-        <i class="fas fa-star"></i>
-        <i class="fas fa-star"></i>
-        <i class="fas fa-star"></i>
-        <i class="fas fa-star"></i>
+<section class="home-hero">
+  <div class="container">
+    <div class="hero-copy">
+      <div class="hero-kicker">
+        <span class="indonesia-ribbon" aria-hidden="true"><span></span><span></span></span>
+        WhatsApp gateway buatan untuk bisnis Indonesia
       </div>
-      <span class="fw-medium">Solusi WA Gateway #1 untuk Developer</span>
-    </div>
-
-    <h1 class="display-3 fw-bold mb-4 px-2" style="letter-spacing: -1px;">
-      WhatsApp API <span class="text-brand">Powerfull</span><br />Untuk Skala Bisnis Anda
-    </h1>
-    <p class="lead text-white-50 mb-5 px-md-5 mx-auto" style="max-width: 700px;">
-      Kirim notifikasi OTP, broadcast promo, dan integrasikan Chatbot dalam hitungan menit. 
-      Hemat biaya operasional tanpa biaya per-pesan yang mahal.
-    </p>
-
-    <div class="hero-btns d-flex justify-content-center gap-3 mb-5">
-      <a href="/auth/register" class="btn btn-brand btn-lg px-4 py-3 shadow-lg"
-        ><i class="fas fa-rocket me-2"></i>Mulai Secara Gratis</a
-      >
-      <a
-        href="/dokumentasi"
-        class="btn btn-outline-light btn-lg px-4 py-3"
-        style="border-radius: 8px; font-weight: 600"
-        ><i class="fas fa-book me-2"></i>Dokumentasi API</a
-      >
-    </div>
-
-    <div class="row justify-content-center g-3 mt-4 px-3">
-      <div class="col-auto">
-        <div class="text-white-50 small d-flex align-items-center bg-white bg-opacity-10 px-3 py-2 rounded-pill">
-          <i class="fas fa-check-circle text-success me-2"></i> Tanpa Kartu Kredit
+      <h1 class="hero-title">w@pi</h1>
+      <p class="hero-lead">
+        Kirim notifikasi pesanan, broadcast promo, reminder pembayaran, auto reply, dan webhook WhatsApp untuk UMKM, toko online, sekolah, komunitas, dan developer lokal.
+      </p>
+      <div class="hero-actions">
+        <a href="/auth/register" class="btn btn-brand btn-lg px-4">
+          <i class="fas fa-rocket me-2"></i>Mulai Gratis
+        </a>
+        <a href="/dokumentasi" class="btn btn-outline-light btn-lg px-4">
+          <i class="fas fa-book me-2"></i>Lihat Dokumentasi
+        </a>
+      </div>
+      <div class="hero-metrics">
+        <div class="hero-metric">
+          <strong>API + Dashboard</strong>
+          <span>Untuk developer dan admin</span>
         </div>
-      </div>
-      <div class="col-auto">
-        <div class="text-white-50 small d-flex align-items-center bg-white bg-opacity-10 px-3 py-2 rounded-pill">
-          <i class="fas fa-check-circle text-success me-2"></i> Aktif Seketika
+        <div class="hero-metric">
+          <strong>Webhook</strong>
+          <span>Order, pembayaran, dan chat</span>
         </div>
-      </div>
-      <div class="col-auto">
-        <div class="text-white-50 small d-flex align-items-center bg-white bg-opacity-10 px-3 py-2 rounded-pill">
-          <i class="fas fa-check-circle text-success me-2"></i> Dukungan 24/7
+        <div class="hero-metric">
+          <strong>Campaign</strong>
+          <span>Promo, kelas, dan komunitas</span>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- Decorative floating icons for desktop -->
-  <div class="d-none d-lg-block">
-    <i class="fab fa-whatsapp floating-icon text-success opacity-25" style="position: absolute; top: 20%; left: 10%; font-size: 4rem;"></i>
-    <i class="fas fa-code floating-icon text-white opacity-25" style="position: absolute; top: 40%; right: 12%; font-size: 3rem; animation-delay: 1s;"></i>
-    <i class="fas fa-bolt floating-icon text-warning opacity-25" style="position: absolute; bottom: 15%; left: 15%; font-size: 2.5rem; animation-delay: 0.5s;"></i>
   </div>
 </section>
 
-<!-- How It Works -->
-<section class="py-5" id="how-it-works">
+<section class="product-strip">
+  <div class="container">
+    <div class="product-window">
+      <div class="window-bar">
+        <div>
+          <span class="window-dot bg-danger"></span>
+          <span class="window-dot bg-warning"></span>
+          <span class="window-dot bg-success"></span>
+        </div>
+        <small class="text-white-50">Preview dashboard operasional Indonesia</small>
+      </div>
+      <div class="preview-grid">
+        <div class="preview-panel">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="preview-stat">
+                <small>Nomor WA Aktif</small>
+                <strong>4/5</strong>
+                <span class="small text-white-50">1 perlu scan ulang</span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="preview-stat">
+                <small>Notifikasi Hari Ini</small>
+                <strong>1.248</strong>
+                <span class="small text-white-50">97% terkirim</span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="preview-stat">
+                <small>Antrean Pending</small>
+                <strong>36</strong>
+                <span class="small text-white-50">8 terjadwal</span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="d-flex justify-content-between small text-white-50 mb-2">
+              <span>Pengiriman 14 hari terakhir</span>
+              <span>Sent / Pending / Failed</span>
+            </div>
+            <svg viewBox="0 0 600 170" width="100%" height="170" role="img" aria-label="Grafik pengiriman">
+              <polyline points="0,130 60,112 120,118 180,90 240,96 300,74 360,78 420,52 480,58 540,34 600,42" fill="none" stroke="#25d366" stroke-width="4" />
+              <polyline points="0,150 60,144 120,138 180,142 240,128 300,132 360,118 420,124 480,110 540,116 600,104" fill="none" stroke="#ffc107" stroke-width="3" />
+              <polyline points="0,160 60,156 120,158 180,150 240,152 300,146 360,148 420,140 480,143 540,136 600,138" fill="none" stroke="#dc3545" stroke-width="3" />
+            </svg>
+          </div>
+        </div>
+        <div class="preview-panel">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <strong>Pesan terbaru</strong>
+            <span class="badge bg-success">Live</span>
+          </div>
+          <div class="message-row">
+            <div>
+              <strong>OTP Login Pelanggan</strong><br>
+              <small class="text-white-50">62812xxxx890</small>
+            </div>
+            <span class="text-success">sent</span>
+          </div>
+          <div class="message-row">
+            <div>
+              <strong>Promo Harbolnas</strong><br>
+              <small class="text-white-50">2.500 penerima</small>
+            </div>
+            <span class="text-warning">queued</span>
+          </div>
+          <div class="message-row">
+            <div>
+              <strong>Webhook order.paid</strong><br>
+              <small class="text-white-50">200 OK</small>
+            </div>
+            <span class="text-success">success</span>
+          </div>
+          <a href="/auth/register" class="btn btn-brand w-100 mt-3">Buat Akun</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features" class="py-5">
   <div class="container py-5">
-    <div class="text-center mb-5">
-      <h2 class="fw-bold">
-        <i class="fas fa-bolt text-warning me-2"></i> Cara w@pi Bekerja Untuk
-        Anda
-      </h2>
-      <p class="text-muted">
-        Otomatisasi komunikasi Anda dalam 3 langkah mudah
+    <div class="section-heading">
+      <div class="nusantara-badge"><i class="fas fa-map-marker-alt"></i> Dibuat untuk alur kerja lokal</div>
+      <h2 class="fw-bold">Fitur yang langsung kepakai untuk bisnis Indonesia</h2>
+      <p class="text-muted mb-0">
+        w@pi menggabungkan endpoint developer dengan tools operasional untuk admin toko, CS, dan tim lapangan.
       </p>
     </div>
-
-    <div class="row align-items-center">
-      <div class="col-lg-5">
-        <!-- Step 1 -->
-        <div class="step-card d-flex align-items-start gap-3">
-          <div class="step-icon flex-shrink-0">
-            <i class="fas fa-user-plus"></i>
-          </div>
-          <div>
-            <h5 class="fw-bold">1. Buat Akun</h5>
-            <p class="text-muted mb-0 small">
-              Daftar akun gratis dalam hitungan detik. Tanpa kartu kredit.
-            </p>
-          </div>
-        </div>
-        <!-- Step 2 -->
-        <div class="step-card d-flex align-items-start gap-3">
-          <div class="step-icon flex-shrink-0">
-            <i class="fas fa-qrcode"></i>
-          </div>
-          <div>
-            <h5 class="fw-bold">2. Hubungkan WhatsApp</h5>
-            <p class="text-muted mb-0 small">
-              Scan kode QR untuk menghubungkan nomor WhatsApp Anda.
-            </p>
-          </div>
-        </div>
-        <!-- Step 3 -->
-        <div class="step-card d-flex align-items-start gap-3">
-          <div class="step-icon flex-shrink-0">
-            <i class="fas fa-paper-plane"></i>
-          </div>
-          <div>
-            <h5 class="fw-bold">3. Mulai Kirim Pesan</h5>
-            <p class="text-muted mb-0 small">
-              Kirim pesan via API atau gunakan alat bawaan kami secara instan.
-            </p>
-          </div>
-        </div>
-
-        <div class="mt-4 text-center text-lg-start">
-          <a href="/auth/register" class="btn btn-brand"
-            >Mulai Gratis Sekarang</a
-          >
-          <a href="#" class="btn btn-link text-muted text-decoration-none ms-3"
-            >Pelajari lebih lanjut →</a
-          >
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-tile">
+          <div class="feature-icon"><i class="fas fa-paper-plane"></i></div>
+          <h5 class="fw-bold">Kirim Pesan API</h5>
+          <p class="text-muted mb-0">Endpoint HTTP untuk OTP, invoice, tracking, reminder, dan pesan grup dengan status pengiriman.</p>
         </div>
       </div>
-
-      <div class="col-lg-7 ps-lg-5 mt-5 mt-lg-0">
-        <div class="bg-light p-4 rounded-4 border">
-          <div class="d-flex align-items-center gap-2 mb-3 border-bottom pb-3">
-            <div
-              class="bg-danger rounded-circle"
-              style="width: 12px; height: 12px"
-            ></div>
-            <div
-              class="bg-warning rounded-circle"
-              style="width: 12px; height: 12px"
-            ></div>
-            <div
-              class="bg-success rounded-circle"
-              style="width: 12px; height: 12px"
-            ></div>
-            <span class="ms-2 text-muted small font-monospace"
-              >POST /message/text</span
-            >
-          </div>
-          <pre class="mb-0 text-dark small" style="white-space: pre-wrap">
-<span class="text-primary">curl</span> --location 'https://wapi.jasaedukasi.com/v1/message' \
---header <span class="text-success">'Content-Type: application/json'</span> \
---data-raw '{
-    "apiKey": "9b0a811f5d511...",
-    "deviceKey": "c6b6cc17",
-    "to": "6281234567890",
-    "text": "Halo Dunia! Dikirim via w@pi 🚀"
-}'</pre>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-tile">
+          <div class="feature-icon"><i class="fas fa-bullhorn"></i></div>
+          <h5 class="fw-bold">Campaign & Scheduler</h5>
+          <p class="text-muted mb-0">Buat broadcast promo tanggal kembar, info kelas, pengumuman warga, atau reminder iuran.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-tile">
+          <div class="feature-icon"><i class="fas fa-reply"></i></div>
+          <h5 class="fw-bold">Auto Reply</h5>
+          <p class="text-muted mb-0">Balas otomatis untuk cek harga, alamat toko, status pesanan, atau format pendaftaran.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-tile">
+          <div class="feature-icon"><i class="fas fa-link"></i></div>
+          <h5 class="fw-bold">Webhook Logs</h5>
+          <p class="text-muted mb-0">Pantau event masuk, response endpoint, dan error webhook dari dashboard.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-tile">
+          <div class="feature-icon"><i class="fas fa-user-check"></i></div>
+          <h5 class="fw-bold">Opt-In & Contacts</h5>
+          <p class="text-muted mb-0">Kelola kontak pelanggan, wali murid, member komunitas, atau reseller dengan lebih rapi.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-tile">
+          <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+          <h5 class="fw-bold">Reports</h5>
+          <p class="text-muted mb-0">Lihat success rate, queue, failed message, inbox, dan performa device harian.</p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Pricing / Cut Costs Section -->
-<section id="pricing" class="cut-costs-section">
-  <div class="container">
-    <div class="row align-items-center">
-      <div class="col-lg-12 text-center mb-5">
-        <h2 class="display-4 fw-bold mb-4 text-white">Paket Harga Yang Sangat Terjangkau</h2>
-        <p class="lead text-white-50">
-          Mulai gratis selamanya atau upgrade ke Pro untuk fitur tanpa batas.
-        </p>
+<section class="workflow-band py-5">
+  <div class="container py-5">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-5">
+        <div class="nusantara-badge"><i class="fas fa-bolt"></i> Praktis untuk tim kecil</div>
+        <h2 class="fw-bold mb-4">Dari scan QR sampai pesan pertama dalam beberapa menit</h2>
+        <div class="workflow-step mb-4">
+          <h5 class="fw-bold">1. Daftar dan tambah device</h5>
+          <p class="text-muted mb-0">Buat akun, pilih paket, lalu scan QR nomor WhatsApp bisnis dari dashboard client.</p>
+        </div>
+        <div class="workflow-step mb-4">
+          <h5 class="fw-bold">2. Kirim lewat API atau dashboard</h5>
+          <p class="text-muted mb-0">Integrasikan ke toko online, aplikasi sekolah, CRM, atau kirim manual dari menu Message/Campaign.</p>
+        </div>
+        <div class="workflow-step">
+          <h5 class="fw-bold">3. Pantau queue dan hasil</h5>
+          <p class="text-muted mb-0">Cek sent, pending, failed, webhook logs, inbox, dan rekomendasi dari dashboard.</p>
+        </div>
       </div>
+      <div class="col-lg-7">
+        <div class="code-panel">
+          <div class="window-bar">
+            <small class="text-white-50">POST /v1/message</small>
+            <span class="badge bg-success">JSON</span>
+          </div>
+          <pre><code>curl --location "https://wapi.jasaedukasi.com/v1/message" \
+--header "Content-Type: application/json" \
+--data '{
+  "apiKey": "YOUR_API_KEY",
+  "deviceKey": "DEVICE_KEY",
+  "to": "6281234567890",
+  "message": "Halo Kak, pesanan #INV-1024 sudah diproses.",
+  "type": "personal"
+}'</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" class="pricing-band py-5">
+  <div class="container py-5">
+    <div class="section-heading">
+      <h2 class="fw-bold text-white">Paket fleksibel untuk UMKM sampai tim operasional</h2>
+      <p class="text-white-50 mb-0">Pilih paket sesuai jumlah nomor, limit harian, dan masa aktif.</p>
     </div>
     <div class="row g-4 justify-content-center">
-      <!-- Free Plan -->
       <div class="col-lg-4">
-        <div class="comparison-card shadow-lg h-100">
-          <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="pricing-card">
+          <div class="d-flex justify-content-between align-items-start mb-3">
             <div>
-              <i class="fas fa-seedling text-muted mb-2" style="font-size: 2rem"></i>
-              <h4 class="fw-bold">Gratis</h4>
+              <h4 class="fw-bold">Warung Digital</h4>
+              <p class="text-muted mb-0">Untuk mencoba integrasi pertama.</p>
             </div>
+            <i class="fas fa-seedling text-success fs-3"></i>
           </div>
-
-          <div class="mb-4">
-            <span class="h1 fw-bold text-dark">Rp 0</span>
-            <span class="text-muted">/selamanya</span>
+          <div class="my-4">
+            <span class="display-6 fw-bold">Rp 0</span>
           </div>
-
-          <ul class="list-unstyled mb-4">
-            <li class="mb-3 d-flex align-items-center">
-              <i class="fas fa-check text-success me-3"></i> 1 Perangkat Aktif
-            </li>
-            <li class="mb-3 d-flex align-items-center">
-              <i class="fas fa-check text-success me-3"></i> 50 Pesan / Hari
-            </li>
-            <li class="mb-3 d-flex align-items-center">
-              <i class="fas fa-check text-success me-3"></i> Akses API Dasar
-            </li>
-            <li class="mb-3 d-flex align-items-center text-muted">
-              <i class="fas fa-times text-danger me-3"></i> Unggah Media & File
-            </li>
-            <li class="mb-3 d-flex align-items-center text-muted">
-              <i class="fas fa-times text-danger me-3"></i> Webhook & Balas Otomatis
-            </li>
+          <ul class="list-unstyled">
+            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>1 device aktif</li>
+            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>API dasar</li>
+            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Dashboard client</li>
           </ul>
-
-          <a href="/auth/register" class="btn btn-outline-success w-100 py-3">Daftar Gratis</a>
+          <a href="/auth/register" class="btn btn-outline-success w-100 mt-3">Daftar Gratis</a>
         </div>
       </div>
-
-      <!-- Pro Plan -->
       <div class="col-lg-5">
-        <div class="comparison-card shadow-lg h-100 border-success" style="border-width: 2px; position: relative;">
-          <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="pricing-card highlight">
+          <div class="d-flex justify-content-between align-items-start mb-3">
             <div>
-              <i class="fab fa-whatsapp text-success mb-2" style="font-size: 2rem"></i>
-              <h4 class="fw-bold">w@pi Pro</h4>
+              <h4 class="fw-bold"><%= highlightPackage ? highlightPackage.name : 'Bisnis Lokal' %></h4>
+              <p class="text-muted mb-0">Untuk operasional rutin dan campaign.</p>
             </div>
-            <span class="badge bg-success text-white px-3 py-2 rounded-pill shadow-sm" style="font-size: 0.75rem;">REKOMENDASI</span>
+            <span class="badge bg-success">Rekomendasi</span>
           </div>
-
-          <div class="mb-4">
-            <span class="h1 fw-bold text-dark">Rp <%= new Intl.NumberFormat('id-ID').format(packages[0] ? packages[0].price : 50000) %></span>
-            <span class="text-muted">/bulan</span>
+          <div class="my-4">
+            <span class="display-6 fw-bold">Rp <%= formatPrice(highlightPackage ? highlightPackage.price : 50000) %></span>
           </div>
-
-          <ul class="list-unstyled mb-4">
-            <li class="mb-3 d-flex align-items-center">
-              <i class="fas fa-check text-success me-3"></i> Perangkat Tanpa Batas*
-            </li>
-            <li class="mb-3 d-flex align-items-center">
-              <i class="fas fa-check text-success me-3"></i> Pesan Tanpa Batas
-            </li>
-            <li class="mb-3 d-flex align-items-center">
-              <i class="fas fa-check text-success me-3"></i> Unggah Media & File
-            </li>
-            <li class="mb-3 d-flex align-items-center">
-              <i class="fas fa-check text-success me-3"></i> Webhook & Balas Otomatis
-            </li>
-            <li class="mb-3 d-flex align-items-center">
-              <i class="fas fa-check text-success me-3"></i> Dukungan Prioritas 24/7
-            </li>
+          <ul class="list-unstyled">
+            <li class="mb-2"><i class="fas fa-check text-success me-2"></i><%= highlightPackage ? (highlightPackage.limit_daily || 0) : 250 %> pesan per hari</li>
+            <li class="mb-2"><i class="fas fa-check text-success me-2"></i><%= highlightPackage ? (highlightPackage.life_time || 30) : 30 %> hari masa aktif</li>
+            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Campaign, template, webhook, report</li>
+            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Auto reply dan opt-in</li>
           </ul>
-
-          <a href="/auth/register" class="btn btn-brand w-100 py-3">Upgrade Sekarang</a>
-          <p class="text-muted small mt-2 text-center">*Sesuai kapasitas server</p>
+          <a href="/auth/register" class="btn btn-brand w-100 mt-3">Mulai Sekarang</a>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Testimonials -->
-<section class="py-5 bg-light" id="reviews">
+<section class="py-5">
   <div class="container py-5">
-    <div class="text-center mb-5">
-      <h2 class="fw-bold text-dark">Dipercaya oleh startup dan pengusaha</h2>
-      <p class="text-muted">
-        Bergabunglah dengan 4.600+ pengguna yang mengotomatiskan bisnis mereka
-        setiap hari
-      </p>
+    <div class="section-heading">
+      <div class="nusantara-badge"><i class="fas fa-store"></i> Use case harian</div>
+      <h2 class="fw-bold">Cocok untuk kebutuhan komunikasi di Indonesia</h2>
+      <p class="text-muted mb-0">Mulai dari notifikasi transaksi sampai broadcast komunitas dan sekolah.</p>
     </div>
-
     <div class="row g-4">
       <div class="col-md-4">
-        <div class="review-card">
-          <div class="stars">★★★★★</div>
-          <p class="text-muted small mb-4">
-            "Akhirnya ada API WhatsApp yang tidak menguras kantong.
-            Pengaturannya instan dan dokumentasinya sangat jelas. Sangat
-            direkomendasikan!"
-          </p>
-          <div class="d-flex align-items-center gap-3">
-            <div
-              class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-              style="width: 40px; height: 40px"
-            >
-              AD
-            </div>
-            <div>
-              <h6 class="fw-bold mb-0">Andi D.</h6>
-              <small class="text-muted">Tech Lead</small>
-            </div>
-          </div>
+        <div class="usecase-card">
+          <i class="fas fa-receipt text-success fs-3 mb-3"></i>
+          <h5 class="fw-bold">Toko Online & UMKM</h5>
+          <p class="text-muted mb-0">Kirim invoice, status pembayaran, resi, reminder transfer, dan promo pelanggan.</p>
         </div>
       </div>
       <div class="col-md-4">
-        <div class="review-card">
-          <div class="stars">★★★★★</div>
-          <p class="text-muted small mb-4">
-            "Kami mengintegrasikan w@pi ke toko WooCommerce kami untuk
-            notifikasi pesanan. Berjalan tanpa hambatan dan pelanggan kami
-            menyukai pembaruannya."
-          </p>
-          <div class="d-flex align-items-center gap-3">
-            <div
-              class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center"
-              style="width: 40px; height: 40px"
-            >
-              RL
-            </div>
-            <div>
-              <h6 class="fw-bold mb-0">Rina L.</h6>
-              <small class="text-muted">Pemilik Toko Online</small>
-            </div>
-          </div>
+        <div class="usecase-card">
+          <i class="fas fa-key text-success fs-3 mb-3"></i>
+          <h5 class="fw-bold">Sekolah & Kursus</h5>
+          <p class="text-muted mb-0">Kirim info kelas, tagihan, pengumuman, dan reminder ke wali murid atau peserta.</p>
         </div>
       </div>
       <div class="col-md-4">
-        <div class="review-card">
-          <div class="stars">★★★★★</div>
-          <p class="text-muted small mb-4">
-            "Tim pendukung terbaik yang pernah ada. Coba lihat fitur mereka,
-            persis seperti apa yang kami butuhkan untuk sistem peringatan
-            internal kami. Layanan 10/10."
-          </p>
-          <div class="d-flex align-items-center gap-3">
-            <div
-              class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center"
-              style="width: 40px; height: 40px"
-            >
-              BS
-            </div>
-            <div>
-              <h6 class="fw-bold mb-0">Budi S.</h6>
-              <small class="text-muted">Developer</small>
-            </div>
-          </div>
+        <div class="usecase-card">
+          <i class="fas fa-users text-success fs-3 mb-3"></i>
+          <h5 class="fw-bold">Komunitas & Reseller</h5>
+          <p class="text-muted mb-0">Kelola kontak, opt-in, template, jadwal, dan laporan broadcast komunitas.</p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Bottom CTA -->
-<section class="bottom-cta">
-  <div class="container position-relative" style="z-index: 2">
-    <h2 class="display-5 fw-bold mb-4">WhatsApp Anda—dengan Kekuatan Super</h2>
-    <p class="lead text-white-50 mb-5">
-      Bergabunglah dengan komunitas kami dan mulailah membangun hari ini.
-    </p>
-    <div class="d-flex justify-content-center gap-3">
-      <a href="/auth/register" class="btn btn-brand btn-lg px-5"
-        >Mulai Gratis Selamanya</a
-      >
-      <a href="#" class="btn btn-light btn-lg px-4 fw-bold">Gabung Komunitas</a>
+<section class="cta-band py-5">
+  <div class="container py-5">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-8">
+        <h2 class="fw-bold mb-3">Siap membuat WhatsApp bisnis Anda lebih rapi?</h2>
+        <p class="lead text-white-50 mb-0">Buat akun, scan nomor, lalu kirim pesan pertama dari dashboard atau API.</p>
+      </div>
+      <div class="col-lg-4 text-lg-end">
+        <a href="/auth/register" class="btn btn-brand btn-lg me-lg-2 mb-2 mb-lg-0">Daftar</a>
+        <a href="/dokumentasi" class="btn btn-light btn-lg">Dokumentasi</a>
+      </div>
     </div>
   </div>
 </section>

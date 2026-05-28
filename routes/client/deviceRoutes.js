@@ -14,6 +14,7 @@ module.exports = ({ sessionManager, deviceManager, billingManager }) => {
         await deviceManager.getDevicesWithLastActive(apiKey);
       const activeDeviceCount =
         await deviceManager.getActiveDeviceCount(apiKey);
+      const deviceShares = await deviceManager.getDeviceShares(apiKey);
 
       // Build a simple device history from devices (latest updated first)
       const deviceHistory = (devices || [])
@@ -36,6 +37,7 @@ module.exports = ({ sessionManager, deviceManager, billingManager }) => {
         packages: packages || [],
         apiKey: apiKey,
         deviceHistory: deviceHistory,
+        deviceShares: deviceShares || [],
         title: "Device - w@pi",
         layout: "layouts/client",
       });
@@ -50,6 +52,9 @@ module.exports = ({ sessionManager, deviceManager, billingManager }) => {
     try {
       const apiKey = req.session.user.api_key;
       const device = await deviceManager.getDevice(apiKey, deviceKey);
+      if (device.access_type !== "owner") {
+        return res.status(403).send("Device shared hanya bisa dipakai untuk kirim pesan.");
+      }
       const packages = await billingManager.getPackages();
       const subDevices = await deviceManager.getSubDevices(apiKey, deviceKey);
 
@@ -94,6 +99,71 @@ module.exports = ({ sessionManager, deviceManager, billingManager }) => {
     }
   });
 
+  router.post("/share/create", authMiddleware, async (req, res) => {
+    try {
+      const apiKey = req.session.user.api_key;
+      const { deviceKey, expiresInDays } = req.body;
+      if (!deviceKey) {
+        return res.status(400).json({
+          status: false,
+          message: "Device key wajib diisi.",
+        });
+      }
+
+      const result = await deviceManager.createDeviceShare(
+        apiKey,
+        deviceKey,
+        expiresInDays,
+      );
+      res.json(result);
+    } catch (error) {
+      console.error("Create device share error:", error);
+      const statusCode = error.output?.statusCode || error.statusCode || 500;
+      res.status(statusCode).json({
+        status: false,
+        message: error.message,
+      });
+    }
+  });
+
+  router.post("/share/accept", authMiddleware, async (req, res) => {
+    try {
+      const apiKey = req.session.user.api_key;
+      const { inviteCode } = req.body;
+      if (!inviteCode) {
+        return res.status(400).json({
+          status: false,
+          message: "Kode undangan wajib diisi.",
+        });
+      }
+
+      const result = await deviceManager.acceptDeviceShare(apiKey, inviteCode);
+      res.json(result);
+    } catch (error) {
+      console.error("Accept device share error:", error);
+      const statusCode = error.output?.statusCode || error.statusCode || 500;
+      res.status(statusCode).json({
+        status: false,
+        message: error.message,
+      });
+    }
+  });
+
+  router.post("/share/revoke", authMiddleware, async (req, res) => {
+    try {
+      const apiKey = req.session.user.api_key;
+      const { shareId } = req.body;
+      const ok = await deviceManager.revokeDeviceShare(apiKey, shareId);
+      res.json({
+        status: ok,
+        message: ok ? "Akses share dicabut." : "Share tidak ditemukan.",
+      });
+    } catch (error) {
+      console.error("Revoke device share error:", error);
+      res.status(500).json({ status: false, message: error.message });
+    }
+  });
+
   router.delete("/remove", authMiddleware, async (req, res) => {
     try {
       const { apiKey, deviceKey } = req.query;
@@ -121,6 +191,12 @@ module.exports = ({ sessionManager, deviceManager, billingManager }) => {
           .status(404)
           .json({ status: false, message: "Device not found" });
       }
+      if (device.access_type !== "owner") {
+        return res.status(403).json({
+          status: false,
+          message: "Device shared hanya bisa dipakai untuk kirim pesan, bukan disconnect.",
+        });
+      }
 
       await sessionManager.removeSession(deviceKey, true, "disconnected");
       res.json({ status: true, message: "Device disconnected successfully" });
@@ -135,6 +211,9 @@ module.exports = ({ sessionManager, deviceManager, billingManager }) => {
     try {
       const apiKey = req.session.user.api_key;
       const device = await deviceManager.getDevice(apiKey, deviceKey);
+      if (device.access_type !== "owner") {
+        return res.status(403).send("Device shared tidak bisa membuka manajemen group.");
+      }
       const groups = await deviceManager.getGroups(apiKey, deviceKey);
 
       res.render("client/device-group", {

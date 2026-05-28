@@ -53,6 +53,23 @@
         </div>
 
         <div class="mb-3">
+            <div class="form-check form-switch">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="opt_in_required"
+                <%= Number(user.opt_in_required) === 1 ? 'checked' : '' %>
+              />
+              <label class="form-check-label" for="opt_in_required">
+                Wajib Opt-In sebelum pesan cron dikirim
+              </label>
+            </div>
+            <small class="text-muted">
+              Jika aktif, cron akan mengirim undangan Opt-In dulu. Pesan asli tetap pending sampai penerima membalas SETUJU.
+            </small>
+        </div>
+
+        <div class="mb-3">
             <label class="form-label">Template Undangan Opt-In</label>
             <textarea
               class="form-control"
@@ -60,7 +77,18 @@
               rows="4"
               placeholder="Contoh: Halo! Silakan balas SETUJU..."
             ><%= user.template_invitation || '' %></textarea>
-            <small class="text-muted">Pesan ini akan dikirim otomatis jika nomor belum melakukan Opt-In (jika fitur Otomatis aktif di .env).</small>
+            <small class="text-muted">Dipakai saat mengirim lewat device milik sendiri.</small>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Template Undangan Opt-In untuk Device Shared</label>
+            <textarea
+              class="form-control"
+              id="template_invitation_shared"
+              rows="4"
+              placeholder="Contoh: Halo! Saya mengirim notifikasi melalui perangkat bersama. Balas SETUJU..."
+            ><%= user.template_invitation_shared || '' %></textarea>
+            <small class="text-muted">Dipakai saat akun Anda mengirim pesan cron memakai device yang dibagikan oleh pengguna lain. Jika kosong, sistem memakai template normal di atas.</small>
         </div>
 
         <hr />
@@ -154,6 +182,8 @@
         phone: document.getElementById("phone").value,
         password: document.getElementById("password").value,
         template_invitation: document.getElementById("template_invitation").value,
+        template_invitation_shared: document.getElementById("template_invitation_shared").value,
+        opt_in_required: document.getElementById("opt_in_required").checked ? "1" : "0",
       };
 
       fetch("/client/profile/update", {

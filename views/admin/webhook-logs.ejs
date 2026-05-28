@@ -1,0 +1,67 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="text-success mb-1"><i class="fa fa-link me-2"></i>Webhook Logs</h4>
+    <div class="text-muted">Audit pengiriman webhook dari semua device.</div>
+  </div>
+</div>
+
+<div class="stat-card">
+  <form class="row g-2 align-items-end" method="get">
+    <div class="col-md-3">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-select">
+        <option value="">Semua</option>
+        <option value="success" <%= filters.status === 'success' ? 'selected' : '' %>>success</option>
+        <option value="failed" <%= filters.status === 'failed' ? 'selected' : '' %>>failed/error</option>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Cari</label>
+      <input name="keyword" class="form-control" value="<%= filters.keyword || '' %>" placeholder="URL, event, error, user, device">
+    </div>
+    <div class="col-md-3">
+      <button class="btn btn-success w-100"><i class="fa fa-search me-1"></i> Filter</button>
+    </div>
+  </form>
+</div>
+
+<div class="stat-card">
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <% (summaryRows || []).forEach(function(row) { %>
+      <span class="badge bg-secondary"><%= row.status || 'unknown' %>: <%= row.cnt %></span>
+    <% }) %>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle">
+      <thead>
+        <tr>
+          <th>Waktu</th>
+          <th>User / Device</th>
+          <th>Event</th>
+          <th>URL</th>
+          <th>Status</th>
+          <th>Error</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (logs && logs.length) { %>
+          <% logs.forEach(function(log) { %>
+            <tr>
+              <td><small><%= log.created_at ? new Date(log.created_at).toLocaleString('id-ID') : '-' %></small></td>
+              <td><%= log.user_name || '-' %><br><small class="text-muted"><%= log.device_name || '-' %></small></td>
+              <td><%= log.event || '-' %></td>
+              <td><small><%= log.webhook_url || '-' %></small></td>
+              <td>
+                <span class="badge <%= log.status === 'success' ? 'bg-success' : 'bg-danger' %>"><%= log.status || '-' %></span>
+                <% if (log.http_status) { %><br><small class="text-muted">HTTP <%= log.http_status %></small><% } %>
+              </td>
+              <td><small><%= (log.error_message || '').length > 120 ? (log.error_message.substring(0, 120) + '...') : (log.error_message || '-') %></small></td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="6" class="text-muted">Belum ada log webhook.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>

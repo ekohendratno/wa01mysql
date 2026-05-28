@@ -2,6 +2,37 @@
   <h4 class="text-success"><i class="fa fa-users me-2"></i>User Management</h4>
 </div>
 
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card h-100">
+      <h5>Total Pengguna</h5>
+      <h2><%= summary.total || 0 %></h2>
+      <small class="text-muted"><%= summary.active_total || 0 %> akun aktif</small>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card h-100 border-start border-4 border-success">
+      <h5>Baru Hari Ini</h5>
+      <h2 class="text-success"><%= summary.today_total || 0 %></h2>
+      <small class="text-muted">Akun terdaftar hari ini</small>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card h-100 border-start border-4 border-info">
+      <h5>7 Hari</h5>
+      <h2 class="text-info"><%= summary.week_total || 0 %></h2>
+      <small class="text-muted">Pengguna baru sepekan</small>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card h-100 border-start border-4 border-primary">
+      <h5>30 Hari</h5>
+      <h2 class="text-primary"><%= summary.month_total || 0 %></h2>
+      <small class="text-muted">Pengguna baru sebulan</small>
+    </div>
+  </div>
+</div>
+
 <div class="row">
   <div class="col-md-12">
     <div class="stat-card">
@@ -44,13 +75,27 @@
                 <span class="text-muted">-</span>
                 <% } %>
               </td>
-              <td><%= new Date(u.created_at).toLocaleDateString() %></td>
+              <td>
+                <% if (u.created_at) { %>
+                <strong><%= new Date(u.created_at).toLocaleDateString('id-ID') %></strong><br>
+                <small class="text-muted"><%= new Date(u.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) %></small>
+                <% } else { %>
+                <span class="text-muted">-</span>
+                <% } %>
+              </td>
               <td>
                 <button
                   class="btn btn-sm btn-primary"
                   onclick="editUser('<%= u.uid %>')"
                 >
                   Edit
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-secondary ms-1"
+                  onclick="duplicateUser('<%= u.uid %>')"
+                  title="Duplikat user ini lalu edit sebagai user baru"
+                >
+                  <i class="fa fa-copy"></i>
                 </button>
                 <button
                   class="btn btn-sm btn-danger ms-1"
@@ -117,7 +162,7 @@
               class="form-control"
               placeholder="Biarkan kosong jika tidak diubah"
             />
-            <small class="text-muted">Untuk user baru default: 123456</small>
+            <small class="text-muted">Wajib diisi untuk user baru.</small>
           </div>
           <div class="mb-3">
             <label>Status</label>
@@ -152,6 +197,7 @@
   });
 
   function formTambahUser() {
+    document.querySelector("#formUser .modal-title").innerText = "Tambah User";
     document.getElementById("userId").value = 0;
     document.getElementById("userName").value = "";
     document.getElementById("userEmail").value = "";
@@ -167,11 +213,39 @@
       .then((res) => {
         if (res.status) {
           const d = res.data;
+          document.querySelector("#formUser .modal-title").innerText =
+            "Edit User";
           document.getElementById("userId").value = d.uid;
           document.getElementById("userName").value = d.name;
           document.getElementById("userEmail").value = d.email;
           document.getElementById("userPhone").value = d.phone;
           document.getElementById("userPass").value = "";
+          document.getElementById("userStatus").value = d.status || "active";
+          if (userModal) userModal.show();
+        } else {
+          alert(res.message);
+        }
+      })
+      .catch((e) => {
+        console.error(e);
+        alert("Error fetching data");
+      });
+  }
+
+  function duplicateUser(uid) {
+    fetch(`/admin/users/duplicate/${uid}`)
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.status) {
+          const d = res.data;
+          document.querySelector("#formUser .modal-title").innerText =
+            "Duplikat User";
+          document.getElementById("userId").value = 0;
+          document.getElementById("userName").value = d.name || "";
+          document.getElementById("userEmail").value = d.email || "";
+          document.getElementById("userPhone").value = d.phone || "";
+          document.getElementById("userPass").value = "";
+          document.getElementById("userPass").focus();
           document.getElementById("userStatus").value = d.status || "active";
           if (userModal) userModal.show();
         } else {

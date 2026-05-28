@@ -25,8 +25,9 @@ module.exports = ({ deviceManager }) => {
 
       // If getDevices doesn't return webhook_url, I need to update it.
       // Let's assume I will update it.
-
-      const devices = await deviceManager.getDevices(apiKey);
+      const devices = await deviceManager.getDevices(apiKey, {
+        includeShared: false,
+      });
 
       res.render("client/webhook", {
         title: "Webhook Management",
@@ -69,6 +70,38 @@ module.exports = ({ deviceManager }) => {
     } catch (error) {
       console.error("Error updating webhook:", error);
       res.status(500).json({ status: false, message: error.message });
+    }
+  });
+
+  router.get("/logs", async (req, res) => {
+    try {
+      const apiKey = req.session.user.api_key;
+      const devices = await deviceManager.getDevices(apiKey, {
+        includeShared: false,
+      });
+      const uid = req.session.user.uid;
+      const pool = deviceManager.pool;
+      const [logs] = await pool.query(
+        `
+          SELECT wl.*, d.name AS device_name
+          FROM webhook_logs wl
+          LEFT JOIN devices d ON d.id = wl.device_id
+          WHERE wl.uid = ?
+          ORDER BY wl.created_at DESC
+          LIMIT 100
+        `,
+        [uid],
+      );
+
+      res.render("client/webhook-logs", {
+        title: "Webhook Logs",
+        layout: "layouts/client",
+        devices,
+        logs,
+      });
+    } catch (error) {
+      console.error("Error fetching webhook logs:", error);
+      res.status(500).send("Internal Server Error");
     }
   });
 

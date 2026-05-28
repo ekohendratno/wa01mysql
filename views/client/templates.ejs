@@ -1,0 +1,151 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="text-success">
+    <i class="fa fa-file-lines me-2"></i>Template Pesan
+  </h4>
+</div>
+
+<div class="stat-card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Nama</th>
+          <th>Kategori</th>
+          <th>Isi</th>
+          <th>Update</th>
+          <th class="text-end">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!templates || templates.length === 0) { %>
+        <tr>
+          <td colspan="5" class="text-center py-4 text-muted">
+            Belum ada template pesan.
+          </td>
+        </tr>
+        <% } else { %>
+          <% templates.forEach((tpl) => { %>
+          <tr>
+            <td class="fw-semibold"><%= tpl.name %></td>
+            <td><span class="badge bg-light text-dark border"><%= tpl.category || "Umum" %></span></td>
+            <td style="max-width: 520px">
+              <div class="text-truncate"><%= tpl.content %></div>
+            </td>
+            <td><small class="text-muted"><%= tpl.updated_at ? moment(tpl.updated_at).format("DD MMM YYYY, HH:mm") : "-" %></small></td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary" onclick="editTemplateById('<%= tpl.id %>')">
+                <i class="fa fa-pen"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteTemplate('<%= tpl.id %>')">
+                <i class="fa fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+          <% }) %>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<button class="floating-button" onclick="openTemplateForm()" title="Tambah Template">
+  <i class="fas fa-plus"></i>
+</button>
+
+<div id="templateModal" class="modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="templateForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Template Pesan</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="templateId" value="0" />
+          <div class="mb-3">
+            <label class="form-label">Nama Template</label>
+            <input id="templateName" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Kategori</label>
+            <input id="templateCategory" class="form-control" placeholder="Marketing, Reminder, OTP" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Isi Pesan</label>
+            <textarea id="templateContent" class="form-control" rows="8" required></textarea>
+            <small class="text-muted">Placeholder seperti {nama}, {bulan}, {nominal} bisa dipakai manual saat campaign.</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-success" id="saveTemplateBtn">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const templates = <%- JSON.stringify(templates || []) %>;
+  let templateModal;
+
+  document.addEventListener("DOMContentLoaded", () => {
+    templateModal = new bootstrap.Modal(document.getElementById("templateModal"));
+  });
+
+  function openTemplateForm() {
+    document.getElementById("templateId").value = 0;
+    document.getElementById("templateName").value = "";
+    document.getElementById("templateCategory").value = "";
+    document.getElementById("templateContent").value = "";
+    templateModal.show();
+  }
+
+  function editTemplateById(id) {
+    const template = templates.find((item) => String(item.id) === String(id));
+    if (!template) {
+      showToast("Template tidak ditemukan.", "danger");
+      return;
+    }
+
+    document.getElementById("templateId").value = template.id;
+    document.getElementById("templateName").value = template.name || "";
+    document.getElementById("templateCategory").value = template.category || "";
+    document.getElementById("templateContent").value = template.content || "";
+    templateModal.show();
+  }
+
+  document.getElementById("templateForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = document.getElementById("saveTemplateBtn");
+    button.disabled = true;
+    button.textContent = "Menyimpan...";
+
+    const response = await fetch("/client/templates/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: document.getElementById("templateId").value,
+        name: document.getElementById("templateName").value,
+        category: document.getElementById("templateCategory").value,
+        content: document.getElementById("templateContent").value,
+      }),
+    });
+    const result = await response.json();
+    if (result.status) {
+      location.reload();
+      return;
+    }
+    showToast(result.message || "Gagal menyimpan template", "danger");
+    button.disabled = false;
+    button.textContent = "Simpan";
+  });
+
+  async function deleteTemplate(id) {
+    if (!confirm("Hapus template ini?")) return;
+    const response = await fetch(`/client/templates/delete/${id}`, { method: "DELETE" });
+    const result = await response.json();
+    if (result.status) location.reload();
+    else showToast(result.message || "Gagal menghapus template", "danger");
+  }
+</script>

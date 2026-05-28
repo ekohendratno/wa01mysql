@@ -1,0 +1,175 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="text-success">
+    <i class="fa fa-bullhorn me-2"></i>Campaign Broadcast
+  </h4>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="stat-card">
+      <h5>Total Campaign</h5>
+      <h2><%= campaigns ? campaigns.length : 0 %></h2>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <h5>Device</h5>
+      <h2><%= devices ? devices.length : 0 %></h2>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="stat-card">
+      <h5>Broadcast</h5>
+      <p class="mb-0 text-muted">Masukkan nomor per baris atau pisahkan dengan koma. Pesan masuk antrean dan dikirim oleh cron.</p>
+    </div>
+  </div>
+</div>
+
+<div class="stat-card">
+  <h5 class="mb-3"><i class="fa fa-clock-rotate-left me-2"></i>Riwayat Campaign</h5>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Campaign</th>
+          <th>Device</th>
+          <th>Penerima</th>
+          <th>Progress</th>
+          <th>Jadwal</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!campaigns || campaigns.length === 0) { %>
+        <tr>
+          <td colspan="6" class="text-center py-4 text-muted">Belum ada campaign.</td>
+        </tr>
+        <% } else { %>
+          <% campaigns.forEach((campaign) => { %>
+          <tr>
+            <td>
+              <strong><%= campaign.name %></strong><br />
+              <small class="text-muted"><%= moment(campaign.created_at).format("DD MMM YYYY, HH:mm") %></small>
+            </td>
+            <td><span class="badge bg-light text-dark border"><%= campaign.device_key || "-" %></span></td>
+            <td><%= campaign.recipients_count %></td>
+            <td>
+              <span class="badge bg-success"><%= campaign.sent_count || 0 %> sent</span>
+              <span class="badge bg-secondary"><%= campaign.pending_count || 0 %> pending</span>
+              <span class="badge bg-danger"><%= campaign.failed_count || 0 %> failed</span>
+            </td>
+            <td><%= campaign.scheduled_at ? moment(campaign.scheduled_at).format("DD MMM YYYY, HH:mm") : "Segera" %></td>
+            <td><span class="badge bg-info"><%= campaign.status %></span></td>
+          </tr>
+          <% }) %>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<button class="floating-button" data-bs-toggle="modal" data-bs-target="#campaignModal" title="Tambah Campaign">
+  <i class="fas fa-plus"></i>
+</button>
+
+<div id="campaignModal" class="modal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="campaignForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Campaign Baru</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Nama Campaign</label>
+              <input id="campaignName" class="form-control" required />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Perangkat</label>
+              <select id="campaignDevice" class="form-control" required>
+                <option value="">Pilih device</option>
+                <% devices.forEach((device) => { %>
+                <option value="<%= device.device_key %>"><%= device.name %> - <%= device.device_key %></option>
+                <% }) %>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Template</label>
+            <select id="campaignTemplate" class="form-control">
+              <option value="">Tanpa template</option>
+              <% templates.forEach((template) => { %>
+              <option value="<%= template.id %>"><%= template.name %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Penerima</label>
+            <textarea id="campaignRecipients" class="form-control" rows="7" placeholder="6281234567890&#10;6289876543210" required></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Isi Pesan</label>
+            <textarea id="campaignMessage" class="form-control" rows="7" required></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Jadwal Kirim</label>
+            <input id="campaignSchedule" type="datetime-local" class="form-control" />
+            <small class="text-muted">Kosongkan untuk masuk antrean sekarang.</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-success" id="createCampaignBtn">Buat Campaign</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const templates = <%- JSON.stringify(templates || []) %>;
+
+  document.getElementById("campaignTemplate").addEventListener("change", function () {
+    const selected = templates.find((template) => String(template.id) === this.value);
+    if (selected) document.getElementById("campaignMessage").value = selected.content || "";
+  });
+
+  document.getElementById("campaignForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = document.getElementById("createCampaignBtn");
+    button.disabled = true;
+    button.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i> Memproses...';
+
+    try {
+      const response = await fetch("/client/campaign/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: document.getElementById("campaignName").value,
+          deviceKey: document.getElementById("campaignDevice").value,
+          recipients: document.getElementById("campaignRecipients").value,
+          message: document.getElementById("campaignMessage").value,
+          scheduledAt: document.getElementById("campaignSchedule").value,
+        }),
+      });
+      const result = await response.json();
+      if (result.status) {
+        showToast(result.message, "success");
+        setTimeout(() => location.reload(), 900);
+        return;
+      }
+      showToast(result.message || "Gagal membuat campaign", "danger");
+    } catch (error) {
+      showToast("Terjadi kesalahan koneksi", "danger");
+    } finally {
+      button.disabled = false;
+      button.textContent = "Buat Campaign";
+    }
+  });
+</script>

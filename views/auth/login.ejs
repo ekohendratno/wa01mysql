@@ -1,230 +1,239 @@
 <style>
   :root {
     --wa-brand: #25d366;
+    --wa-hover: #1ebc57;
     --wa-dark: #075e54;
-    --bg-right: #003126;
+    --id-red: #d91f2d;
+    --auth-dark: #0b221e;
   }
-  .min-vh-100 {
+
+  .auth-shell {
     min-height: 100vh;
+    background: #f7faf9;
   }
+
+  .auth-form-side {
+    min-height: 100vh;
+    background: #fff;
+  }
+
+  .auth-brand {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--wa-dark);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .auth-brand::after {
+    content: "ID";
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--id-red);
+    border: 1px solid rgba(217, 31, 45, 0.25);
+    border-radius: 999px;
+    padding: 2px 7px;
+  }
+
   .form-control-pill {
     border-radius: 8px;
-    padding: 12px 15px;
-    border: 1px solid #dfe1e5;
-    background-color: #f8f9fa;
+    padding: 13px 15px;
+    border: 1px solid #dfe6e3;
+    background-color: #f8faf9;
   }
+
   .form-control-pill:focus {
     border-color: var(--wa-brand);
-    box-shadow: 0 0 0 0.2rem rgba(37, 211, 102, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(37, 211, 102, 0.2);
     background-color: #fff;
   }
+
   .btn-brand {
     background-color: var(--wa-brand);
     color: white;
     border: none;
     border-radius: 8px;
     padding: 12px;
-    font-weight: 600;
-    transition: all 0.2s;
+    font-weight: 700;
   }
+
   .btn-brand:hover {
-    background-color: #1ebc57;
+    background-color: var(--wa-hover);
     color: white;
   }
-  .right-side-bg {
-    background: radial-gradient(circle at 50% 50%, #0d5546 0%, #00251a 100%);
+
+  .auth-visual {
+    min-height: 100vh;
+    background:
+      linear-gradient(135deg, rgba(157, 23, 38, 0.94), rgba(0, 49, 38, 0.9)),
+      url("https://images.unsplash.com/photo-1556745757-8d76bdb6984b?auto=format&fit=crop&w=1400&q=80");
+    background-size: cover;
+    background-position: center;
+    color: #fff;
     position: relative;
     overflow: hidden;
   }
-  .right-side-bg::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url("https://user-images.githubusercontent.com/1500684/235473775-5980757a-c756-42ee-9783-c90a1961524e.svg")
-      no-repeat center center;
-    opacity: 0.1;
-    background-size: cover;
+
+  .indonesia-ribbon {
+    display: inline-flex;
+    width: 58px;
+    height: 12px;
+    border-radius: 999px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.24);
   }
-  .feature-list i {
-    color: var(--wa-brand);
-    margin-right: 10px;
+
+  .indonesia-ribbon span:first-child {
+    background: #e11d2e;
+    flex: 1;
   }
-  .brand-logo {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--wa-dark);
-    text-decoration: none;
+
+  .indonesia-ribbon span:last-child {
+    background: #fff;
+    flex: 1;
+  }
+
+  .auth-preview {
+    background: rgba(12, 27, 24, 0.76);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    padding: 18px;
+    backdrop-filter: blur(10px);
+  }
+
+  .auth-preview-row {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
-  @media (max-width: 576px) {
-    .brand-logo {
-      font-size: 1.2rem;
-    }
-    .brand-logo i {
-      font-size: 1.5rem !important;
-    }
-    h2 {
-      font-size: 1.5rem;
+
+  .auth-preview-row:last-child {
+    border-bottom: 0;
+  }
+
+  @media (max-width: 992px) {
+    .auth-form-side {
+      min-height: 100vh;
     }
   }
 </style>
 
-<div class="container-fluid p-0">
-  <div class="row g-0 min-vh-100">
-    <!-- LEFT SIDE: FORM -->
-    <div class="col-lg-6 d-flex flex-column bg-white position-relative">
-      <!-- Header: Logo & Create Account -->
+<div class="container-fluid p-0 auth-shell">
+  <div class="row g-0">
+    <div class="col-lg-6 auth-form-side d-flex flex-column">
       <div class="d-flex justify-content-between align-items-center p-3 p-md-4">
-        <a href="/" class="brand-logo">
+        <a href="/" class="auth-brand">
           <i class="fab fa-whatsapp text-success" style="font-size: 2rem"></i>
           <span>w@pi</span>
         </a>
         <div class="d-flex gap-2">
-          <a
-            href="/"
-            class="btn btn-outline-secondary px-3 d-flex align-items-center"
-            style="border-radius: 8px"
-            title="Home"
-          >
-            <i class="fas fa-home"></i>
-            <span class="d-none d-md-inline ms-2">Home</span>
+          <a href="/" class="btn btn-outline-secondary px-3" style="border-radius: 8px">
+            <i class="fas fa-home me-md-2"></i><span class="d-none d-md-inline">Beranda</span>
           </a>
-          <a
-            href="/auth/register"
-            class="btn btn-success text-white px-3 d-flex align-items-center"
-            style="
-              border-radius: 8px;
-              background-color: var(--wa-brand);
-              border: none;
-            "
-          >
-            <i class="fas fa-user-plus d-md-none"></i>
-            <span class="d-none d-md-inline">Buat Akun Baru</span>
-            <span class="d-md-none ms-2">Daftar</span>
+          <a href="/auth/register" class="btn btn-success px-3" style="border-radius: 8px; background: var(--wa-brand); border: 0">
+            <i class="fas fa-user-plus me-md-2"></i><span class="d-none d-md-inline">Daftar</span>
           </a>
         </div>
       </div>
 
-      <div class="row justify-content-center my-auto w-100 mx-0 px-4 px-md-5">
+      <div class="row justify-content-center my-auto w-100 mx-0 px-4 px-md-5 py-4">
         <div class="col-md-8 col-lg-8">
-          <div class="text-center mb-5">
-            <h2 class="fw-bold text-dark">Selamat Datang Kembali</h2>
-            <p class="text-muted">Masuk ke dashboard w@pi Anda.</p>
+          <div class="mb-4">
+            <div class="d-inline-flex align-items-center gap-2 text-danger fw-bold small mb-3">
+              <span class="indonesia-ribbon" aria-hidden="true"><span></span><span></span></span>
+              Dashboard Indonesia
+            </div>
+            <h2 class="fw-bold text-dark mb-2">Masuk ke dashboard w@pi</h2>
+            <p class="text-muted mb-0">Kelola device, campaign, queue, webhook, dan laporan WhatsApp bisnis Anda.</p>
           </div>
 
           <% if (error) { %>
-          <div class="alert alert-danger"><%= error %></div>
+            <div class="alert alert-danger"><%= error %></div>
           <% } %>
 
           <form action="/auth/login" method="POST">
             <div class="mb-4">
-              <label class="form-label fw-bold small text-secondary"
-                >Username / Email</label
-              >
+              <label class="form-label fw-bold small text-secondary">Username / Email</label>
               <input
                 name="username"
                 type="text"
                 class="form-control form-control-pill"
-                placeholder="Masukkan email Anda"
+                placeholder="nama@email.com"
+                autocomplete="username"
                 required
               />
             </div>
 
             <div class="mb-4">
-              <label class="form-label fw-bold small text-secondary"
-                >Password</label
-              >
+              <label class="form-label fw-bold small text-secondary">Password</label>
               <input
                 name="password"
                 type="password"
                 class="form-control form-control-pill"
-                placeholder="••••••••"
+                placeholder="Masukkan password"
+                autocomplete="current-password"
                 required
               />
             </div>
 
             <div class="d-flex justify-content-between align-items-center mb-4">
               <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  name="remember"
-                  id="rememberMe"
-                />
-                <label
-                  class="form-check-label small text-muted"
-                  for="rememberMe"
-                  >Ingat Saya</label
-                >
+                <input class="form-check-input" type="checkbox" name="remember" id="rememberMe" />
+                <label class="form-check-label small text-muted" for="rememberMe">Ingat saya</label>
               </div>
-              <a
-                href="#"
-                class="small text-decoration-none text-success fw-bold"
-                >Lupa Password?</a
-              >
+              <a href="/client/bantuin" class="small text-decoration-none text-success fw-bold">Butuh bantuan?</a>
             </div>
 
             <button type="submit" class="btn btn-brand w-100 mb-4 py-3">
-              Masuk
+              <i class="fas fa-right-to-bracket me-2"></i>Masuk
             </button>
 
             <div class="text-center text-muted small">
-              Dengan masuk, Anda setuju dengan
-              <a href="#" class="text-decoration-none">Ketentuan Layanan</a> dan
-              <a href="#" class="text-decoration-none">Kebijakan Privasi</a>
-              kami.
+              Belum punya akun?
+              <a href="/auth/register" class="text-decoration-none fw-bold text-success">Daftar gratis</a>
             </div>
           </form>
         </div>
       </div>
     </div>
 
-    <!-- RIGHT SIDE: HERO -->
-    <div
-      class="col-lg-6 d-none d-lg-flex flex-column justify-content-center align-items-center text-white right-side-bg p-5"
-    >
-      <div class="mw-100" style="max-width: 500px">
-        <h1 class="display-4 fw-bold mb-4">
-          WhatsApp Anda—<br />dengan Kekuatan Super
-        </h1>
-        <p class="lead mb-4 text-white-50">
-          Otomatisasi WhatsApp, tingkatkan pendapatan. Dipercaya oleh 4.600+
-          pelanggan.
-        </p>
-
-        <div
-          class="d-inline-flex align-items-center bg-success bg-opacity-25 border border-success border-opacity-50 rounded-pill px-3 py-2 mb-5"
-        >
-          <i class="fas fa-gift me-2 text-warning"></i>
-          <span class="fw-bold">250 Pesan GRATIS setiap bulan.</span>
+    <div class="col-lg-6 d-none d-lg-flex auth-visual align-items-center">
+      <div class="container px-5">
+        <div class="mb-4">
+          <div class="d-inline-flex align-items-center gap-2 bg-white bg-opacity-10 border border-light border-opacity-25 rounded-pill px-3 py-2 mb-4">
+            <span class="indonesia-ribbon" aria-hidden="true"><span></span><span></span></span>
+            <span class="fw-bold">Untuk UMKM, sekolah, komunitas, dan developer lokal</span>
+          </div>
+          <h1 class="display-5 fw-bold mb-3">Satu dashboard untuk WhatsApp bisnis Indonesia.</h1>
+          <p class="lead text-white-50">Pantau nomor aktif, kirim campaign, cek pesan gagal, dan pastikan webhook berjalan.</p>
         </div>
-
-        <h6 class="text-uppercase text-white-50 fw-bold mb-4 small ls-1">
-          Paket Gratis Selamanya Termasuk:
-        </h6>
-
-        <ul class="list-unstyled feature-list mb-0">
-          <li class="mb-3 d-flex align-items-center">
-            <i class="fas fa-check-circle"></i> <span>Akses API WhatsApp</span>
-          </li>
-          <li class="mb-3 d-flex align-items-center">
-            <i class="fas fa-check-circle"></i>
-            <span>Akses Webhook WhatsApp</span>
-          </li>
-          <li class="mb-3 d-flex align-items-center">
-            <i class="fas fa-check-circle"></i>
-            <span>Akses Semua Fitur Utama</span>
-          </li>
-          <li class="d-flex align-items-center">
-            <i class="fas fa-check-circle"></i>
-            <span>Integrasi WordPress, WooCommerce, Google Sheets</span>
-          </li>
-        </ul>
+        <div class="auth-preview">
+          <div class="auth-preview-row">
+            <div>
+              <strong>Notifikasi order</strong><br>
+              <small class="text-white-50">Invoice dan status pembayaran</small>
+            </div>
+            <span class="text-success">sent</span>
+          </div>
+          <div class="auth-preview-row">
+            <div>
+              <strong>Promo pelanggan</strong><br>
+              <small class="text-white-50">Broadcast terjadwal</small>
+            </div>
+            <span class="text-warning">queued</span>
+          </div>
+          <div class="auth-preview-row">
+            <div>
+              <strong>Webhook toko online</strong><br>
+              <small class="text-white-50">order.paid</small>
+            </div>
+            <span class="text-success">200 OK</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>

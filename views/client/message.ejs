@@ -104,6 +104,7 @@
             <th>Waktu</th>
             <th>Nomor Tujuan</th>
             <th>Isi Pesan</th>
+            <th>Opt-In</th>
             <th>Tipe</th>
             <th>Status</th>
             <th style="width: 100px">Aksi</th>
@@ -245,7 +246,7 @@
 
       if (data.messages.length === 0) {
         tbody.innerHTML =
-          '<tr><td colspan="6" class="text-center">Tidak ada pesan terdaftar</td></tr>';
+          '<tr><td colspan="7" class="text-center">Tidak ada pesan terdaftar</td></tr>';
       } else {
         data.messages.forEach((message) => {
           const statusClass =
@@ -255,17 +256,41 @@
               failed: "danger",
               pending: "secondary",
             }[message.status] || "default";
+          const optInStatus = message.opt_in_status || "pending";
+          const optInClass =
+            {
+              approved: "success",
+              blocked: "danger",
+              pending: "warning text-dark",
+            }[optInStatus] || "secondary";
+          const optInText =
+            {
+              approved: "approved",
+              blocked: "menolak",
+              pending: "pending",
+            }[optInStatus] || optInStatus;
+          const optInTitle = message.opt_in_source
+            ? `Sumber: ${message.opt_in_source}`
+            : "Belum ada status persetujuan";
 
           const formattedTime = moment(
             message.updated_at || message.created_at
           ).format("YYYY/MM/DD HH:mm");
+          const safeNumber = escapeHtml(message.number);
+          const safeDeviceKey = escapeHtml(message.device_key);
+          const safeMessage = escapeHtml(message.message);
+          const safeType = escapeHtml(message.type);
+          const safeStatus = escapeHtml(message.status);
+          const safeOptInText = escapeHtml(optInText);
+          const safeOptInTitle = escapeHtml(optInTitle);
           const row = `
           <tr data-status="${message.status}">
             <td>${formattedTime}</td>
-            <td>${message.number} - ${message.device_key}</td>
-            <td>${message.message}</td>
-            <td>${message.type}</td>
-            <td><span class="badge bg-${statusClass}">${message.status}</span></td>
+            <td>${safeNumber} - ${safeDeviceKey}</td>
+            <td>${safeMessage}</td>
+            <td><span class="badge bg-${optInClass}" title="${safeOptInTitle}">${safeOptInText}</span></td>
+            <td>${safeType}</td>
+            <td><span class="badge bg-${statusClass}">${safeStatus}</span></td>
             <td>
               <button class="btn btn-sm btn-secondary btn-action" onclick="confirmRetry('${message.id}')">
                 <i class="fa fa-undo"></i>

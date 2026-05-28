@@ -1,0 +1,74 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="text-success mb-1"><i class="fa fa-mobile-alt me-2"></i>Devices</h4>
+    <div class="text-muted">Pantau semua device milik client.</div>
+  </div>
+</div>
+
+<div class="stat-card">
+  <form class="row g-2 align-items-end" method="get">
+    <div class="col-md-3">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-select">
+        <option value="">Semua</option>
+        <% ['connected','disconnected','connecting'].forEach(function(s) { %>
+          <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Cari user/device</label>
+      <input name="user" class="form-control" value="<%= filters.user || '' %>" placeholder="Nama user, email, device, nomor">
+    </div>
+    <div class="col-md-3">
+      <button class="btn btn-success w-100"><i class="fa fa-search me-1"></i> Filter</button>
+    </div>
+  </form>
+</div>
+
+<div class="stat-card">
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <% (summaryRows || []).forEach(function(row) { %>
+      <span class="badge bg-secondary"><%= row.status || 'unknown' %>: <%= row.cnt %></span>
+    <% }) %>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle">
+      <thead>
+        <tr>
+          <th>Device</th>
+          <th>User</th>
+          <th>Status</th>
+          <th>Kuota</th>
+          <th>Pesan</th>
+          <th>Webhook</th>
+          <th>Update</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (devices && devices.length) { %>
+          <% devices.forEach(function(d) { %>
+            <tr>
+              <td>
+                <strong><%= d.name || '-' %></strong><br>
+                <small class="text-muted"><%= d.phone || d.device_key || '-' %></small>
+              </td>
+              <td><%= d.user_name || '-' %><br><small class="text-muted"><%= d.user_email || '-' %></small></td>
+              <td><span class="badge <%= d.status === 'connected' ? 'bg-success' : 'bg-secondary' %>"><%= d.status || '-' %></span></td>
+              <td><%= d.limit_daily || 0 %>/hari<br><small class="text-muted"><%= d.life_time || 0 %> hari</small></td>
+              <td>
+                <span class="text-success"><%= d.sent_messages || 0 %></span> sent,
+                <span class="text-warning"><%= d.pending_messages || 0 %></span> pending,
+                <span class="text-danger"><%= d.failed_messages || 0 %></span> failed
+              </td>
+              <td><small><%= d.webhook_url || '-' %></small></td>
+              <td><small><%= d.updated_at ? new Date(d.updated_at).toLocaleString('id-ID') : '-' %></small></td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="7" class="text-muted">Tidak ada device.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>

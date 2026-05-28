@@ -106,9 +106,6 @@
     <div class="stat-card">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h5><i class="fa fa-layer-group me-2"></i>Sub Sessions (Backup)</h5>
-        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addSubSessionModal">
-          <i class="fa fa-plus-circle me-1"></i>Tambah Sub Session
-        </button>
       </div>
 
       <div class="table-responsive">
@@ -157,6 +154,12 @@
     </div>
     <% } %>
   </div>
+
+  <% if (!device.session_parent) { %>
+  <button class="floating-button" data-bs-toggle="modal" data-bs-target="#addSubSessionModal" title="Tambah Sub Session">
+    <i class="fas fa-plus"></i>
+  </button>
+  <% } %>
 
   <!-- Modal Tambah Sub Session -->
   <% if (!device.session_parent) { %>

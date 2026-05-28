@@ -16,6 +16,13 @@ module.exports = ({ sessionManager, userManager }) => {
     try {
       const { username, password } = req.body;
       const user = await userManager.loginUser(username, password);
+      const role = user && (user.role === "admin" || user.role === "client")
+        ? user.role
+        : null;
+
+      if (!role) {
+        throw new Error("Role akun tidak valid. Silakan hubungi admin.");
+      }
 
       // Simpan data pengguna ke dalam sesi
       req.session.user = {
@@ -23,11 +30,11 @@ module.exports = ({ sessionManager, userManager }) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        role: user.role,
+        role,
         api_key: user.api_key,
       };
 
-      res.redirect(`/${user.role}`);
+      res.redirect(`/${role}`);
     } catch (error) {
       res.render("auth/login", {
         path: req.originalUrl,
@@ -75,6 +82,11 @@ module.exports = ({ sessionManager, userManager }) => {
     } catch (error) {
       res.render("auth/register", {
         error: error.message || "Registrasi gagal",
+        name,
+        email,
+        phone,
+        ref,
+        path: req.originalUrl,
         title: "Registrasi - w@pi",
         layout: "layouts/main",
       });

@@ -7,8 +7,11 @@ module.exports = ({ messageManager, deviceManager }) => {
     try {
       const uid = req.session.user.uid;
       const apiKey = req.session.user.api_key;
+      await messageManager.syncOptInsFromInbox(uid);
       const optins = await messageManager.getOptIns(uid);
-      const devices = await deviceManager.getDevices(apiKey);
+      const devices = await deviceManager.getDevices(apiKey, {
+        includeShared: false,
+      });
 
       res.render("client/optin", {
         optins: optins || [],
@@ -109,6 +112,21 @@ module.exports = ({ messageManager, deviceManager }) => {
       res.json({
         status: result,
         message: result ? "Berhasil dihapus" : "Gagal menghapus",
+      });
+    } catch (error) {
+      console.error("Error removing opt-in:", error);
+      res.status(500).json({ status: false, message: error.message });
+    }
+  });
+
+  router.post("/remove/:id", authMiddleware, async (req, res) => {
+    try {
+      const uid = req.session.user.uid;
+      const id = req.params.id;
+      const result = await messageManager.removeOptIn(uid, id);
+      res.json({
+        status: result,
+        message: result ? "Berhasil dihapus" : "Data tidak ditemukan",
       });
     } catch (error) {
       console.error("Error removing opt-in:", error);

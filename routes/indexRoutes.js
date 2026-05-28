@@ -1,8 +1,5 @@
 const express = require("express");
-const crypto = require("crypto");
-const axios = require("axios");
 const router = express.Router();
-const duitkuConfig = require("../config-duitku"); // Konfigurasi Duitku
 
 module.exports = ({ sessionManager, billingManager }) => {
   /**
@@ -89,14 +86,6 @@ module.exports = ({ sessionManager, billingManager }) => {
       }
 
       const api_key = user.api_key;
-      const name = user.name || "";
-      const email = user.email || "";
-      const phone = user.phone || "";
-
-      // Ambil konfigurasi Duitku
-      const environment = duitkuConfig.environment || "sandbox";
-      const merchantCode = duitkuConfig.merchantCode;
-      const merchantKey = duitkuConfig.merchantKey;
 
       const { paymentAmount, paymentMethod, productDetail } = req.body || {};
       const amount = Number(paymentAmount || 0);
@@ -107,37 +96,8 @@ module.exports = ({ sessionManager, billingManager }) => {
       const pm = paymentMethod || "VA";
       const productDesc = productDetail || `Top-Up Saldo`;
 
-      // Generate unique order id and timestamp (Duitku expects seconds)
+      // Generate one order id for both local transaction and gateway invoice.
       const merchantOrderId = Date.now().toString();
-      const timestamp = Math.floor(Date.now() / 1000); // seconds
-
-      // compute signature (keep existing format but ensure string)
-      // Note: many Duitku integrations expect timestamp in seconds; using ms causes "Request Expired".
-      const signature = crypto
-        .createHash("sha256")
-        .update(`${merchantCode}${timestamp}${merchantKey}`)
-        .digest("hex");
-
-      const requestBody = {
-        paymentAmount: parseInt(amount),
-        merchantOrderId: merchantOrderId,
-        productDetails: productDesc,
-        paymentMethod: pm,
-        email: email,
-        phoneNumber: phone,
-        customerVaName: name,
-        callbackUrl: duitkuConfig.callbackUrl,
-        returnUrl: duitkuConfig.returnUrl,
-        expiryPeriod: 10,
-      };
-
-      const headers = {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "x-duitku-signature": signature,
-        "x-duitku-timestamp": String(timestamp),
-        "x-duitku-merchantcode": merchantCode,
-      };
 
       // Use helper that wraps duitku-nodejs to create invoice (handles signature/timestamp)
       const { createDuitkuInvoice } = require("../lib/DuitKu");

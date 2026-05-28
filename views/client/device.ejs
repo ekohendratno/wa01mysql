@@ -2,6 +2,13 @@
   <h4 class="text-success">
     <i class="fa fa-mobile-alt me-2"></i>Manajemen Perangkat
   </h4>
+  <button
+    class="btn btn-outline-success"
+    data-bs-toggle="modal"
+    data-bs-target="#formTerimaShare"
+  >
+    <i class="fa fa-link me-1"></i> Terima Share
+  </button>
 </div>
 
 <!-- Statistik Perangkat -->
@@ -59,6 +66,9 @@
               <td><code><%= device.device_key %></code></td>
               <td>
                 <strong><%= device.name %></strong>
+                <% if (device.access_type === 'shared') { %>
+                <br /><span class="badge bg-primary">Shared dari <%= device.owner_name || 'owner' %></span>
+                <% } %>
                 <% if (subDevices.some(s => s.session_parent ===
                 device.device_key)) { %>
                 <br /><small class="text-info"
@@ -86,7 +96,17 @@
                 </span>
               </td>
               <td>
-                <% if (['connecting', 'disconnected'].includes(device.status)) { %>
+                <% if (device.access_type === 'shared') { %>
+                <button
+                  class="btn btn-sm btn-info btn-action"
+                  onclick="addDeviceSession('<%= device.device_key %>')"
+                  data-bs-toggle="modal"
+                  data-bs-target="#formKirimPesan"
+                  title="Kirim Pesan"
+                >
+                  <i class="fa fa-envelope"></i>
+                </button>
+                <% } else if (['connecting', 'disconnected'].includes(device.status)) { %>
                 <a
                   href="/client/device/status?deviceKey=<%= device.device_key %>"
                   class="btn btn-sm btn-success btn-action"
@@ -113,6 +133,7 @@
                 </button>
                 <% } %>
 
+                <% if (device.access_type !== 'shared') { %>
                 <a
                   title="Manajemen Grup"
                   href="/client/device/group?deviceKey=<%= device.device_key %>"
@@ -131,6 +152,14 @@
                 </button>
                 <% } %>
 
+                <button
+                  class="btn btn-sm btn-outline-primary btn-action"
+                  onclick="openShareDevice('<%= device.device_key %>', '<%= (device.name || '').replace(/'/g, '&#39;') %>')"
+                  title="Bagikan Perangkat"
+                >
+                  <i class="fa fa-share-nodes"></i>
+                </button>
+
                 <a
                   href="javascript:void()"
                   title="Hapus Perangkat"
@@ -139,6 +168,7 @@
                 >
                   <i class="fa fa-trash"></i>
                 </a>
+                <% } %>
               </td>
             </tr>
 
@@ -323,6 +353,60 @@
       </ul>
     </div>
   </div>
+
+  <div class="col-md-12">
+    <div class="stat-card">
+      <h5 class="mb-3"><i class="fa fa-share-nodes me-2"></i>Device yang Dibagikan</h5>
+      <p class="text-muted small mb-3">
+        Kode undangan hanya memberi akses kirim pesan. Penerima tidak bisa scan QR,
+        disconnect, menghapus, atau mengubah webhook device owner.
+      </p>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Device</th>
+              <th>Kode</th>
+              <th>Penerima</th>
+              <th>Status</th>
+              <th>Kedaluwarsa</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (deviceShares && deviceShares.length) { %>
+              <% deviceShares.forEach(function(share) { %>
+                <tr>
+                  <td><%= share.device_name || '-' %><br><small class="text-muted"><%= share.device_key %></small></td>
+                  <td><code><%= share.invite_code %></code></td>
+                  <td>
+                    <% if (share.shared_name) { %>
+                      <%= share.shared_name %><br><small class="text-muted"><%= share.shared_email || '-' %></small>
+                    <% } else { %>
+                      <span class="text-muted">Belum diterima</span>
+                    <% } %>
+                  </td>
+                  <td><span class="badge bg-secondary"><%= share.status %></span></td>
+                  <td><small><%= share.expires_at ? new Date(share.expires_at).toLocaleString('id-ID') : '-' %></small></td>
+                  <td>
+                    <% if (share.status !== 'revoked') { %>
+                      <button class="btn btn-sm btn-outline-danger" onclick="revokeShare('<%= share.id %>')">
+                        <i class="fa fa-ban"></i>
+                      </button>
+                    <% } else { %>
+                      <span class="text-muted">-</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="6" class="text-muted text-center">Belum ada device yang dibagikan.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <button
@@ -390,6 +474,83 @@
           <a class="btn btn-secondary" data-bs-dismiss="modal">Batalkan</a>
           <button id="tambahDeviceButton" class="btn btn-success" type="submit">
             Tambah
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Share Device Modal -->
+<div id="formShareDevice" class="modal" style="display: none">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="shareDeviceForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Bagikan Perangkat</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="shareDeviceKey" />
+          <div class="alert alert-info small">
+            Penerima kode hanya dapat memakai device untuk kirim pesan dari akunnya.
+          </div>
+          <div class="mb-3">
+            <label>Device</label>
+            <input type="text" id="shareDeviceName" class="form-control" readonly />
+          </div>
+          <div class="mb-3">
+            <label>Masa berlaku kode</label>
+            <select id="shareExpiresInDays" class="form-control">
+              <option value="1">1 hari</option>
+              <option value="7" selected>7 hari</option>
+              <option value="14">14 hari</option>
+              <option value="30">30 hari</option>
+            </select>
+          </div>
+          <div id="shareResult" class="d-none">
+            <label>Kode Undangan</label>
+            <div class="input-group">
+              <input type="text" id="shareInviteCode" class="form-control" readonly />
+              <button type="button" class="btn btn-outline-secondary" onclick="copyShareCode()">
+                <i class="fa fa-copy"></i>
+              </button>
+            </div>
+            <small class="text-muted">Bagikan kode ini ke akun penerima.</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+          <button id="createShareButton" class="btn btn-success" type="submit">
+            Buat Kode
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Accept Share Modal -->
+<div id="formTerimaShare" class="modal" style="display: none">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="acceptShareForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Terima Share Device</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small">
+            Masukkan kode undangan dari pemilik device. Setelah diterima,
+            device akan muncul di daftar perangkat Anda sebagai shared device.
+          </p>
+          <label>Kode Undangan</label>
+          <input type="text" id="acceptInviteCode" class="form-control text-uppercase" placeholder="Contoh: A1B2C3D4E5" required />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button id="acceptShareButton" class="btn btn-success" type="submit">
+            Terima
           </button>
         </div>
       </form>
@@ -564,7 +725,15 @@
         if (!result.status) {
           showToast(result.message, "danger");
           if (result.redirect) {
-            window.location.href = result.redirect;
+            // Jangan langsung redirect (toast tidak terlihat).
+            // Tampilkan pesan dulu dan biarkan user memilih lanjut ke billing atau tetap di halaman.
+            setTimeout(() => {
+              const go = confirm(
+                (result.message || "Saldo tidak cukup.") +
+                  "\n\nKlik OK untuk menuju halaman Billing/Top Up, atau Cancel untuk tetap di halaman ini.",
+              );
+              if (go) window.location.href = result.redirect;
+            }, 350);
           }
         } else {
           showToast("Device berhasil ditambahkan.", "success");
@@ -576,7 +745,13 @@
         if (response && response.message) {
           showToast(response.message, "danger");
           if (response.redirect) {
-            window.location.href = response.redirect;
+            setTimeout(() => {
+              const go = confirm(
+                (response.message || "Saldo tidak cukup.") +
+                  "\n\nKlik OK untuk menuju halaman Billing/Top Up, atau Cancel untuk tetap di halaman ini.",
+              );
+              if (go) window.location.href = response.redirect;
+            }, 350);
           }
         } else {
           showToast("Terjadi kesalahan saat menambahkan device.", "danger");
@@ -587,6 +762,130 @@
       },
     });
   });
+
+  function openShareDevice(deviceKey, deviceName) {
+    $("#shareDeviceKey").val(deviceKey);
+    $("#shareDeviceName").val(`${deviceName || "-"} (${deviceKey})`);
+    $("#shareExpiresInDays").val("7");
+    $("#shareResult").addClass("d-none");
+    $("#shareInviteCode").val("");
+
+    const modal = new bootstrap.Modal(document.getElementById("formShareDevice"));
+    modal.show();
+  }
+
+  $("#shareDeviceForm").submit(function (event) {
+    event.preventDefault();
+
+    const button = $(this).find('button[type="submit"]');
+    button.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Membuat...');
+
+    $.ajax({
+      url: "/client/device/share/create",
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({
+        deviceKey: $("#shareDeviceKey").val(),
+        expiresInDays: $("#shareExpiresInDays").val(),
+      }),
+      success: function (result) {
+        if (!result.status) {
+          showToast(result.message || "Gagal membuat kode share.", "danger");
+          return;
+        }
+
+        const inviteCode = result.data?.invite_code || result.inviteCode || "";
+        if (!inviteCode) {
+          showToast("Kode share berhasil dibuat, tapi response tidak berisi kode.", "danger");
+          return;
+        }
+
+        $("#shareInviteCode").val(inviteCode);
+        $("#shareResult").removeClass("d-none");
+        showToast("Kode share berhasil dibuat.", "success");
+      },
+      error: function (xhr) {
+        const message = xhr.responseJSON?.message || "Gagal membuat kode share.";
+        showToast(message, "danger");
+      },
+      complete: function () {
+        button.prop("disabled", false).html('<i class="fa fa-key"></i> Buat Kode');
+      },
+    });
+  });
+
+  function copyShareCode() {
+    const code = $("#shareInviteCode").val();
+    if (!code) return;
+
+    navigator.clipboard.writeText(code)
+      .then(() => showToast("Kode share disalin.", "success"))
+      .catch(() => {
+        $("#shareInviteCode").trigger("select");
+        document.execCommand("copy");
+        showToast("Kode share disalin.", "success");
+      });
+  }
+
+  $("#acceptShareForm").submit(function (event) {
+    event.preventDefault();
+
+    const inviteCode = $("#acceptInviteCode").val().trim();
+    if (!inviteCode) {
+      showToast("Kode undangan wajib diisi.", "danger");
+      return;
+    }
+
+    const button = $(this).find('button[type="submit"]');
+    button.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Memproses...');
+
+    $.ajax({
+      url: "/client/device/share/accept",
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({ inviteCode }),
+      success: function (result) {
+        if (!result.status) {
+          showToast(result.message || "Kode share tidak bisa digunakan.", "danger");
+          return;
+        }
+
+        showToast("Device shared berhasil ditambahkan ke akun Anda.", "success");
+        setTimeout(() => window.location.reload(), 500);
+      },
+      error: function (xhr) {
+        const message = xhr.responseJSON?.message || "Kode share tidak bisa digunakan.";
+        showToast(message, "danger");
+      },
+      complete: function () {
+        button.prop("disabled", false).html('<i class="fa fa-check"></i> Terima Share');
+      },
+    });
+  });
+
+  function revokeShare(shareId) {
+    if (!confirm("Cabut akses share device ini?")) return;
+
+    $.ajax({
+      url: "/client/device/share/revoke",
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({ shareId }),
+      success: function (result) {
+        if (!result.status) {
+          showToast(result.message || "Share tidak ditemukan.", "danger");
+          return;
+        }
+
+        showToast("Akses share berhasil dicabut.", "success");
+        setTimeout(() => window.location.reload(), 500);
+      },
+      error: function (xhr) {
+        const message = xhr.responseJSON?.message || "Gagal mencabut akses share.";
+        showToast(message, "danger");
+      },
+    });
+  }
 
   // Fungsi untuk mengonfirmasi penghapusan perangkat
   async function confirmDelete(deviceKey) {

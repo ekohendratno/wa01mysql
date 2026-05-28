@@ -1,0 +1,103 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="text-success">
+    <i class="fa fa-code me-2"></i>Developer API
+  </h4>
+  <a href="/client/dokumentasi" class="btn btn-outline-success">
+    <i class="fa fa-book me-1"></i> Dokumentasi
+  </a>
+</div>
+
+<div class="row">
+  <div class="col-lg-5">
+    <div class="stat-card">
+      <h5 class="mb-3">API Key</h5>
+      <div class="input-group mb-3">
+        <input id="apiKeyInput" class="form-control" value="<%= apiKey %>" readonly />
+        <button class="btn btn-outline-secondary" onclick="copyApiKey()">
+          <i class="fa fa-copy"></i>
+        </button>
+      </div>
+      <button class="btn btn-danger" onclick="regenerateKey()">
+        <i class="fa fa-rotate me-1"></i> Regenerate API Key
+      </button>
+      <p class="text-muted small mt-3 mb-0">Regenerate key akan membuat integrasi lama berhenti sampai key baru dipakai.</p>
+    </div>
+
+    <div class="stat-card">
+      <h5 class="mb-3">Device Key</h5>
+      <% if (!devices || devices.length === 0) { %>
+      <p class="text-muted mb-0">Belum ada device.</p>
+      <% } else { %>
+      <div class="list-group">
+        <% devices.forEach((device) => { %>
+        <div class="list-group-item">
+          <strong><%= device.name || "Tanpa Nama" %></strong><br />
+          <code><%= device.device_key %></code>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="stat-card">
+      <h5 class="mb-3">Contoh Request</h5>
+      <pre class="bg-dark text-white p-3 rounded"><code>curl --location '<%= baseUrl %>/v1/message' \
+--header 'Content-Type: application/json' \
+--data '{
+  "apiKey": "<%= apiKey %>",
+  "deviceKey": "<%= devices && devices[0] ? devices[0].device_key : "DEVICE_KEY" %>",
+  "to": "6281234567890",
+  "text": "Halo dari w@pi",
+  "isGroup": 0
+}'</code></pre>
+    </div>
+
+    <div class="stat-card">
+      <h5 class="mb-3">Endpoint Cepat</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <tbody>
+            <tr>
+              <td><span class="badge bg-primary">POST</span></td>
+              <td><code><%= baseUrl %>/v1/message</code></td>
+              <td>Daftarkan pesan ke antrean.</td>
+            </tr>
+            <tr>
+              <td><span class="badge bg-primary">POST</span></td>
+              <td><code><%= baseUrl %>/v1/optin</code></td>
+              <td>Tambahkan status opt-in nomor.</td>
+            </tr>
+            <tr>
+              <td><span class="badge bg-success">GET</span></td>
+              <td><code><%= baseUrl %>/session?key=DEVICE_KEY</code></td>
+              <td>Cek status session.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function copyApiKey() {
+    const input = document.getElementById("apiKeyInput");
+    input.select();
+    navigator.clipboard.writeText(input.value);
+    showToast("API key disalin.", "success");
+  }
+
+  async function regenerateKey() {
+    if (!confirm("Regenerate API key sekarang? Integrasi lama perlu diperbarui.")) return;
+    const response = await fetch("/client/developer/regenerate-key", { method: "POST" });
+    const result = await response.json();
+    if (result.status) {
+      document.getElementById("apiKeyInput").value = result.apiKey;
+      showToast("API key baru dibuat.", "success");
+    } else {
+      showToast(result.message || "Gagal regenerate API key", "danger");
+    }
+  }
+</script>

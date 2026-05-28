@@ -52,17 +52,18 @@
         if (res.contacts && res.contacts.length > 0) {
           let html = "";
           res.contacts.forEach((c) => {
+            const number = c.phone || c.jid.split("@")[0];
             html += `
                             <tr>
-                                <td><strong>${c.name || "Tanpa Nama"}</strong></td>
+                                <td><strong>${escapeHtml(c.name || "Tanpa Nama")}</strong></td>
                                 <td>
-                                    <span class="badge bg-light text-dark border">${c.phone || c.jid.split("@")[0]}</span>
-                                    <br><small class="text-muted">${c.jid}</small>
+                                    <span class="badge bg-light text-dark border">${escapeHtml(number)}</span>
+                                    <br><small class="text-muted">${escapeHtml(c.jid)}</small>
                                 </td>
-                                <td><span class="badge bg-info text-white">${c.device_name || "System"}</span></td>
+                                <td><span class="badge bg-info text-white">${escapeHtml(c.device_name || "System")}</span></td>
                                 <td><small class="text-muted">${new Date(c.updated_at).toLocaleString("id-ID")}</small></td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-success" onclick="sendMessageTo('${c.phone || c.jid.split("@")[0]}')">
+                                    <button class="btn btn-sm btn-outline-success" onclick="sendMessageTo('${encodeURIComponent(number)}')">
                                         <i class="fa fa-paper-plane"></i>
                                     </button>
                                 </td>
@@ -115,7 +116,7 @@
   }
 
   function sendMessageTo(number) {
-    window.location.href = `/client/message?to=${number}`;
+    window.location.href = `/client/message?to=${encodeURIComponent(decodeURIComponent(number))}`;
   }
 
   $(document).ready(function () {

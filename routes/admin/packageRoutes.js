@@ -10,7 +10,7 @@ module.exports = (billingManager, pool) => {
             let packages = [];
 
             try {
-                packages = await billingManager.getPackages();
+                packages = await billingManager.getPackages(true);
             } catch (error) {
                 console.error("Error fetching packages:", error);
             }
@@ -31,7 +31,10 @@ module.exports = (billingManager, pool) => {
         try {
             const id = Number(req.params.id || 0);
             if (!id) return res.status(400).json({ status: false, message: 'Invalid id' });
-            const [rows] = await pool.query('SELECT * FROM packages WHERE id = ? LIMIT 1', [id]);
+            const [rows] = await pool.query(
+                'SELECT p.*, p.life_time AS duration, p.limit_daily AS message_limit FROM packages p WHERE p.id = ? LIMIT 1',
+                [id]
+            );
             if (!rows || rows.length === 0) return res.status(404).json({ status: false, message: 'Not found' });
             return res.json({ status: true, data: rows[0] });
         } catch (err) {
@@ -46,8 +49,8 @@ module.exports = (billingManager, pool) => {
             const id = Number(req.body.id || 0);
             const name = String(req.body.name || '').trim();
             const price = parseFloat(req.body.price || 0) || 0;
-            const duration = parseInt(req.body.duration || 0) || 0;
-            const message_limit = parseInt(req.body.message_limit || 0) || 0;
+            const lifeTime = parseInt(req.body.duration || req.body.life_time || 0) || 0;
+            const limitDaily = parseInt(req.body.message_limit || req.body.limit_daily || 0) || 0;
             const description = String(req.body.description || '').trim();
             const recomended = req.body.recomended ? 1 : 0;
             const active = req.body.active ? 1 : 0;
@@ -56,11 +59,11 @@ module.exports = (billingManager, pool) => {
 
             if (id > 0) {
                 // update
-                await pool.query('UPDATE packages SET name = ?, price = ?, duration = ?, description = ?, recomended = ?, message_limit = ?, active = ?, updated_at = NOW() WHERE id = ?', [name, price, duration, description, recomended, message_limit, active, id]);
+                await pool.query('UPDATE packages SET name = ?, price = ?, life_time = ?, description = ?, recomended = ?, limit_daily = ?, active = ?, updated_at = NOW() WHERE id = ?', [name, price, lifeTime, description, recomended, limitDaily, active, id]);
                 return res.json({ status: true, message: 'Package updated' });
             } else {
                 // insert
-                await pool.query('INSERT INTO packages (name, price, duration, description, recomended, message_limit, active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())', [name, price, duration, description, recomended, message_limit, active]);
+                await pool.query('INSERT INTO packages (name, price, life_time, description, recomended, limit_daily, active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())', [name, price, lifeTime, description, recomended, limitDaily, active]);
                 return res.json({ status: true, message: 'Package created' });
             }
         } catch (err) {

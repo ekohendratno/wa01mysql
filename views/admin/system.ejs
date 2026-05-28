@@ -1,0 +1,283 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="text-success mb-1"><i class="fa fa-heart-pulse me-2"></i>System Health</h4>
+    <div class="text-muted">Status runtime, database, antrean, webhook, dan konfigurasi penting.</div>
+  </div>
+  <a href="/health" target="_blank" class="btn btn-outline-success btn-sm">
+    <i class="fa fa-up-right-from-square me-1"></i> JSON health
+  </a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card h-100">
+      <h5>Database</h5>
+      <h2 class="<%= health.database === 'connected' ? 'text-success' : 'text-danger' %>"><%= health.database %></h2>
+      <small class="text-muted"><%= health.databaseVersion || '-' %></small>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card h-100">
+      <h5>Sessions</h5>
+      <h2><%= health.activeSessions %>/<%= health.loadedSessions %></h2>
+      <small class="text-muted">Connected / loaded</small>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card h-100">
+      <h5>Queue Pending</h5>
+      <h2 class="<%= health.queuePending > 100 ? 'text-warning' : '' %>"><%= health.queuePending %></h2>
+      <small class="text-muted"><%= health.queueProcessing %> processing</small>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card h-100">
+      <h5>Memory RSS</h5>
+      <h2><%= health.memoryUsedMb %> MB</h2>
+      <small class="text-muted"><%= health.freeMemoryMb %> MB free dari <%= health.totalMemoryMb %> MB</small>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-5">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-lightbulb me-2"></i>Saran Sistem</h5>
+      <ul class="list-group list-group-flush">
+        <% (health.recommendations || []).forEach(function(item) { %>
+          <li class="list-group-item px-0"><%= item %></li>
+        <% }) %>
+      </ul>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-sliders me-2"></i>Environment Check</h5>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Status</th>
+              <th>Detail</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% (health.envChecks || []).forEach(function(check) { %>
+              <tr>
+                <td><code><%= check.name %></code></td>
+                <td><span class="badge <%= check.ok ? 'bg-success' : 'bg-warning text-dark' %>"><%= check.ok ? 'OK' : 'Perlu cek' %></span></td>
+                <td><%= check.detail %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-4">
+    <div class="stat-card h-100">
+      <h5 class="mb-3">Runtime</h5>
+      <dl class="row mb-0">
+        <dt class="col-5">Host</dt>
+        <dd class="col-7"><%= health.host %></dd>
+        <dt class="col-5">Node</dt>
+        <dd class="col-7"><%= health.nodeVersion %></dd>
+        <dt class="col-5">Platform</dt>
+        <dd class="col-7"><%= health.platform %></dd>
+        <dt class="col-5">Environment</dt>
+        <dd class="col-7"><%= health.nodeEnv %></dd>
+        <dt class="col-5">Port</dt>
+        <dd class="col-7"><%= health.serverPort %></dd>
+        <dt class="col-5">Server URL</dt>
+        <dd class="col-7"><%= health.serverUrl || '-' %></dd>
+        <dt class="col-5">Uptime</dt>
+        <dd class="col-7"><%= Math.floor((health.uptime || 0) / 3600) %> jam <%= Math.floor(((health.uptime || 0) % 3600) / 60) %> menit</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="stat-card h-100">
+      <h5 class="mb-3">Database Detail</h5>
+      <dl class="row mb-0">
+        <dt class="col-5">DB Time</dt>
+        <dd class="col-7"><%= health.databaseTime ? new Date(health.databaseTime).toLocaleString('id-ID') : '-' %></dd>
+        <dt class="col-5">SQL Mode</dt>
+        <dd class="col-7"><small><%= health.sqlMode || '-' %></small></dd>
+        <dt class="col-5">Oldest Queue</dt>
+        <dd class="col-7"><%= health.queueOldestPending ? new Date(health.queueOldestPending).toLocaleString('id-ID') : '-' %></dd>
+        <dt class="col-5">Webhook Failed</dt>
+        <dd class="col-7"><%= health.webhookFailed24h %> dalam 24 jam</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="stat-card h-100">
+      <h5 class="mb-3">Distribusi Cepat</h5>
+      <div class="mb-3">
+        <strong>Device</strong>
+        <div class="mt-2">
+          <% (health.deviceStatus || []).forEach(function(row) { %>
+            <span class="badge bg-secondary me-1"><%= row.status || 'unknown' %>: <%= row.cnt %></span>
+          <% }) %>
+        </div>
+      </div>
+      <div class="mb-3">
+        <strong>Messages</strong>
+        <div class="mt-2">
+          <% (health.messageStatus || []).forEach(function(row) { %>
+            <span class="badge bg-secondary me-1"><%= row.status || 'unknown' %>: <%= row.cnt %></span>
+          <% }) %>
+        </div>
+      </div>
+      <div>
+        <strong>Transactions</strong>
+        <div class="mt-2">
+          <% (health.transactionStatus || []).forEach(function(row) { %>
+            <span class="badge bg-secondary me-1"><%= row.status || 'unknown' %>: <%= row.cnt %></span>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-6">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Top User 30 Hari</h5>
+        <a href="/admin/users" class="btn btn-sm btn-outline-secondary">Users</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Total</th>
+              <th>Sent</th>
+              <th>Failed</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.topUsers && health.topUsers.length) { %>
+              <% health.topUsers.forEach(function(user) { %>
+                <tr>
+                  <td><%= user.name || '-' %><br><small class="text-muted"><%= user.email || '-' %></small></td>
+                  <td><%= user.total_messages || 0 %></td>
+                  <td class="text-success"><%= user.sent_messages || 0 %></td>
+                  <td class="text-danger"><%= user.failed_messages || 0 %></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="4" class="text-muted">Belum ada aktivitas user.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Pesan Failed Terbaru</h5>
+        <a href="/admin/messages?status=failed" class="btn btn-sm btn-outline-secondary">Failed</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>User / Device</th>
+              <th>Nomor</th>
+              <th>Response</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.recentFailures && health.recentFailures.length) { %>
+              <% health.recentFailures.forEach(function(row) { %>
+                <tr>
+                  <td><small><%= row.created_at ? new Date(row.created_at).toLocaleString('id-ID') : '-' %></small></td>
+                  <td><%= row.user_name || '-' %><br><small class="text-muted"><%= row.device_name || '-' %></small></td>
+                  <td><%= row.number || '-' %></td>
+                  <td><small><%= (row.response || '').length > 80 ? (row.response.substring(0, 80) + '...') : (row.response || '-') %></small></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="4" class="text-muted">Tidak ada pesan failed terbaru.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Webhook Failed Terbaru</h5>
+        <a href="/admin/webhooks?status=failed" class="btn btn-sm btn-outline-secondary">Webhook</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Event</th>
+              <th>Error</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.recentWebhookFailures && health.recentWebhookFailures.length) { %>
+              <% health.recentWebhookFailures.forEach(function(row) { %>
+                <tr>
+                  <td><small><%= row.created_at ? new Date(row.created_at).toLocaleString('id-ID') : '-' %></small></td>
+                  <td><%= row.event || '-' %><br><small class="text-muted"><%= row.user_name || '-' %> / <%= row.device_name || '-' %></small></td>
+                  <td><small><%= row.http_status ? ('HTTP ' + row.http_status + ' - ') : '' %><%= (row.error_message || '').length > 80 ? (row.error_message.substring(0, 80) + '...') : (row.error_message || '-') %></small></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="3" class="text-muted">Tidak ada webhook failed terbaru.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="stat-card h-100">
+      <h5 class="mb-3">Database Tables</h5>
+      <div class="table-responsive" style="max-height: 420px">
+        <table class="table table-sm table-bordered align-middle">
+          <thead>
+            <tr>
+              <th>Table</th>
+              <th>Rows</th>
+              <th>Data</th>
+              <th>Index</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.tables && health.tables.length) { %>
+              <% health.tables.forEach(function(t) { %>
+                <tr>
+                  <td><%= t.TABLE_NAME || t.table_name %></td>
+                  <td><%= t.TABLE_ROWS || t.table_rows || 0 %></td>
+                  <td><%= Math.round(((t.DATA_LENGTH || t.data_length || 0) / 1024)) %> KB</td>
+                  <td><%= Math.round(((t.INDEX_LENGTH || t.index_length || 0) / 1024)) %> KB</td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="4" class="text-muted">Tidak ada data tabel.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

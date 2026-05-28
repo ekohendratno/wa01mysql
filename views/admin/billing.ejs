@@ -75,8 +75,141 @@
   </div>
 </div>
 
+<button class="floating-button" data-bs-toggle="modal" data-bs-target="#sendBalanceModal" title="Kirim Saldo">
+  <i class="fas fa-plus"></i>
+</button>
+
+<div id="sendBalanceModal" class="modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="sendBalanceForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Kirim Saldo ke Pengguna</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info small">
+            Saldo akan langsung masuk ke akun pengguna dan dicatat sebagai transaksi success dari admin.
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="balanceUserSearch">Pengguna</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fa fa-search"></i></span>
+              <input id="balanceUserSearch" type="search" class="form-control" placeholder="Cari nama, email, atau nomor telepon..." autocomplete="off" />
+            </div>
+            <select id="balanceUserUid" class="form-select mt-2" required>
+              <option value="">Memuat pengguna...</option>
+            </select>
+            <small id="balanceUserHint" class="text-muted">Cari lalu pilih pengguna dari selectbox.</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="balanceAmount">Nominal</label>
+            <div class="input-group">
+              <span class="input-group-text">Rp</span>
+              <input id="balanceAmount" type="number" min="1" step="1" class="form-control" placeholder="50000" required />
+            </div>
+          </div>
+          <div class="mb-0">
+            <label class="form-label" for="balanceNote">Catatan</label>
+            <input id="balanceNote" type="text" class="form-control" maxlength="120" placeholder="Bonus, koreksi saldo, pembayaran manual..." />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button id="sendBalanceButton" type="submit" class="btn btn-success">
+            <i class="fa fa-paper-plane me-1"></i> Kirim Saldo
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
   $(document).ready(function () {
+    let balanceUsers = [];
+
+    function formatRupiah(value) {
+      return new Intl.NumberFormat("id-ID").format(Number(value || 0));
+    }
+
+    function getUserLabel(user) {
+      const phone = user.phone ? ` | ${user.phone}` : "";
+      return `${user.name || user.email} - ${user.email}${phone}`;
+    }
+
+    function renderUserOptions(keyword = "") {
+      const select = $("#balanceUserUid");
+      const query = keyword.toLowerCase().trim();
+      const filteredUsers = balanceUsers.filter(function (user) {
+        const searchable = [
+          user.name,
+          user.email,
+          user.phone,
+          user.uid,
+        ].join(" ").toLowerCase();
+        return !query || searchable.includes(query);
+      });
+
+      const currentValue = select.val();
+      select.empty();
+
+      if (!filteredUsers.length) {
+        select.append('<option value="">Pengguna tidak ditemukan</option>');
+        $("#balanceUserHint").text("Tidak ada pengguna sesuai pencarian.");
+        return;
+      }
+
+      select.append('<option value="">Pilih pengguna...</option>');
+      filteredUsers.forEach(function (user) {
+        const status = Number(user.active) === 1 ? "Aktif" : "Nonaktif";
+        select.append(`
+          <option value="${user.uid}">
+            ${escapeHtml(getUserLabel(user))} | ${status} | Saldo Rp ${formatRupiah(user.balance)}
+          </option>
+        `);
+      });
+
+      if (currentValue && filteredUsers.some((user) => String(user.uid) === String(currentValue))) {
+        select.val(currentValue);
+      }
+
+      updateSelectedUserHint();
+    }
+
+    function updateSelectedUserHint() {
+      const uid = $("#balanceUserUid").val();
+      const selected = balanceUsers.find((user) => String(user.uid) === String(uid));
+      if (!selected) {
+        $("#balanceUserHint").text("Cari lalu pilih pengguna dari selectbox.");
+        return;
+      }
+
+      const status = Number(selected.active) === 1 ? "Aktif" : "Nonaktif";
+      $("#balanceUserHint").text(`Terpilih: ${selected.name || selected.email} | ${status} | Saldo Rp ${formatRupiah(selected.balance)}`);
+    }
+
+    function loadUsers() {
+      $.ajax({
+        url: "/admin/billing/users",
+        method: "GET",
+        success: function (response) {
+          if (!response.success || !response.users || response.users.length === 0) {
+            balanceUsers = [];
+            renderUserOptions();
+            return;
+          }
+
+          balanceUsers = response.users;
+          renderUserOptions($("#balanceUserSearch").val());
+        },
+        error: function () {
+          balanceUsers = [];
+          $("#balanceUserHint").text("Gagal memuat pengguna.");
+        },
+      });
+    }
+
     function loadBillingData(status = "all") {
       $.ajax({
         url: "/admin/billing/data",
@@ -88,8 +221,8 @@
             response.data;
 
           // Update saldo dan pemakaian
-          $(".stat-card:eq(0) h2").text(`Rp ${balance.toLocaleString()}`);
-          $(".stat-card:eq(1) h2").text(`Rp ${totalUsed.toLocaleString()}`);
+          $(".stat-card:eq(0) h2").text(`Rp ${formatRupiah(balance)}`);
+          $(".stat-card:eq(1) h2").text(`Rp ${formatRupiah(totalUsed)}`);
           $(".stat-card:eq(2) h2").text(`${totalPending} Pending`);
 
           const tbody = $("#transaksiTable tbody");
@@ -106,8 +239,8 @@
             const badge = getStatusBadge(tx.status);
             tbody.append(`
               <tr>
-                <td>${tx.formattedDate}</td>
-                <td>${tx.description}</td>
+                <td>${escapeHtml(tx.formattedDate)}</td>
+                <td>${escapeHtml(tx.description)}</td>
                 <td>${tx.amountFormatted}</td>
                 <td>${badge}</td>
               </tr>`);
@@ -133,13 +266,69 @@
     }
 
     // Tombol filter tab
-    $(".filter-btn").on("click", function () {
+    $(".filter-btn").on("click", function (event) {
+      event.preventDefault();
       $(".filter-btn").removeClass("active");
       $(this).addClass("active");
       const status = $(this).data("status");
       loadBillingData(status);
     });
+
+    $("#sendBalanceForm").on("submit", function (event) {
+      event.preventDefault();
+
+      const uid = $("#balanceUserUid").val();
+      const amount = $("#balanceAmount").val();
+      const note = $("#balanceNote").val().trim();
+
+      if (!uid || !amount || Number(amount) <= 0) {
+        alert("Pilih pengguna dan isi nominal saldo.");
+        return;
+      }
+
+      const button = $("#sendBalanceButton");
+      button.prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-1"></i> Mengirim...');
+
+      $.ajax({
+        url: "/admin/billing/send-balance",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ uid, amount, note }),
+        success: function (response) {
+          if (!response.success) {
+            alert(response.message || "Gagal mengirim saldo.");
+            return;
+          }
+
+          alert(response.message || "Saldo berhasil dikirim.");
+          $("#sendBalanceForm")[0].reset();
+          $("#balanceUserSearch").val("");
+          renderUserOptions("");
+          const modalEl = document.getElementById("sendBalanceModal");
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          if (modal) modal.hide();
+          loadUsers();
+          loadBillingData($(".filter-btn.active").data("status") || "all");
+        },
+        error: function (xhr) {
+          alert(xhr.responseJSON?.message || "Gagal mengirim saldo.");
+        },
+        complete: function () {
+          button.prop("disabled", false).html('<i class="fa fa-paper-plane me-1"></i> Kirim Saldo');
+        },
+      });
+    });
+
+    $("#balanceUserSearch").on("input", function () {
+      renderUserOptions($(this).val());
+    });
+
+    $("#balanceUserUid").on("change", updateSelectedUserHint);
+
+    $("#sendBalanceModal").on("show.bs.modal", loadUsers);
+
     // Initial load
+    loadUsers();
     loadBillingData("all");
   });
 </script>

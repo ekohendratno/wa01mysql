@@ -1,228 +1,384 @@
-<!-- Baris Pertama -->
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="stat-card">
-            <h5>Saldo</h5>
-            <h2>Rp <%= (countSummary.balance || 0).toLocaleString() %></h2>
-            <small class="text-muted">
-                Update <%= countSummary && countSummary.updatedAt ? moment(countSummary.updatedAt).fromNow() : "Belum tersedia" %>
-            </small>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="stat-card">
-            <h5>Perangkat Aktif</h5>
-            <h2><%= countDevice || 0 %> Device</h2>
-            <small class="text-muted">
-                Terakhir aktif: <%= countDeviceLast && countDeviceLast.last_active ? countDeviceLast.last_active : "-" %>
-            </small>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="stat-card">
-            <h5>Total Pesan</h5>
-            <h2>
-                <%= (countMessage ? (countMessage.sent || 0) + (countMessage.pending || 0) + (countMessage.failed || 0) + (countMessage.processing || 0) : 0) %>
-            </h2>
-            <small class="text-muted">Bulan ini</small>
-        </div>
-    </div>
+<%
+  const totalAllTime = (countMessage ? (countMessage.sent || 0) + (countMessage.pending || 0) + (countMessage.failed || 0) + (countMessage.processing || 0) : 0);
+  const dash = dashboard || {};
+  const today = dash.today || {};
+  const week = dash.week || {};
+  const queue = dash.queue || {};
+  const campaign = dash.campaigns || {};
+  const inbox = dash.inbox || {};
+  const optIns = dash.optIns || {};
+  const webhooks = dash.webhooks || {};
+  const deviceStatus = dash.deviceStatus || {};
+%>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <h4 class="text-success mb-1"><i class="fa fa-gauge-high me-2"></i>Dashboard Client</h4>
+    <div class="text-muted">Pantau pengiriman, device, queue, dan aktivitas terbaru.</div>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="/client/message" class="btn btn-success btn-sm"><i class="fa fa-paper-plane me-1"></i> Kirim Pesan</a>
+    <a href="/client/campaign" class="btn btn-outline-success btn-sm"><i class="fa fa-bullhorn me-1"></i> Campaign</a>
+    <a href="/client/device" class="btn btn-outline-secondary btn-sm"><i class="fa fa-mobile-alt me-1"></i> Device</a>
+  </div>
 </div>
 
-
-<!-- Baris Kedua -->
-<div class="row">
-    <div class="col-md-8">
-        <div class="stat-card">
-            <h5 class="mb-4">Statistik Pengiriman Pesan</h5>
-            <div class="chart-container">
-                <canvas id="messageChart"></canvas>
-            </div>
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card h-100 kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <h5>Saldo</h5>
+          <h2>Rp <%= (countSummary.balance || 0).toLocaleString('id-ID') %></h2>
         </div>
-
-
-        <div class="stat-card">
-            <h5 class="mb-4">Perangkat Aktif</h5>
-            <div class="table-responsive">
-
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Nama Perangkat</th>
-                            <th>Nomor WA</th>
-                            <th>Status</th>
-                            <th>Terakhir Aktif</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-
-                        <% if (!devices || devices.length===0) { %>
-                            <tr>
-                                <td colspan="5" class="text-center">Tidak ada device terdaftar</td>
-                            </tr>
-                            <% } else { %>
-                                <% devices.forEach(device=> { %>
-
-
-                                    <tr>
-                                        <td>
-                                            <%= device.name %>
-                                        </td>
-                                        <td>
-                                            <%= device.phone %> - <%= device.device_key %>
-                                        </td>
-                                        <td>
-                                            <% const statusClass={ 'connected' : 'connected' , 'disconnected'
-                                                : 'disconnected' , 'connecting' : 'connecting' }[device.status]
-                                                || 'disconnected' %>
-                                                <span class="status-badge <%= statusClass %>">
-                                                    <i
-                                                        class="fa fa-<%= statusClass === 'connected' ? 'check' : 'times' %>-circle" style="color:<%= statusClass === 'connected' ? 'green' : 'red' %>"></i>
-                                                    <%= device.status.charAt(0).toUpperCase() + device.status.slice(1)
-                                                        %>
-                                                </span>
-
-                                        </td>
-                                        <td><%= device.last_active %></td>
-                                    </tr>
-
-
-
-                                    <% }) %>
-                                        <% } %>
-                    </tbody>
-                </table>
-
-            </div>
-        </div>
-
-
+        <i class="fa fa-wallet kpi-icon text-success"></i>
+      </div>
+      <small class="text-muted">Terpakai: Rp <%= (countSummary.totalUsed || 0).toLocaleString('id-ID') %></small>
     </div>
-    <div class="col-md-4">
-        <div class="stat-card mb-4" style="display: none;">
-            <h5>Status WhatsApp</h5>
-            <div class="text-center my-4">
-                <i class="fab fa-whatsapp fa-3x text-success mb-3"></i>
-                <h4>Connected</h4>
-                <small class="text-muted">Terhubung ke <%= devices.length %> device</small>
-            </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card h-100 kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <h5>Device Connected</h5>
+          <h2><%= countDevice || 0 %>/<%= devices.length || 0 %></h2>
         </div>
-        <div class="stat-card">
-            <h5>Pesan Terakhir</h5>
-            <div class="mt-3">
-                <% if (messagesLast && messagesLast.length > 0) { %>
-                    <% messagesLast.forEach(message => { %>
-                        <div class="d-flex align-items-start mb-3">
-                            <div class="flex-fill">
-                                <small class="text-muted">
-                                    <i class="fa fa-clock me-1"></i>
-                                    <%= moment(message.created_at).format("DD MMM YYYY, HH:mm") %>
-                                </small><br/>
-                                <small>
-                                    <i class="fa fa-phone me-1 text-success"></i>
-                                    <%= message.number %> - <%= message.device_key %>
-                                </small><br/>
-                                <small class="text-muted">
-                                    <i class="fa fa-message me-1"></i>
-                                    <%= message.message %>
-                                </small>
-                                <hr class="my-2" style="border: 1px solid #dddddd;" />
-                            </div>
-                        </div>
-                    <% }) %>
-                <% } else { %>
-                    <p class="text-muted">Tidak ada pesan terbaru.</p>
-                <% } %>
-
-            </div>
-        </div>
-        
+        <i class="fa fa-signal kpi-icon text-info"></i>
+      </div>
+      <small class="text-muted"><%= deviceStatus.connecting || 0 %> connecting, <%= deviceStatus.disconnected || 0 %> disconnected</small>
     </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card h-100 kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <h5>Pesan Hari Ini</h5>
+          <h2><%= today.total || 0 %></h2>
+        </div>
+        <i class="fa fa-comments kpi-icon text-primary"></i>
+      </div>
+      <small class="text-muted"><%= today.sent || 0 %> sent, <%= today.failed || 0 %> failed</small>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card h-100 kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <h5>Success Rate</h5>
+          <h2><%= dash.successRate || 0 %>%</h2>
+        </div>
+        <i class="fa fa-chart-line kpi-icon text-warning"></i>
+      </div>
+      <small class="text-muted">Dari <%= week.total || 0 %> pesan 7 hari</small>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-8">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h5 class="mb-0">Performa Pengiriman 14 Hari</h5>
+          <small class="text-muted">Sent, pending, dan failed per hari</small>
+        </div>
+        <a href="/client/reports" class="btn btn-sm btn-outline-secondary">Reports</a>
+      </div>
+      <div class="chart-container dashboard-chart">
+        <canvas id="messageTrendChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h5 class="mb-0">Komposisi Status</h5>
+          <small class="text-muted">Akumulasi 7 hari terakhir</small>
+        </div>
+        <span class="badge bg-success"><%= dash.peakHour || '-' %> peak</span>
+      </div>
+      <div class="chart-container status-chart">
+        <canvas id="statusChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <a href="/client/queue" class="text-decoration-none">
+      <div class="stat-card h-100 mini-metric border-start border-4 border-warning">
+        <h5>Queue</h5>
+        <h2 class="text-warning"><%= queue.pending || 0 %></h2>
+        <small class="text-muted"><%= queue.scheduled || 0 %> terjadwal, <%= queue.processing || 0 %> processing</small>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-3">
+    <a href="/client/campaign" class="text-decoration-none">
+      <div class="stat-card h-100 mini-metric border-start border-4 border-info">
+        <h5>Campaign</h5>
+        <h2 class="text-info"><%= campaign.total || 0 %></h2>
+        <small class="text-muted"><%= campaign.queued || 0 %> queued, <%= campaign.scheduled || 0 %> scheduled</small>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-3">
+    <a href="/client/inbox" class="text-decoration-none">
+      <div class="stat-card h-100 mini-metric border-start border-4 border-success">
+        <h5>Inbox</h5>
+        <h2 class="text-success"><%= inbox.today || 0 %></h2>
+        <small class="text-muted"><%= inbox.week || 0 %> pesan masuk 7 hari</small>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-3">
+    <a href="/client/webhook/logs" class="text-decoration-none">
+      <div class="stat-card h-100 mini-metric border-start border-4 border-danger">
+        <h5>Webhook 24 Jam</h5>
+        <h2 class="<%= (webhooks.failed24h || 0) > 0 ? 'text-danger' : 'text-success' %>"><%= webhooks.failed24h || 0 %></h2>
+        <small class="text-muted"><%= webhooks.success24h || 0 %> success</small>
+      </div>
+    </a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-5">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-lightbulb me-2"></i>Rekomendasi</h5>
+      <div class="d-grid gap-2">
+        <% (dash.recommendations || []).forEach(function(tip) { %>
+          <a href="<%= tip.href %>" class="alert alert-<%= tip.type %> py-2 mb-0 text-decoration-none">
+            <%= tip.text %>
+          </a>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Device Hari Ini</h5>
+        <a href="/client/device" class="btn btn-sm btn-outline-secondary">Kelola</a>
+      </div>
+      <div class="row g-2">
+        <% if (dash.deviceCards && dash.deviceCards.length) { %>
+          <% dash.deviceCards.forEach(function(device) { 
+            const usage = device.limit_daily ? Math.min(100, Math.round(((device.today_total || 0) / device.limit_daily) * 100)) : 0;
+          %>
+            <div class="col-md-6">
+              <div class="device-card">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <strong><%= device.name || '-' %></strong><br>
+                    <small class="text-muted"><%= device.phone || device.device_key || '-' %></small>
+                  </div>
+                  <span class="badge <%= device.status === 'connected' ? 'bg-success' : 'bg-secondary' %>"><%= device.status || '-' %></span>
+                </div>
+                <div class="progress mt-3" style="height: 8px">
+                  <div class="progress-bar <%= usage > 80 ? 'bg-warning' : 'bg-success' %>" style="width: <%= usage %>%"></div>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                  <small><%= device.today_total || 0 %>/<%= device.limit_daily || 0 %> kuota</small>
+                  <small><span class="text-success"><%= device.today_sent || 0 %></span> sent, <span class="text-danger"><%= device.today_failed || 0 %></span> failed</small>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <div class="col-12 text-muted">Belum ada device terdaftar.</div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="stat-card h-100">
+      <h5 class="mb-3">Opt-In & Kontak</h5>
+      <div class="d-flex justify-content-between py-2 border-bottom">
+        <span>Contacts</span><strong><%= dash.contacts || 0 %></strong>
+      </div>
+      <div class="d-flex justify-content-between py-2 border-bottom">
+        <span>Approved</span><strong class="text-success"><%= optIns.approved || 0 %></strong>
+      </div>
+      <div class="d-flex justify-content-between py-2 border-bottom">
+        <span>Pending</span><strong class="text-warning"><%= optIns.pending || 0 %></strong>
+      </div>
+      <div class="d-flex justify-content-between py-2">
+        <span>Blocked</span><strong class="text-danger"><%= optIns.blocked || 0 %></strong>
+      </div>
+      <a href="/client/optin" class="btn btn-sm btn-outline-success w-100 mt-3">Buka Opt-In</a>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Campaign Terbaru</h5>
+        <a href="/client/campaign" class="btn btn-sm btn-outline-secondary">Semua</a>
+      </div>
+      <% if (campaign.recent && campaign.recent.length) { %>
+        <% campaign.recent.forEach(function(item) { %>
+          <div class="activity-row">
+            <div class="d-flex justify-content-between">
+              <strong><%= item.name %></strong>
+              <span class="badge bg-secondary"><%= item.status || '-' %></span>
+            </div>
+            <small class="text-muted"><%= item.recipients_count || 0 %> target - <%= item.device_name || '-' %></small>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <p class="text-muted mb-0">Belum ada campaign.</p>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Pesan Terakhir</h5>
+        <a href="/client/queue" class="btn btn-sm btn-outline-secondary">Queue</a>
+      </div>
+      <% if (messagesLast && messagesLast.length > 0) { %>
+        <% messagesLast.forEach(function(message) { %>
+          <div class="activity-row">
+            <div class="d-flex justify-content-between">
+              <small class="text-muted"><%= moment(message.created_at).format("DD MMM, HH:mm") %></small>
+              <span class="badge bg-secondary"><%= message.status || '-' %></span>
+            </div>
+            <div><i class="fa fa-phone me-1 text-success"></i><%= message.number || '-' %></div>
+            <small class="text-muted"><%= (message.message || '').length > 90 ? (message.message.substring(0, 90) + '...') : (message.message || '-') %></small>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <p class="text-muted mb-0">Tidak ada pesan terbaru.</p>
+      <% } %>
+    </div>
+  </div>
 </div>
 
 <style>
-    /* Pastikan chart-container fleksibel */
-    .chart-container {
-        width: 100%;
-        max-width: 100%;
-        height: auto;
-        min-height: 300px; /* Sesuaikan sesuai kebutuhan */
-        max-height: 400px;
-    }
+  .kpi-card h2,
+  .mini-metric h2 {
+    font-size: 1.9rem;
+  }
 
-    canvas {
-        width: 100% !important;
-        height: auto !important;
-        max-height: 400px;
+  .kpi-icon {
+    font-size: 1.6rem;
+    opacity: 0.85;
+  }
+
+  .dashboard-chart {
+    height: 320px;
+  }
+
+  .status-chart {
+    height: 260px;
+  }
+
+  .device-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 14px;
+    background: #fbfcfc;
+    height: 100%;
+  }
+
+  .activity-row {
+    border-bottom: 1px solid #edf0f2;
+    padding: 10px 0;
+  }
+
+  .activity-row:last-child {
+    border-bottom: 0;
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-chart,
+    .status-chart {
+      height: 260px;
     }
+  }
 </style>
 
-
 <script>
-    // Data Statistik Pengiriman Pesan dari Server
-    const messageStatistics = <%- JSON.stringify(messageStatistics) %>;
+  const dashboardDaily = <%- JSON.stringify(dash.daily || []) %>;
+  const dashboardWeek = <%- JSON.stringify(week) %>;
 
-    // Ekstrak data untuk chart
-    const labels = messageStatistics.daily.map(item => item.date);
-    const sentData = messageStatistics.daily.map(item => item.sent);
-    const pendingData = messageStatistics.daily.map(item => item.pending);
-    const failedData = messageStatistics.daily.map(item => item.failed);
+  function renderTrendChart() {
+    const canvas = document.getElementById("messageTrendChart");
+    if (!canvas || typeof Chart === "undefined") return;
 
-    // Pastikan Chart.js menyesuaikan ukuran box
-    const ctx = document.getElementById('messageChart').getContext('2d');
-    const messageChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Terkirim',
-                    data: sentData,
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    fill: true
-                },
-                {
-                    label: 'Pending',
-                    data: pendingData,
-                    borderColor: 'rgba(255, 206, 86, 1)',
-                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                    fill: true
-                },
-                {
-                    label: 'Gagal',
-                    data: failedData,
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    fill: true
-                }
-            ]
-        },
-        options: {
-            responsive: true, // Chart menyesuaikan ukuran container
-            maintainAspectRatio: false, // Jangan pertahankan rasio aspek bawaan
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Tanggal'
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Jumlah Pesan'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top'
-                }
-            }
-        }
+    new Chart(canvas.getContext("2d"), {
+      type: "line",
+      data: {
+        labels: dashboardDaily.map((item) => item.date),
+        datasets: [
+          {
+            label: "Sent",
+            data: dashboardDaily.map((item) => item.sent),
+            borderColor: "#128c7e",
+            backgroundColor: "rgba(18, 140, 126, 0.12)",
+            fill: true,
+            tension: 0.25,
+          },
+          {
+            label: "Pending",
+            data: dashboardDaily.map((item) => item.pending),
+            borderColor: "#ffc107",
+            backgroundColor: "rgba(255, 193, 7, 0.14)",
+            fill: true,
+            tension: 0.25,
+          },
+          {
+            label: "Failed",
+            data: dashboardDaily.map((item) => item.failed),
+            borderColor: "#dc3545",
+            backgroundColor: "rgba(220, 53, 69, 0.1)",
+            fill: true,
+            tension: 0.25,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { position: "bottom" } },
+      },
     });
-</script>
+  }
 
+  function renderStatusChart() {
+    const canvas = document.getElementById("statusChart");
+    if (!canvas || typeof Chart === "undefined") return;
+
+    new Chart(canvas.getContext("2d"), {
+      type: "doughnut",
+      data: {
+        labels: ["Sent", "Pending", "Failed", "Processing"],
+        datasets: [{
+          data: [
+            dashboardWeek.sent || 0,
+            dashboardWeek.pending || 0,
+            dashboardWeek.failed || 0,
+            dashboardWeek.processing || 0,
+          ],
+          backgroundColor: ["#128c7e", "#ffc107", "#dc3545", "#0dcaf0"],
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: "bottom" } },
+      },
+    });
+  }
+
+  renderTrendChart();
+  renderStatusChart();
+</script>

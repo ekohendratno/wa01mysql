@@ -40,6 +40,12 @@ const DeviceManager = require("./lib/DeviceManager.js");
 const AutoReplyManager = require("./lib/AutoReplyManager.js");
 const UserManager = require("./lib/UserManager.js");
 const { requireRole, redirectIfLoggedIn } = require("./lib/Utils.js");
+const {
+  attachCsrfToken,
+  corsOrigin,
+  createRateLimiter,
+  csrfProtection,
+} = require("./lib/Security.js");
 
 const expressLayouts = require("express-ejs-layouts");
 
@@ -48,7 +54,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
-    origin: "*", // Atau domain spesifik: "https://yourdomain.com"
+    origin: corsOrigin,
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -65,9 +71,9 @@ app.set("view engine", "ejs");
 app.set("views", __dirname + "/views");
 app.use(
   cors({
-    origin: "*",
+    origin: corsOrigin,
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type"],
+    allowedHeaders: ["Content-Type", "X-CSRF-Token"],
     credentials: true,
   }),
 );
@@ -98,6 +104,9 @@ app.use(
   }),
 );
 
+app.use(attachCsrfToken);
+app.use(csrfProtection);
+
 const moment = require("moment");
 const momentTimezone = require("moment-timezone");
 app.use((req, res, next) => {
@@ -107,7 +116,6 @@ app.use((req, res, next) => {
 });
 
 const folderSession = "./.sessions";
-app.use("/asset/sessions", express.static(folderSession));
 
 const morgan = require("morgan");
 // Logging HTTP requests
@@ -139,7 +147,85 @@ const cronManager = new CronManager(
 );
 const cronGroupManager = new CronGroupManager(pool, sessionManager);
 const SessionWatcher = require("./lib/SessionWatcher");
-const sessionWatcher = new SessionWatcher(sessionManager, folderSession);
+const sessionWatcher = new SessionWatcher(sessionManager, deviceManager, folderSession);
+
+app.get("/asset/sessions/:key/qr.png", async (req, res) => {
+  try {
+    const user = req.session?.user;
+    const key = String(req.params.key || "");
+    if (!user || user.role !== "client" || !user.api_key) {
+      return res.status(401).send("Unauthorized");
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(key)) {
+      return res.status(400).send("Invalid session key");
+    }
+
+    const device = await deviceManager.getDevice(user.api_key, key);
+    if (!device || device.access_type !== "owner") {
+      return res.status(403).send("Forbidden");
+    }
+
+    const qrPath = path.resolve(folderSession, key, "qr.png");
+    const sessionRoot = path.resolve(folderSession);
+    if (!qrPath.startsWith(sessionRoot + path.sep) || !fs.existsSync(qrPath)) {
+      return res.status(404).send("QR not found");
+    }
+
+    res.setHeader("Cache-Control", "no-store");
+    return res.sendFile(qrPath);
+  } catch (error) {
+    return res.status(404).send("QR not found");
+  }
+});
+
+const authLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_AUTH_MAX || "25", 10),
+  keyPrefix: "auth",
+});
+const apiLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_API_MAX || "120", 10),
+  keyPrefix: "api",
+});
+const dashboardLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_DASHBOARD_MAX || "240", 10),
+  keyPrefix: "dashboard",
+});
+
+
+
+
+// Routes Main
+const indexRoutes = require("./routes/indexRoutes")({
+  sessionManager,
+  billingManager,
+});
+const v1Routes = require("./routes/v1Routes")({
+  sessionManager,
+  messageManager,
+});
+const authRoutes = require("./routes/authRoutes")({
+  sessionManager,
+  userManager,
+});
+const sessionRoutes = require("./routes/sessionRoutes")(sessionManager);
+const messageRoutes = require("./routes/messageRoutes")({
+  sessionManager,
+  messageManager,
+});
+const groupRoutes = require("./routes/groupRoutes")(sessionManager);
+
+app.use("/", indexRoutes);
+app.use("/v1", apiLimiter, v1Routes);
+app.use("/bot", apiLimiter, v1Routes); //backup lama
+app.use("/auth", authLimiter, authRoutes);
+app.use("/session", sessionRoutes);
+app.use("/message", dashboardLimiter, messageRoutes);
+app.use("/group", groupRoutes);
+
+
 
 // Routes Admin
 const indexAdminRoutes = require("./routes/admin/indexRoutes.js")({
@@ -158,10 +244,23 @@ const billingAdminRoutes = require("./routes/admin/billingRoutes.js")(
   billingManager,
 );
 const userAdminRoutes = require("./routes/admin/userRoutes.js")({ pool });
+const deviceAdminRoutes = require("./routes/admin/deviceRoutes.js")({ pool });
+const messageAdminRoutes = require("./routes/admin/messageRoutes.js")({ pool });
+const campaignAdminRoutes = require("./routes/admin/campaignRoutes.js")({ pool });
+const webhookAdminRoutes = require("./routes/admin/webhookRoutes.js")({ pool });
+const systemAdminRoutes = require("./routes/admin/systemRoutes.js")({
+  pool,
+  sessionManager,
+});
 app.use("/admin", requireRole("admin"), indexAdminRoutes);
 app.use("/admin/package", requireRole("admin"), packageAdminRoutes);
 app.use("/admin/billing", requireRole("admin"), billingAdminRoutes);
 app.use("/admin/users", requireRole("admin"), userAdminRoutes);
+app.use("/admin/devices", requireRole("admin"), deviceAdminRoutes);
+app.use("/admin/messages", requireRole("admin"), messageAdminRoutes);
+app.use("/admin/campaigns", requireRole("admin"), campaignAdminRoutes);
+app.use("/admin/webhooks", requireRole("admin"), webhookAdminRoutes);
+app.use("/admin/system", requireRole("admin"), systemAdminRoutes);
 
 // Routes Client
 const indexClientRoutes = require("./routes/client/indexRoutes")({
@@ -189,6 +288,21 @@ const groupClientRoutes = require("./routes/client/groupRoutes")({
 const messageClientRoutes = require("./routes/client/messageRoutes")({
   sessionManager,
   messageManager,
+  deviceManager,
+});
+const campaignClientRoutes = require("./routes/client/campaignRoutes")({
+  pool,
+  messageManager,
+  deviceManager,
+});
+const templateClientRoutes = require("./routes/client/templateRoutes")({
+  pool,
+});
+const queueClientRoutes = require("./routes/client/queueRoutes")({ pool });
+const reportClientRoutes = require("./routes/client/reportRoutes")({ pool });
+const inboxClientRoutes = require("./routes/client/inboxRoutes")({ pool });
+const developerClientRoutes = require("./routes/client/developerRoutes")({
+  pool,
   deviceManager,
 });
 const autoreplyClientRoutes = require("./routes/client/autoreplyRoutes")({
@@ -221,6 +335,12 @@ app.use("/client/package", requireRole("client"), packageClientRoutes);
 app.use("/client/billing", requireRole("client"), billingClientRoutes);
 app.use("/client/device", requireRole("client"), deviceClientRoutes);
 app.use("/client/group", requireRole("client"), groupClientRoutes);
+app.use("/client/campaign", requireRole("client"), campaignClientRoutes);
+app.use("/client/templates", requireRole("client"), templateClientRoutes);
+app.use("/client/queue", requireRole("client"), queueClientRoutes);
+app.use("/client/reports", requireRole("client"), reportClientRoutes);
+app.use("/client/inbox", requireRole("client"), inboxClientRoutes);
+app.use("/client/developer", requireRole("client"), developerClientRoutes);
 app.use("/client/message", requireRole("client"), messageClientRoutes);
 app.use("/client/autoreply", requireRole("client"), autoreplyClientRoutes);
 app.use("/client/bantuin", requireRole("client"), bantuinClientRoutes);
@@ -235,33 +355,6 @@ const webhookClientRoutes = require("./routes/client/webhookRoutes")({
 });
 app.use("/client/webhook", requireRole("client"), webhookClientRoutes);
 
-// Routes Main
-const indexRoutes = require("./routes/indexRoutes")({
-  sessionManager,
-  billingManager,
-});
-const v1Routes = require("./routes/v1Routes")({
-  sessionManager,
-  messageManager,
-});
-const authRoutes = require("./routes/authRoutes")({
-  sessionManager,
-  userManager,
-});
-const sessionRoutes = require("./routes/sessionRoutes")(sessionManager);
-const messageRoutes = require("./routes/messageRoutes")({
-  sessionManager,
-  messageManager,
-});
-const groupRoutes = require("./routes/groupRoutes")(sessionManager);
-
-app.use("/", indexRoutes);
-app.use("/v1", v1Routes);
-app.use("/bot", v1Routes); //backup lama
-app.use("/auth", authRoutes);
-app.use("/session", sessionRoutes);
-app.use("/message", messageRoutes);
-app.use("/group", groupRoutes);
 // Health check endpoint
 app.get("/health", async (req, res) => {
   try {
