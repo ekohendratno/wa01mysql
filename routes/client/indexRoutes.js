@@ -67,6 +67,7 @@ async function buildDashboardStats(pool, apiKey, devices, sessions) {
         transactions: { pending: 0, successThisMonth: 0, spentThisMonth: 0 },
         deviceStatus: { connected: 0, disconnected: 0, connecting: 0, other: 0 },
         deviceCards: [],
+        packageAlerts: { critical: [], warning: [], healthy: [], nearest: null },
         daily: [],
         peakHour: "-",
         successRate: 0,
@@ -151,6 +152,7 @@ async function buildDashboardStats(pool, apiKey, devices, sessions) {
         [uid]
     );
     result.deviceCards = deviceRows || [];
+    result.packageAlerts = buildPackageAlerts(result.deviceCards);
 
     const [campaignRows] = await pool.query(
         `SELECT
@@ -245,6 +247,26 @@ async function buildDashboardStats(pool, apiKey, devices, sessions) {
     return result;
 }
 
+function buildPackageAlerts(devices) {
+    const buckets = { critical: [], warning: [], healthy: [], nearest: null };
+    const sorted = (devices || [])
+        .map((device) => ({
+            ...device,
+            life_time: Number(device.life_time || 0),
+            limit_daily: Number(device.limit_daily || 0),
+        }))
+        .sort((a, b) => a.life_time - b.life_time);
+
+    sorted.forEach((device) => {
+        if (device.life_time <= 3) buckets.critical.push(device);
+        else if (device.life_time <= 7) buckets.warning.push(device);
+        else buckets.healthy.push(device);
+    });
+
+    buckets.nearest = sorted[0] || null;
+    return buckets;
+}
+
 function fillDailyStats(rows, days) {
     const map = {};
     rows.forEach((row) => {
@@ -277,6 +299,8 @@ function buildRecommendations(stats, devices, sessions) {
     if (stats.queue.pending > 50) tips.push({ type: "warning", text: "Queue pending cukup tinggi. Cek koneksi device atau pecah campaign menjadi batch kecil.", href: "/client/queue" });
     if (stats.week.total > 0 && stats.successRate < 85) tips.push({ type: "danger", text: "Success rate 7 hari di bawah 85%. Review nomor tujuan, opt-in, dan status device.", href: "/client/reports" });
     if (stats.webhooks.failed24h > 0) tips.push({ type: "warning", text: "Ada webhook gagal dalam 24 jam. Cek URL webhook dan response server tujuan.", href: "/client/webhook/logs" });
+    if (stats.packageAlerts?.critical?.length) tips.push({ type: "danger", text: `${stats.packageAlerts.critical.length} device masa aktifnya tinggal 3 hari atau kurang. Upgrade paket sebelum nonaktif.`, href: "/client/device" });
+    else if (stats.packageAlerts?.warning?.length) tips.push({ type: "warning", text: `${stats.packageAlerts.warning.length} device masa aktifnya tinggal 7 hari atau kurang. Siapkan perpanjangan paket.`, href: "/client/device" });
     if (stats.optIns.pending > stats.optIns.approved && stats.optIns.pending > 0) tips.push({ type: "info", text: "Opt-in pending lebih banyak dari approved. Kirim reminder persetujuan ke kontak yang belum approve.", href: "/client/optin" });
     if (!stats.campaigns.total && hasDevice) tips.push({ type: "info", text: "Buat campaign pertama untuk broadcast terjadwal dari kontak atau template.", href: "/client/campaign" });
     if (!stats.contacts && hasDevice) tips.push({ type: "info", text: "Sinkronkan atau tambah kontak agar campaign lebih mudah dikelola.", href: "/client/contact" });

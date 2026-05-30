@@ -1,40 +1,132 @@
-<div class="stat-card">
-  <h5 class="mb-4"><i class="fas fa-info-circle me-2"></i>Pengenalan</h5>
-  <p>
-    <strong>w@pi</strong> adalah platform WhatsApp Gateway handal yang memungkinkan Anda mengintegrasikan komunikasi WhatsApp ke dalam aplikasi Anda melalui REST API yang sederhana.
-  </p>
+<%
+  const docBaseUrl = typeof baseUrl !== "undefined" ? baseUrl : "https://wapi.jasaedukasi.com";
+  const docApiKey = typeof apiKey !== "undefined" ? apiKey : "MASUKKAN_API_KEY_ANDA";
+  const docDevices = typeof devices !== "undefined" ? devices : [];
+  const docDeviceKey = docDevices && docDevices.length ? docDevices[0].device_key : "DEVICE_KEY";
+%>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h4 class="text-success mb-0">
+    <i class="fa fa-book me-2"></i>Dokumentasi API
+  </h4>
+  <a href="/client/developer" class="btn btn-outline-success">
+    <i class="fa fa-code me-1"></i> Developer API
+  </a>
 </div>
 
-<div class="stat-card">
-  <h5 class="mb-4"><i class="fas fa-link me-2"></i>Endpoint Dasar</h5>
-  <p>Semua permintaan API harus dikirim ke Base URL berikut:</p>
-  <div class="bg-dark text-white p-3 rounded mb-3">
-    <code>https://wapi.jasaedukasi.com/v1</code>
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="stat-card">
+      <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i>Pengenalan</h5>
+      <p>
+        <strong>w@pi</strong> menyediakan REST API untuk memasukkan pesan WhatsApp ke antrean,
+        mencatat persetujuan opt-in, dan mengecek status session device. Endpoint queue
+        dirancang untuk pemakaian produksi karena mengikuti limit harian, jadwal, device fallback,
+        dan aturan opt-in.
+      </p>
+      <div class="row g-3 mt-2">
+        <div class="col-md-4">
+          <div class="border rounded p-3 h-100">
+            <strong>1. Hubungkan device</strong>
+            <div class="text-muted small mt-1">Scan QR dari menu Device sampai status connected.</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="border rounded p-3 h-100">
+            <strong>2. Ambil credential</strong>
+            <div class="text-muted small mt-1">Gunakan API Key akun dan Device Key perangkat.</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="border rounded p-3 h-100">
+            <strong>3. Kirim request</strong>
+            <div class="text-muted small mt-1">Post JSON ke endpoint <code>/v1/message</code>.</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-  <p class="small text-muted">Pastikan Anda menggunakan protokol <strong>HTTPS</strong> untuk keamanan data.</p>
+
+  <div class="col-lg-4">
+    <div class="stat-card h-100">
+      <h5 class="mb-3">Credential Aktif</h5>
+      <label class="form-label small text-muted mb-1">Base URL</label>
+      <pre class="bg-light p-2 rounded"><code><%= docBaseUrl %>/v1</code></pre>
+      <label class="form-label small text-muted mb-1">API Key</label>
+      <pre class="bg-light p-2 rounded"><code><%= docApiKey %></code></pre>
+      <label class="form-label small text-muted mb-1">Device Key Contoh</label>
+      <pre class="bg-light p-2 rounded mb-0"><code><%= docDeviceKey %></code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="stat-card mt-4">
+  <h5 class="mb-3"><i class="fas fa-link me-2"></i>Endpoint Dasar</h5>
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 110px">Method</th>
+          <th>Endpoint</th>
+          <th>Fungsi</th>
+          <th>Auth</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge bg-primary">POST</span></td>
+          <td><code><%= docBaseUrl %>/v1/message</code></td>
+          <td>Mendaftarkan pesan ke antrean pengiriman.</td>
+          <td><code>apiKey</code> di body JSON</td>
+        </tr>
+        <tr>
+          <td><span class="badge bg-primary">POST</span></td>
+          <td><code><%= docBaseUrl %>/v1/optin</code></td>
+          <td>Mencatat persetujuan atau blokir nomor penerima.</td>
+          <td><code>apiKey</code> di body JSON</td>
+        </tr>
+        <tr>
+          <td><span class="badge bg-success">GET</span></td>
+          <td><code><%= docBaseUrl %>/session?key=DEVICE_KEY</code></td>
+          <td>Mengecek status session device.</td>
+          <td>Device key di query string</td>
+        </tr>
+        <tr>
+          <td><span class="badge bg-primary">POST</span></td>
+          <td><code><%= docBaseUrl %>/message/send</code></td>
+          <td>Kirim langsung tanpa queue. Cocok untuk testing, bukan blast besar.</td>
+          <td>Session login atau <code>apiKey</code> di body JSON</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <div class="stat-card">
-  <h5 class="mb-4"><i class="fas fa-paper-plane me-2"></i>Mengirim Pesan (Text)</h5>
-  <p>Gunakan endpoint ini untuk mengirim pesan teks ke nomor personal atau grup.</p>
-  <div class="badge bg-primary mb-2">POST</div> <code>/message</code>
+  <h5 class="mb-3"><i class="fas fa-paper-plane me-2"></i>Mengirim Pesan Queue</h5>
+  <p>
+    Endpoint <code>POST /v1/message</code> menyimpan pesan ke tabel antrean.
+    Response sukses berarti pesan sudah terdaftar, bukan berarti WhatsApp sudah menerima pesan.
+  </p>
 
-  <p class="mt-3"><strong>Contoh Body Request (JSON):</strong></p>
-  <pre class="bg-dark text-white p-3 rounded"><code>{
-  "apiKey"    : "MASUKKAN_API_KEY_ANDA",
-  "deviceKey" : "ID_PERANGKAT",
-  "to"        : "628123456789",
-  "text"      : "Halo! Pesan ini dikirim melalui w@pi API 🚀",
-  "isGroup"   : 0
-}</code></pre>
+  <pre class="bg-dark text-white p-3 rounded"><code>curl --location '<%= docBaseUrl %>/v1/message' \
+--header 'Content-Type: application/json' \
+--data '{
+  "apiKey": "<%= docApiKey %>",
+  "deviceKey": "<%= docDeviceKey %>",
+  "to": "6281234567890",
+  "text": "Halo! Pesan ini dikirim melalui w@pi API",
+  "isGroup": 0,
+  "tags": "notifikasi"
+}'</code></pre>
 
-  <p><strong>Parameter:</strong></p>
-  <div class="table-responsive">
+  <div class="table-responsive mt-3">
     <table class="table table-bordered table-hover">
       <thead class="table-light">
         <tr>
           <th>Parameter</th>
           <th>Wajib</th>
+          <th>Contoh</th>
           <th>Deskripsi</th>
         </tr>
       </thead>
@@ -42,32 +134,138 @@
         <tr>
           <td><code>apiKey</code></td>
           <td>Ya</td>
-          <td>Kunci API Anda yang dapat ditemukan di halaman profil.</td>
+          <td><code><%= docApiKey %></code></td>
+          <td>Kunci API akun Anda.</td>
         </tr>
         <tr>
           <td><code>deviceKey</code></td>
           <td>Ya</td>
-          <td>ID unik perangkat Anda (didapat dari daftar perangkat).</td>
+          <td><code><%= docDeviceKey %></code></td>
+          <td>Device pengirim. Bisa device milik akun atau device yang dibagikan ke akun.</td>
         </tr>
         <tr>
           <td><code>to</code></td>
           <td>Ya</td>
-          <td>Nomor WA (Gunakan kode negara, misal: 628xxx) atau ID Grup.</td>
+          <td><code>6281234567890</code></td>
+          <td>Nomor personal format Indonesia. Awalan <code>08</code> otomatis dinormalisasi ke <code>628</code>.</td>
         </tr>
         <tr>
           <td><code>text</code></td>
           <td>Ya</td>
-          <td>Isi pesan yang akan dikirim.</td>
+          <td><code>Halo</code></td>
+          <td>Isi pesan teks.</td>
         </tr>
         <tr>
           <td><code>isGroup</code></td>
           <td>Tidak</td>
-          <td><code>1</code> untuk grup, <code>0</code> untuk personal (default: 0).</td>
+          <td><code>0</code></td>
+          <td><code>1</code> untuk grup, <code>0</code> untuk personal.</td>
         </tr>
         <tr>
-          <td><code>tags</code></td>
+          <td><code>tags</code> / <code>tag</code></td>
           <td>Tidak</td>
-          <td>Label kustom untuk manajemen log (misal: "OTP", "Marketing").</td>
+          <td><code>invoice</code></td>
+          <td>Label untuk filter log dan laporan.</td>
+        </tr>
+        <tr>
+          <td><code>scheduledAt</code> / <code>scheduled_at</code></td>
+          <td>Tidak</td>
+          <td><code>2026-05-30 08:00:00</code></td>
+          <td>Jadwalkan pesan dalam zona waktu Asia/Jakarta.</td>
+        </tr>
+        <tr>
+          <td><code>campaignId</code> / <code>campaign_id</code></td>
+          <td>Tidak</td>
+          <td><code>12</code></td>
+          <td>ID campaign untuk pengelompokan laporan.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="mb-2"><strong>Response sukses:</strong></p>
+  <pre class="bg-light p-3 rounded"><code>{
+  "status": "success",
+  "message": "Message registered successfully",
+  "data": {
+    "status": true,
+    "message": "Message registered successfully",
+    "messageId": 123
+  }
+}</code></pre>
+</div>
+
+<div class="stat-card">
+  <h5 class="mb-3"><i class="fas fa-users me-2"></i>Bulk dan Grup</h5>
+  <p>
+    Untuk bulk personal, pisahkan nomor dengan koma. Sistem akan menyimpan satu baris pesan bertipe bulk
+    dan memproses penerima satu per satu. Untuk grup, gunakan key grup dari menu Group/Device Group.
+  </p>
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <p class="mb-2"><strong>Bulk personal:</strong></p>
+      <pre class="bg-dark text-white p-3 rounded"><code>{
+  "apiKey": "<%= docApiKey %>",
+  "deviceKey": "<%= docDeviceKey %>",
+  "to": "6281111111111,6282222222222",
+  "text": "Pengumuman untuk wali murid",
+  "isGroup": 0,
+  "tags": "broadcast"
+}</code></pre>
+    </div>
+    <div class="col-lg-6">
+      <p class="mb-2"><strong>Pesan grup:</strong></p>
+      <pre class="bg-dark text-white p-3 rounded"><code>{
+  "apiKey": "<%= docApiKey %>",
+  "deviceKey": "<%= docDeviceKey %>",
+  "to": "GROUP_KEY",
+  "text": "Pengumuman untuk grup",
+  "isGroup": 1,
+  "tags": "group"
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="stat-card">
+  <h5 class="mb-3"><i class="fas fa-user-check me-2"></i>Opt-In dan Persetujuan</h5>
+  <p>
+    Jika fitur opt-in aktif, pesan personal akan menunggu sampai penerima berstatus
+    <code>approved</code>. Sistem dapat mengirim undangan persetujuan otomatis,
+    lalu penerima cukup membalas <code>SETUJU</code>. Balasan <code>STOP</code> akan
+    mengubah status menjadi <code>blocked</code>.
+  </p>
+
+  <pre class="bg-dark text-white p-3 rounded"><code>curl --location '<%= docBaseUrl %>/v1/optin' \
+--header 'Content-Type: application/json' \
+--data '{
+  "apiKey": "<%= docApiKey %>",
+  "number": "6281234567890",
+  "status": "approved",
+  "source": "web_form"
+}'</code></pre>
+
+  <div class="table-responsive mt-3">
+    <table class="table table-bordered">
+      <thead class="table-light">
+        <tr>
+          <th>Status</th>
+          <th>Efek</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>approved</code></td>
+          <td>Nomor boleh menerima pesan personal.</td>
+        </tr>
+        <tr>
+          <td><code>pending</code></td>
+          <td>Nomor belum menyetujui. Pesan akan menunggu opt-in.</td>
+        </tr>
+        <tr>
+          <td><code>blocked</code></td>
+          <td>Nomor menolak atau berhenti berlangganan. Pesan personal ditolak.</td>
         </tr>
       </tbody>
     </table>
@@ -75,35 +273,111 @@
 </div>
 
 <div class="stat-card">
-  <h5 class="mb-4"><i class="fas fa-user-check me-2"></i>API Opt-In (Persetujuan)</h5>
-  <p>Gunakan endpoint ini jika Anda mengaktifkan fitur filter ijin kirim pesan.</p>
-  <div class="badge bg-primary mb-2">POST</div> <code>/optin</code>
+  <h5 class="mb-3"><i class="fas fa-bolt me-2"></i>Kirim Langsung</h5>
+  <p>
+    Endpoint <code>POST /message/send</code> mengirim langsung melalui session aktif.
+    Endpoint ini berguna untuk tes cepat, tetapi tidak memakai mekanisme antrean sekuat <code>/v1/message</code>.
+  </p>
 
-  <pre class="bg-dark text-white p-3 rounded mt-3"><code>{
-  "apiKey" : "MASUKKAN_API_KEY_ANDA",
-  "number" : "628xxx",
-  "status" : "granted",
-  "source" : "web_form"
+  <pre class="bg-dark text-white p-3 rounded"><code>curl --location '<%= docBaseUrl %>/message/send' \
+--header 'Content-Type: application/json' \
+--data '{
+  "apiKey": "<%= docApiKey %>",
+  "key": "<%= docDeviceKey %>",
+  "to": "6281234567890",
+  "text": "Tes kirim langsung",
+  "group": 0,
+  "tags": "testing"
+}'</code></pre>
+</div>
+
+<div class="stat-card">
+  <h5 class="mb-3"><i class="fas fa-signal me-2"></i>Cek Session</h5>
+  <p>Gunakan endpoint ini untuk memastikan device masih tersedia sebelum mengirim pesan.</p>
+
+  <pre class="bg-dark text-white p-3 rounded"><code>curl --location '<%= docBaseUrl %>/session?key=<%= docDeviceKey %>'</code></pre>
+
+  <pre class="bg-light p-3 rounded"><code>{
+  "status": true,
+  "message": "Session status retrieved successfully.",
+  "data": {
+    "key": "<%= docDeviceKey %>",
+    "connected": true
+  }
 }</code></pre>
 </div>
 
 <div class="stat-card">
-  <h5 class="mb-4"><i class="fas fa-exclamation-triangle me-2"></i>Error Handling</h5>
-  <p>Platform kami menggunakan kode status HTTP standar untuk menunjukkan keberhasilan atau kegagalan permintaan.</p>
+  <h5 class="mb-3"><i class="fas fa-exclamation-triangle me-2"></i>Error Handling</h5>
   <div class="table-responsive">
-    <table class="table table-sm table-bordered">
-      <thead>
+    <table class="table table-sm table-bordered align-middle">
+      <thead class="table-light">
         <tr>
           <th>Kode</th>
           <th>Keterangan</th>
+          <th>Langkah</th>
         </tr>
       </thead>
       <tbody>
-        <tr><td>201</td><td>Pesan berhasil didaftarkan ke sistem.</td></tr>
-        <tr><td>400</td><td>Bad Request (Parameter tidak lengkap atau format salah).</td></tr>
-        <tr><td>401</td><td>Unauthorized (API Key tidak valid).</td></tr>
-        <tr><td>500</td><td>Internal Server Error.</td></tr>
+        <tr>
+          <td><code>200</code></td>
+          <td>Request berhasil. Untuk session, data status tersedia di response.</td>
+          <td>Lanjutkan proses normal.</td>
+        </tr>
+        <tr>
+          <td><code>201</code></td>
+          <td>Pesan berhasil didaftarkan ke antrean.</td>
+          <td>Cek menu Message/Queue untuk status pengiriman.</td>
+        </tr>
+        <tr>
+          <td><code>400</code></td>
+          <td>Parameter kurang, device tidak valid, limit tercapai, atau request ditolak.</td>
+          <td>Periksa body JSON, API key, device key, dan status opt-in.</td>
+        </tr>
+        <tr>
+          <td><code>401</code></td>
+          <td>API key tidak tersedia atau tidak valid.</td>
+          <td>Ambil ulang key dari halaman Developer API.</td>
+        </tr>
+        <tr>
+          <td><code>403</code></td>
+          <td>Fitur tertentu sedang dinonaktifkan, misalnya API opt-in.</td>
+          <td>Aktifkan fitur atau gunakan menu dashboard.</td>
+        </tr>
+        <tr>
+          <td><code>500</code></td>
+          <td>Terjadi kesalahan server.</td>
+          <td>Cek log aplikasi dan status database/device.</td>
+        </tr>
       </tbody>
     </table>
+  </div>
+
+  <p class="mb-2"><strong>Contoh response gagal:</strong></p>
+  <pre class="bg-light p-3 rounded"><code>{
+  "status": false,
+  "message": "Invalid API key"
+}</code></pre>
+</div>
+
+<div class="stat-card">
+  <h5 class="mb-3"><i class="fas fa-list-check me-2"></i>Checklist Produksi</h5>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <ul class="mb-0">
+        <li>Simpan API key di environment variable aplikasi Anda.</li>
+        <li>Gunakan endpoint queue <code>/v1/message</code> untuk trafik rutin.</li>
+        <li>Pastikan device connected dan limit harian cukup.</li>
+        <li>Gunakan <code>tags</code> agar laporan mudah difilter.</li>
+      </ul>
+    </div>
+    <div class="col-md-6">
+      <ul class="mb-0">
+        <li>Aktifkan opt-in untuk notifikasi personal berskala besar.</li>
+        <li>Jangan regenerate API key tanpa memperbarui integrasi.</li>
+        <li>Pakai retry dari menu Queue untuk pesan gagal.</li>
+        <li>Pantau Inbox untuk balasan <code>SETUJU</code> dan <code>STOP</code>.</li>
+      </ul>
+    </div>
   </div>
 </div>

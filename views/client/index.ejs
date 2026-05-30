@@ -9,6 +9,14 @@
   const optIns = dash.optIns || {};
   const webhooks = dash.webhooks || {};
   const deviceStatus = dash.deviceStatus || {};
+  const packageAlerts = dash.packageAlerts || {};
+  const nearestPackage = packageAlerts.nearest || null;
+  const packageAlertClass = nearestPackage && Number(nearestPackage.life_time || 0) <= 3
+    ? 'border-danger'
+    : (nearestPackage && Number(nearestPackage.life_time || 0) <= 7 ? 'border-warning' : 'border-success');
+  const packageAlertTextClass = nearestPackage && Number(nearestPackage.life_time || 0) <= 3
+    ? 'text-danger'
+    : (nearestPackage && Number(nearestPackage.life_time || 0) <= 7 ? 'text-warning' : 'text-success');
 %>
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
@@ -70,6 +78,70 @@
         <i class="fa fa-chart-line kpi-icon text-warning"></i>
       </div>
       <small class="text-muted">Dari <%= week.total || 0 %> pesan 7 hari</small>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-5">
+    <div class="stat-card h-100 border-start border-4 <%= packageAlertClass %>">
+      <div class="d-flex justify-content-between align-items-start gap-3">
+        <div>
+          <h5 class="mb-1"><i class="fa fa-box me-2"></i>Masa Aktif Paket</h5>
+          <% if (nearestPackage) { %>
+            <div class="text-muted small">Paling dekat habis</div>
+            <h2 class="<%= packageAlertTextClass %> mb-1"><%= nearestPackage.life_time || 0 %> hari</h2>
+            <div>
+              <strong><%= nearestPackage.name || '-' %></strong>
+              <span class="text-muted">(<%= nearestPackage.device_key || '-' %>)</span>
+            </div>
+          <% } else { %>
+            <h2 class="text-muted mb-1">-</h2>
+            <div class="text-muted">Belum ada device aktif.</div>
+          <% } %>
+        </div>
+        <% if (nearestPackage) { %>
+          <a href="/client/device/status?deviceKey=<%= nearestPackage.device_key %>" class="btn btn-sm btn-outline-success">
+            Detail
+          </a>
+        <% } %>
+      </div>
+      <% if (nearestPackage) { %>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+          <span class="badge bg-danger"><%= (packageAlerts.critical || []).length %> kritis</span>
+          <span class="badge bg-warning text-dark"><%= (packageAlerts.warning || []).length %> segera habis</span>
+          <span class="badge bg-success"><%= (packageAlerts.healthy || []).length %> aman</span>
+        </div>
+      <% } %>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Pengingat Paket Device</h5>
+        <a href="/client/device" class="btn btn-sm btn-outline-secondary">Kelola Device</a>
+      </div>
+      <% const reminderDevices = (dash.deviceCards || []).slice().sort((a, b) => Number(a.life_time || 0) - Number(b.life_time || 0)).slice(0, 4); %>
+      <% if (reminderDevices.length) { %>
+        <div class="row g-2">
+          <% reminderDevices.forEach(function(device) {
+            const days = Number(device.life_time || 0);
+            const badgeClass = days <= 3 ? 'bg-danger' : (days <= 7 ? 'bg-warning text-dark' : 'bg-success');
+          %>
+            <div class="col-md-6">
+              <a href="/client/device/status?deviceKey=<%= device.device_key %>" class="package-reminder text-decoration-none">
+                <div>
+                  <strong><%= device.name || device.device_key || '-' %></strong><br>
+                  <small class="text-muted"><%= device.limit_daily || 0 %> pesan/hari - <%= device.status || '-' %></small>
+                </div>
+                <span class="badge <%= badgeClass %>"><%= days %> hari</span>
+              </a>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p class="text-muted mb-0">Belum ada device untuk dipantau.</p>
+      <% } %>
     </div>
   </div>
 </div>
@@ -286,6 +358,25 @@
     padding: 14px;
     background: #fbfcfc;
     height: 100%;
+  }
+
+  .package-reminder {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px;
+    background: #fbfcfc;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: 100%;
+    transition: all 0.2s;
+  }
+
+  .package-reminder:hover {
+    border-color: #128c7e;
+    background: #f2fbf7;
   }
 
   .activity-row {

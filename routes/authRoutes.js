@@ -55,8 +55,41 @@ module.exports = ({ sessionManager, userManager }) => {
   });
 
   router.post("/register", redirectIfLoggedIn, async (req, res) => {
+    let name = "";
+    let email = "";
+    let phone = "";
+    let ref = "";
+
+    const renderRegisterError = (message) =>
+      res.status(400).render("auth/register", {
+        error: message || "Registrasi gagal",
+        name,
+        email,
+        phone,
+        ref,
+        path: req.originalUrl,
+        title: "Registrasi - w@pi",
+        layout: "layouts/main",
+      });
+
     try {
-      const { name, email, phone, ref, password, repassword } = req.body;
+      ({ name = "", email = "", phone = "", ref = "" } = req.body);
+      const { password, repassword } = req.body;
+
+      name = String(name).trim();
+      email = String(email).trim().toLowerCase();
+      phone = String(phone).trim();
+      ref = String(ref).trim();
+
+      if (!name) {
+        throw new Error("Nama lengkap harus diisi");
+      }
+      if (!email) {
+        throw new Error("Email harus diisi");
+      }
+      if (!phone) {
+        throw new Error("Nomor WhatsApp harus diisi");
+      }
 
       if (!password || !repassword) {
         throw new Error("Password dan Konfirmasi Password harus diisi");
@@ -80,16 +113,7 @@ module.exports = ({ sessionManager, userManager }) => {
       req.session.user = user;
       res.redirect("/client");
     } catch (error) {
-      res.render("auth/register", {
-        error: error.message || "Registrasi gagal",
-        name,
-        email,
-        phone,
-        ref,
-        path: req.originalUrl,
-        title: "Registrasi - w@pi",
-        layout: "layouts/main",
-      });
+      return renderRegisterError(error.message || "Registrasi gagal");
     }
   });
 

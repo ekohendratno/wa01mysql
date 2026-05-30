@@ -46,7 +46,17 @@
     </div>
 
     <div class="stat-card">
-      <h5 class="mb-4"><i class="fa fa-box me-2"></i>Paket & Fitur</h5>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="mb-0"><i class="fa fa-box me-2"></i>Paket & Fitur</h5>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-success"
+          data-bs-toggle="modal"
+          data-bs-target="#upgradePackageModal"
+        >
+          <i class="fa fa-arrow-up me-1"></i> Upgrade Paket
+        </button>
+      </div>
       
       <div class="row">
         <div class="col-md-6 mb-3">
@@ -153,6 +163,56 @@
       </div>
     </div>
     <% } %>
+  </div>
+
+  <div class="modal fade" id="upgradePackageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Upgrade Paket Device</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning small">
+            Paket lama akan hangus setelah upgrade berhasil. Masa aktif dan limit harian device akan diganti mengikuti paket baru.
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Device</label>
+            <input type="text" class="form-control" value="<%= device.name || device.device_key %> (<%= device.device_key %>)" readonly>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Paket aktif saat ini</label>
+            <input type="text" class="form-control" value="<%= device.package_name || 'Regular' %> - <%= device.life_time || 0 %> hari - <%= device.limit_daily || 0 %> pesan/hari" readonly>
+          </div>
+
+          <div class="mb-3">
+            <label for="upgradePackageId" class="form-label">Pilih paket baru</label>
+            <select class="form-select" id="upgradePackageId" required>
+              <% packages.forEach(pkg => { %>
+                <option value="<%= pkg.id %>" <%= device.packageId == pkg.id ? 'selected' : '' %>>
+                  <%= pkg.name %> - Rp <%= Number(pkg.price || 0).toLocaleString('id-ID') %> - <%= pkg.limit_daily || pkg.message_limit || 0 %> pesan/hari - <%= pkg.life_time || pkg.duration || 0 %> hari
+                </option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="confirmUpgradePackage">
+            <label class="form-check-label" for="confirmUpgradePackage">
+              Saya paham paket lama akan hangus dan saldo akan dipotong sesuai harga paket baru.
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="button" id="upgradePackageButton" class="btn btn-success" onclick="submitUpgradePackage()">
+            Upgrade Paket
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <% if (!device.session_parent) { %>
@@ -430,6 +490,67 @@
         }
         btn.disabled = false;
         btn.innerHTML = oldText;
+      }
+    });
+  }
+
+  function submitUpgradePackage() {
+    const packageId = $("#upgradePackageId").val();
+    const confirmed = $("#confirmUpgradePackage").is(":checked");
+    const btn = $("#upgradePackageButton");
+    const oldText = btn.html();
+
+    if (!packageId) {
+      showToast("Paket baru wajib dipilih.", "danger");
+      return;
+    }
+
+    if (!confirmed) {
+      showToast("Centang konfirmasi paket lama hangus terlebih dahulu.", "warning");
+      return;
+    }
+
+    btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Memproses...');
+
+    $.ajax({
+      url: "/client/device/upgrade-package",
+      method: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({
+        deviceKey: key,
+        packageId,
+      }),
+      success: function(response) {
+        if (response.status) {
+          showToast(response.message || "Paket berhasil diupgrade.", "success");
+          setTimeout(() => window.location.reload(), 700);
+        } else {
+          showToast(response.message || "Gagal upgrade paket.", "danger");
+          if (response.redirect) {
+            setTimeout(() => {
+              const go = confirm(
+                (response.message || "Saldo tidak cukup.") +
+                  "\n\nKlik OK untuk menuju Billing/Top Up, atau Cancel untuk tetap di halaman ini.",
+              );
+              if (go) window.location.href = response.redirect;
+            }, 350);
+          }
+          btn.prop("disabled", false).html(oldText);
+        }
+      },
+      error: function(xhr) {
+        const response = xhr.responseJSON || {};
+        showToast(response.message || "Terjadi kesalahan saat upgrade paket.", "danger");
+        if (response.redirect) {
+          setTimeout(() => {
+            const go = confirm(
+              (response.message || "Saldo tidak cukup.") +
+                "\n\nKlik OK untuk menuju Billing/Top Up, atau Cancel untuk tetap di halaman ini.",
+            );
+            if (go) window.location.href = response.redirect;
+          }, 350);
+        }
+        btn.prop("disabled", false).html(oldText);
       }
     });
   }

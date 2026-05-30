@@ -8,9 +8,7 @@ module.exports = ({ pool, deviceManager }) => {
     try {
       const apiKey = req.session.user.api_key;
       const devices = await deviceManager.getDevices(apiKey);
-      const baseUrl =
-        process.env.SERVER_URL ||
-        `${req.protocol}://${req.get("host")}`;
+      const baseUrl = "https://wapi.jasaedukasi.com";
 
       res.render("client/developer", {
         title: "Developer API - w@pi",

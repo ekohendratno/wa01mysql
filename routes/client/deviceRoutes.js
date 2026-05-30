@@ -99,6 +99,35 @@ module.exports = ({ sessionManager, deviceManager, billingManager }) => {
     }
   });
 
+  router.post("/upgrade-package", authMiddleware, async (req, res) => {
+    try {
+      const apiKey = req.session.user.api_key;
+      const { deviceKey, packageId } = req.body;
+
+      if (!deviceKey || !packageId) {
+        return res.status(400).json({
+          status: false,
+          message: "Device dan paket wajib dipilih.",
+        });
+      }
+
+      const result = await deviceManager.upgradeDevicePackage(
+        apiKey,
+        deviceKey,
+        packageId,
+      );
+      res.json(result);
+    } catch (error) {
+      console.error("Upgrade package error:", error);
+      const statusCode = error.statusCode || error.output?.statusCode || 500;
+      res.status(statusCode).json({
+        status: false,
+        message: error.message || "Gagal upgrade paket.",
+        ...(error.data || {}),
+      });
+    }
+  });
+
   router.post("/share/create", authMiddleware, async (req, res) => {
     try {
       const apiKey = req.session.user.api_key;

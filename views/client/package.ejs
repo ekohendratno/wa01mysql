@@ -1,41 +1,69 @@
+<%
+    function renderPackageFeature(line) {
+        const raw = String(line || "")
+            .replace(/âœ…/g, "")
+            .replace(/✅/g, "")
+            .replace(/âŒ/g, "")
+            .replace(/❌/g, "")
+            .trim();
+
+        const escaped = raw
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+        return escaped
+            .replace(/&lt;small&gt;/gi, '<small class="text-muted">')
+            .replace(/&lt;\/small&gt;/gi, "</small>");
+    }
+
+    function isIncludedFeature(line) {
+        const raw = String(line || "");
+        return raw.includes("âœ…") || raw.includes("✅");
+    }
+
+    function splitPackageDescription(description) {
+        return String(description || "")
+            .split(/<br\s*\/?>|\r?\n/gi)
+            .map(line => line.trim())
+            .filter(Boolean);
+    }
+%>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="text-success"><i class="fa fa-box me-2"></i>Packages</h4>
 </div>
 
-<!-- Statistik Saldo -->
 <div class="row gy-4">
     <% packages.forEach(pkg => { %>
         <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-            <div class="card h-100 pricing-card position-relative shadow-sm 
+            <div class="card h-100 pricing-card position-relative shadow-sm
                 <%= pkg.recomended ? 'border-warning bg-warning bg-opacity-25' : 'border-secondary bg-light' %>">
-                
-                <!-- Badge Rekomendasi -->
+
                 <% if (pkg.recomended) { %>
                     <span class="badge bg-success position-absolute top-0 start-50 translate-middle text-white px-3 py-2">
                         Rekomendasi
                     </span>
                 <% } %>
-                
-                <!-- Konten Kartu -->
+
                 <div class="card-body text-center">
-                    <!-- Title Paket -->
                     <h4 class="card-title fw-bold"><%= pkg.name %></h4>
 
-                    <!-- Harga Paket -->
                     <h2 class="text-success">Rp <%= new Intl.NumberFormat('id-ID').format(pkg.price) %></h2>
-                    <small class="text-muted">/<%= pkg.duration %> hari</small>
+                    <small class="text-muted">/<%= pkg.duration || pkg.life_time %> hari</small>
 
-                    <!-- Fitur Paket -->
                     <ul class="list-unstyled text-start mt-3">
                         <% if (pkg.description) { %>
-                            <% pkg.description.split('<br>').forEach(line => { %>
+                            <% splitPackageDescription(pkg.description).forEach(line => { %>
                                 <li class="mb-2">
-                                    <% if (line.includes('✅')) { %>
+                                    <% if (isIncludedFeature(line)) { %>
                                         <i class="fas fa-check-circle text-success me-2"></i>
                                     <% } else { %>
                                         <i class="fas fa-times-circle text-danger me-2"></i>
                                     <% } %>
-                                    <%= line.replace('✅', '').replace('❌', '') %>
+                                    <%- renderPackageFeature(line) %>
                                 </li>
                             <% }) %>
                         <% } else { %>
@@ -49,7 +77,6 @@
 </div>
 
 <style>
-/* Styling Umum */
 .pricing-card {
     border: 2px solid #128C7E;
     border-radius: 15px;
@@ -83,7 +110,22 @@
     border-radius: 30px;
 }
 
-/* Hover Effect */
+.pricing-card li {
+    display: flex;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+.pricing-card li i {
+    margin-top: 4px;
+    flex-shrink: 0;
+}
+
+.pricing-card li small {
+    display: inline;
+    line-height: 1.45;
+}
+
 .feature-card:hover {
     transform: translateY(-10px);
 }

@@ -315,6 +315,7 @@ const bantuinClientRoutes = require("./routes/client/bantuinRoutes")(
 );
 const dokumentasiClientRoutes = require("./routes/client/dokumentasiRoutes")(
   sessionManager,
+  deviceManager,
 );
 const profileClientRoutes = require("./routes/client/profileRoutes")({ pool });
 const subSessionClientRoutes = require("./routes/client/subSessionRoutes")({

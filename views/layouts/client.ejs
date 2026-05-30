@@ -164,7 +164,7 @@
       .sidebar-menu a {
         display: flex;
         align-items: center;
-        padding: 12px 20px;
+        padding: 10px 20px;
         color: #495057;
         text-decoration: none;
         transition: all 0.3s;
@@ -181,6 +181,24 @@
         margin-right: 10px;
         text-align: center;
         flex-shrink: 0;
+      }
+
+      .sidebar-section {
+        margin: 14px 16px 6px;
+        padding-top: 12px;
+        border-top: 1px solid #dde4e0;
+        color: #7a8580;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .sidebar-section:first-child {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: 0;
       }
 
       .sidebar-toggle-area {
@@ -233,6 +251,14 @@
           margin-right: 0;
         }
 
+        .sidebar-section {
+          margin: 10px 16px;
+          padding-top: 10px;
+          height: 1px;
+          overflow: hidden;
+          color: transparent;
+        }
+
         .sidebar-toggle-bottom .menu-text {
           display: none;
         }
@@ -263,6 +289,14 @@
 
         .sidebar.mini .sidebar-menu i {
           margin-right: 0;
+        }
+
+        .sidebar.mini .sidebar-section {
+          margin: 10px 16px;
+          padding-top: 10px;
+          height: 1px;
+          overflow: hidden;
+          color: transparent;
         }
 
         .sidebar.mini .sidebar-toggle-bottom .menu-text {
@@ -296,12 +330,15 @@
         </div>
 
         <ul class="sidebar-menu">
+          <li class="sidebar-section"><span class="menu-text">Utama</span></li>
           <li>
             <a href="/client">
               <i class="fa fa-home"></i>
               <span class="menu-text">Dashboard</span>
             </a>
           </li>
+
+          <li class="sidebar-section"><span class="menu-text">Akun & Billing</span></li>
           <li>
             <a href="/client/package">
               <i class="fa fa-box"></i> <span class="menu-text">Package</span>
@@ -313,6 +350,8 @@
               <span class="menu-text">Billing</span>
             </a>
           </li>
+
+          <li class="sidebar-section"><span class="menu-text">Operasional WA</span></li>
           <li>
             <a href="/client/device">
               <i class="fa fa-mobile-alt"></i>
@@ -323,12 +362,6 @@
             <a href="/client/campaign">
               <i class="fa fa-bullhorn"></i>
               <span class="menu-text">Campaign</span>
-            </a>
-          </li>
-          <li>
-            <a href="/client/templates">
-              <i class="fa fa-file-lines"></i>
-              <span class="menu-text">Templates</span>
             </a>
           </li>
           <li>
@@ -349,10 +382,18 @@
               <span class="menu-text">Inbox</span>
             </a>
           </li>
+
+          <li class="sidebar-section"><span class="menu-text">Data & Otomasi</span></li>
           <li>
             <a href="/client/contact">
               <i class="fa fa-address-book"></i>
               <span class="menu-text">Contacts</span>
+            </a>
+          </li>
+          <li>
+            <a href="/client/templates">
+              <i class="fa fa-file-lines"></i>
+              <span class="menu-text">Templates</span>
             </a>
           </li>
           <li>
@@ -373,12 +414,16 @@
               <span class="menu-text">Auto Reply</span>
             </a>
           </li>
+
+          <li class="sidebar-section"><span class="menu-text">Analitik</span></li>
           <li>
             <a href="/client/reports">
               <i class="fa fa-chart-line"></i>
               <span class="menu-text">Reports</span>
             </a>
           </li>
+
+          <li class="sidebar-section"><span class="menu-text">Bantuan & API</span></li>
           <li>
             <a href="/client/developer">
               <i class="fa fa-code"></i>
@@ -397,6 +442,8 @@
               <span class="menu-text">Documentation</span>
             </a>
           </li>
+
+          <li class="sidebar-section"><span class="menu-text">Pengguna</span></li>
           <li>
             <a href="/client/profile">
               <i class="fa fa-user"></i>
