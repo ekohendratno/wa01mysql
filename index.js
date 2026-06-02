@@ -39,6 +39,7 @@ const MessageManager = require("./lib/MessageManager.js");
 const DeviceManager = require("./lib/DeviceManager.js");
 const AutoReplyManager = require("./lib/AutoReplyManager.js");
 const UserManager = require("./lib/UserManager.js");
+const AiManager = require("./lib/AiManager.js");
 const { requireRole, redirectIfLoggedIn } = require("./lib/Utils.js");
 const {
   attachCsrfToken,
@@ -139,6 +140,8 @@ const billingManager = new BillingManager(pool);
 const messageManager = new MessageManager(pool, sessionManager);
 const userManager = new UserManager(pool);
 const autoreplyManager = new AutoReplyManager(pool);
+const aiManager = new AiManager(pool);
+sessionManager.setAiManager(aiManager);
 const cronManager = new CronManager(
   pool,
   messageManager,
@@ -251,6 +254,8 @@ const webhookAdminRoutes = require("./routes/admin/webhookRoutes.js")({ pool });
 const systemAdminRoutes = require("./routes/admin/systemRoutes.js")({
   pool,
   sessionManager,
+  cronManager,
+  cronGroupManager,
 });
 app.use("/admin", requireRole("admin"), indexAdminRoutes);
 app.use("/admin/package", requireRole("admin"), packageAdminRoutes);
@@ -330,6 +335,9 @@ const optinClientRoutes = require("./routes/client/optinRoutes")({
 const contactClientRoutes = require("./routes/client/contactRoutes")({
   deviceManager,
 });
+const aiClientRoutes = require("./routes/client/aiRoutes")({
+  aiManager,
+});
 
 app.use("/client", requireRole("client"), indexClientRoutes);
 app.use("/client/package", requireRole("client"), packageClientRoutes);
@@ -350,6 +358,7 @@ app.use("/client/profile", requireRole("client"), profileClientRoutes);
 app.use("/client/optin", requireRole("client"), optinClientRoutes);
 app.use("/client/contact", requireRole("client"), contactClientRoutes);
 app.use("/client/sub-session", requireRole("client"), subSessionClientRoutes);
+app.use("/client/ai", requireRole("client"), aiClientRoutes);
 
 const webhookClientRoutes = require("./routes/client/webhookRoutes")({
   deviceManager,

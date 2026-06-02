@@ -30,6 +30,7 @@ module.exports = ({ sessionManager, messageManager }) => {
         text,
         group,
         tags,
+        { recordDirect: true },
       );
 
       if (!result.status) {

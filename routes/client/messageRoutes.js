@@ -6,12 +6,19 @@ module.exports = ({ sessionManager, messageManager, deviceManager }) => {
   router.get("/", authMiddleware, async (req, res) => {
     try {
       const apiKey = req.session.user.api_key;
+      const uid = req.session.user.uid;
       const devices = await deviceManager.getDevices(apiKey, {
         status: "connected",
       });
+      const [[userOptIn]] = await messageManager.pool.query(
+        "SELECT opt_in_required FROM users WHERE uid = ? LIMIT 1",
+        [uid],
+      );
+
       res.render("client/message", {
         apiKey,
         devices: devices || [],
+        showOptInColumn: Number(userOptIn?.opt_in_required || 0) === 1,
         title: "Messages - w@pi",
         layout: "layouts/client",
       });
@@ -42,6 +49,17 @@ module.exports = ({ sessionManager, messageManager, deviceManager }) => {
     }
   });
 
+  router.get("/insights", authMiddleware, async (req, res) => {
+    try {
+      const apiKey = req.session.user.api_key;
+      const insights = await messageManager.getMessageInsights(apiKey);
+      res.json({ success: true, insights });
+    } catch (error) {
+      console.error("Message insights error:", error);
+      res.status(500).json({ success: false, message: "Terjadi kesalahan" });
+    }
+  });
+
   router.delete("/remove", authMiddleware, async (req, res) => {
     try {
       const { apiKey, id } = req.query;
@@ -59,8 +77,10 @@ module.exports = ({ sessionManager, messageManager, deviceManager }) => {
 
   router.post("/retry", authMiddleware, async (req, res) => {
     try {
-      const { apiKey, id } = req.query;
-      const result = await messageManager.retryMessage(apiKey, id);
+      const apiKey = req.session.user.api_key;
+      const id = req.body.id || req.query.id;
+      const deviceKey = req.body.deviceKey || req.query.deviceKey || null;
+      const result = await messageManager.retryMessage(apiKey, id, deviceKey);
       res.json({ status: true, message: "Message retry successfully" });
     } catch (error) {
       console.error("Retry message error:", error);

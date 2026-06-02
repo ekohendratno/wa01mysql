@@ -193,6 +193,34 @@ module.exports = ({ sessionManager, deviceManager, billingManager }) => {
     }
   });
 
+  router.post("/share/update-expiry", authMiddleware, async (req, res) => {
+    try {
+      const apiKey = req.session.user.api_key;
+      const { shareId, additionalDays, expiresAt, limitDailyOverride, aiReplyMode } = req.body;
+      if (!shareId) {
+        return res.status(400).json({
+          status: false,
+          message: "Share ID wajib diisi.",
+        });
+      }
+
+      const result = await deviceManager.updateDeviceShareExpiry(apiKey, shareId, {
+        additionalDays,
+        expiresAt,
+        limitDailyOverride,
+        aiReplyMode,
+      });
+      res.json(result);
+    } catch (error) {
+      console.error("Update device share expiry error:", error);
+      const statusCode = error.output?.statusCode || error.statusCode || 500;
+      res.status(statusCode).json({
+        status: false,
+        message: error.message,
+      });
+    }
+  });
+
   router.delete("/remove", authMiddleware, async (req, res) => {
     try {
       const { apiKey, deviceKey } = req.query;

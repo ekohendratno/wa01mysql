@@ -365,6 +365,11 @@
       <div class="main-content" id="mainContent"><%- body %></div>
     </div>
 
+    <div
+      class="toast-container position-fixed top-0 end-0 p-3"
+      style="z-index: 1080"
+    ></div>
+
     <script>
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
       if (window.$) {
@@ -395,6 +400,30 @@
           .replace(/>/g, "&gt;")
           .replace(/"/g, "&quot;")
           .replace(/'/g, "&#39;");
+      }
+
+      function showToast(message, type = "info") {
+        const safeType = ["success", "danger", "warning", "info", "secondary"].includes(type)
+          ? type
+          : "info";
+        const toastId = "toast-" + Date.now();
+        const toastHtml = `
+          <div id="${toastId}" class="toast align-items-center text-bg-${safeType} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+              <div class="toast-body">${escapeHtml(message)}</div>
+              <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+          </div>`;
+        const container = document.querySelector(".toast-container");
+        if (!container || typeof bootstrap === "undefined") {
+          alert(message);
+          return;
+        }
+        container.insertAdjacentHTML("beforeend", toastHtml);
+        const toastEl = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        toast.show();
+        toastEl.addEventListener("hidden.bs.toast", () => toastEl.remove());
       }
 
       function aksiLogout() {

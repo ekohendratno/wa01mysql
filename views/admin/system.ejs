@@ -78,6 +78,147 @@
 </div>
 
 <div class="row g-3 mb-4">
+  <div class="col-lg-7">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0"><i class="fa fa-clock-rotate-left me-2"></i>Cron Jobs</h5>
+        <span class="badge bg-success"><%= health.cronTaskCount || 0 %> task aktif</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Job</th>
+              <th>Jadwal</th>
+              <th>Eksekusi Berikutnya</th>
+              <th>Fungsi</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.cronJobs && health.cronJobs.length) { %>
+              <% health.cronJobs.forEach(function(job) { %>
+                <tr>
+                  <td>
+                    <strong><%= job.name %></strong><br>
+                    <small class="text-muted"><code><%= job.schedule %></code></small>
+                  </td>
+                  <td><small><%= job.frequency %></small></td>
+                  <td style="min-width: 180px">
+                    <div
+                      class="cron-countdown"
+                      data-next-run="<%= job.nextRunAt || '' %>"
+                      data-interval="<%= job.intervalSeconds || 60 %>"
+                    >
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Sisa</small>
+                        <small class="fw-semibold cron-countdown-text">-</small>
+                      </div>
+                      <div class="progress" style="height: 8px">
+                        <div class="progress-bar bg-success cron-countdown-bar" style="width: 0%"></div>
+                      </div>
+                      <small class="text-muted cron-next-run d-block mt-1">-</small>
+                    </div>
+                  </td>
+                  <td><small><%= job.task %></small></td>
+                  <td><span class="badge <%= job.status === 'registered' ? 'bg-success' : 'bg-secondary' %>"><%= job.status %></span></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="5" class="text-muted">Belum ada data cron.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-broom me-2"></i>Preview Cleanup Harian</h5>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th class="text-end">Calon Hapus</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.cleanupPreview && health.cleanupPreview.length) { %>
+              <% health.cleanupPreview.forEach(function(row) { %>
+                <tr>
+                  <td><small><%= row.item %></small></td>
+                  <td class="text-end"><span class="badge <%= Number(row.cnt || 0) > 0 ? 'bg-warning text-dark' : 'bg-secondary' %>"><%= row.cnt || 0 %></span></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="2" class="text-muted">Tidak ada preview cleanup.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+      <small class="text-muted d-block mt-3">Data <code>opt_ins</code> dan <code>contacts</code> tidak masuk cleanup otomatis.</small>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    function formatDuration(totalSeconds) {
+      const seconds = Math.max(0, Math.floor(totalSeconds));
+      const days = Math.floor(seconds / 86400);
+      const hours = Math.floor((seconds % 86400) / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+
+      if (days > 0) return `${days}h ${hours}j ${minutes}m`;
+      if (hours > 0) return `${hours}j ${minutes}m ${secs}d`;
+      if (minutes > 0) return `${minutes}m ${secs}d`;
+      return `${secs}d`;
+    }
+
+    function advanceNextRun(nextRun, intervalSeconds) {
+      const intervalMs = Math.max(1, intervalSeconds) * 1000;
+      let next = nextRun.getTime();
+      const now = Date.now();
+      while (next <= now) next += intervalMs;
+      return new Date(next);
+    }
+
+    function updateCronCountdowns() {
+      document.querySelectorAll(".cron-countdown").forEach(function (el) {
+        const nextRunRaw = el.getAttribute("data-next-run");
+        const intervalSeconds = parseInt(el.getAttribute("data-interval") || "60", 10);
+        if (!nextRunRaw) return;
+
+        let nextRun = new Date(nextRunRaw);
+        if (Number.isNaN(nextRun.getTime())) return;
+
+        nextRun = advanceNextRun(nextRun, intervalSeconds);
+        el.setAttribute("data-next-run", nextRun.toISOString());
+
+        const remainingSeconds = (nextRun.getTime() - Date.now()) / 1000;
+        const percent = Math.max(
+          0,
+          Math.min(100, 100 - (remainingSeconds / Math.max(1, intervalSeconds)) * 100)
+        );
+
+        const text = el.querySelector(".cron-countdown-text");
+        const bar = el.querySelector(".cron-countdown-bar");
+        const nextLabel = el.querySelector(".cron-next-run");
+
+        if (text) text.textContent = formatDuration(remainingSeconds);
+        if (bar) bar.style.width = `${percent}%`;
+        if (nextLabel) nextLabel.textContent = `Next: ${nextRun.toLocaleString("id-ID")}`;
+      });
+    }
+
+    updateCronCountdowns();
+    setInterval(updateCronCountdowns, 1000);
+  })();
+</script>
+
+<div class="row g-3 mb-4">
   <div class="col-lg-4">
     <div class="stat-card h-100">
       <h5 class="mb-3">Runtime</h5>
@@ -217,6 +358,75 @@
 </div>
 
 <div class="row g-3">
+  <div class="col-lg-6">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-list-check me-2"></i>Log Aplikasi Terbaru</h5>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>User</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.recentAppLogs && health.recentAppLogs.length) { %>
+              <% health.recentAppLogs.forEach(function(row) { %>
+                <tr>
+                  <td><small><%= row.created_at ? new Date(row.created_at).toLocaleString('id-ID') : '-' %></small></td>
+                  <td><%= row.user_name || '-' %></td>
+                  <td><small><%= (row.action || '').length > 100 ? (row.action.substring(0, 100) + '...') : (row.action || '-') %></small></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="3" class="text-muted">Belum ada log aplikasi.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0"><i class="fa fa-tower-broadcast me-2"></i>Webhook Log Terbaru</h5>
+        <a href="/admin/webhooks" class="btn btn-sm btn-outline-secondary">Semua</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Event</th>
+              <th>Status</th>
+              <th>User / Device</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.recentWebhookLogs && health.recentWebhookLogs.length) { %>
+              <% health.recentWebhookLogs.forEach(function(row) { %>
+                <tr>
+                  <td><small><%= row.created_at ? new Date(row.created_at).toLocaleString('id-ID') : '-' %></small></td>
+                  <td><%= row.event || '-' %></td>
+                  <td>
+                    <span class="badge <%= row.status === 'success' ? 'bg-success' : 'bg-danger' %>"><%= row.status || '-' %></span>
+                    <% if (row.http_status) { %><small class="text-muted">HTTP <%= row.http_status %></small><% } %>
+                  </td>
+                  <td><small><%= row.user_name || '-' %> / <%= row.device_name || '-' %></small></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="4" class="text-muted">Belum ada webhook log.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mt-1">
   <div class="col-lg-5">
     <div class="stat-card h-100">
       <div class="d-flex justify-content-between align-items-center mb-3">

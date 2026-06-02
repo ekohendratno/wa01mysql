@@ -68,6 +68,8 @@ async function buildDashboardStats(pool, apiKey, devices, sessions) {
         deviceStatus: { connected: 0, disconnected: 0, connecting: 0, other: 0 },
         deviceCards: [],
         packageAlerts: { critical: [], warning: [], healthy: [], nearest: null },
+        shareAlerts: { critical: [], warning: [], healthy: [], nearest: null },
+        receivedShareAlerts: { critical: [], warning: [], healthy: [], nearest: null },
         daily: [],
         peakHour: "-",
         successRate: 0,
@@ -153,6 +155,44 @@ async function buildDashboardStats(pool, apiKey, devices, sessions) {
     );
     result.deviceCards = deviceRows || [];
     result.packageAlerts = buildPackageAlerts(result.deviceCards);
+
+    const [shareRows] = await pool.query(
+        `SELECT
+            ds.id, ds.invite_code, ds.status, ds.expires_at, ds.created_at,
+            d.name AS device_name, d.device_key,
+            u.name AS shared_name, u.email AS shared_email
+         FROM device_shares ds
+         JOIN devices d ON ds.device_id = d.id
+         LEFT JOIN users u ON ds.shared_uid = u.uid
+         WHERE ds.owner_uid = ?
+           AND ds.status = 'active'
+           AND ds.expires_at IS NOT NULL
+           AND ds.expires_at > NOW()
+         ORDER BY ds.expires_at ASC
+         LIMIT 8`,
+        [uid]
+    );
+    result.shareAlerts = buildShareAlerts(shareRows || []);
+
+    const [receivedShareRows] = await pool.query(
+        `SELECT
+            ds.id, ds.invite_code, ds.status, ds.expires_at, ds.created_at,
+            d.name AS device_name, d.device_key, d.phone, d.status AS device_status,
+            u.name AS owner_name, u.email AS owner_email
+         FROM device_shares ds
+         JOIN devices d ON ds.device_id = d.id
+         JOIN users u ON ds.owner_uid = u.uid
+         WHERE ds.shared_uid = ?
+           AND ds.status = 'active'
+           AND ds.permission_send = 1
+           AND ds.expires_at IS NOT NULL
+           AND ds.expires_at > NOW()
+           AND d.status != 'deleted'
+         ORDER BY ds.expires_at ASC
+         LIMIT 8`,
+        [uid]
+    );
+    result.receivedShareAlerts = buildShareAlerts(receivedShareRows || []);
 
     const [campaignRows] = await pool.query(
         `SELECT
@@ -301,10 +341,36 @@ function buildRecommendations(stats, devices, sessions) {
     if (stats.webhooks.failed24h > 0) tips.push({ type: "warning", text: "Ada webhook gagal dalam 24 jam. Cek URL webhook dan response server tujuan.", href: "/client/webhook/logs" });
     if (stats.packageAlerts?.critical?.length) tips.push({ type: "danger", text: `${stats.packageAlerts.critical.length} device masa aktifnya tinggal 3 hari atau kurang. Upgrade paket sebelum nonaktif.`, href: "/client/device" });
     else if (stats.packageAlerts?.warning?.length) tips.push({ type: "warning", text: `${stats.packageAlerts.warning.length} device masa aktifnya tinggal 7 hari atau kurang. Siapkan perpanjangan paket.`, href: "/client/device" });
+    if (stats.shareAlerts?.critical?.length) tips.push({ type: "danger", text: `${stats.shareAlerts.critical.length} akses device share tinggal 3 hari atau kurang. Buat kode share baru atau koordinasikan perpanjangan akses.`, href: "/client/device" });
+    else if (stats.shareAlerts?.warning?.length) tips.push({ type: "warning", text: `${stats.shareAlerts.warning.length} akses device share tinggal 7 hari atau kurang. Siapkan perpanjangan akses penerima.`, href: "/client/device" });
+    if (stats.receivedShareAlerts?.critical?.length) tips.push({ type: "danger", text: `${stats.receivedShareAlerts.critical.length} shared device yang Anda terima tinggal 3 hari atau kurang. Hubungi owner untuk memperpanjang akses.`, href: "/client/device" });
+    else if (stats.receivedShareAlerts?.warning?.length) tips.push({ type: "warning", text: `${stats.receivedShareAlerts.warning.length} shared device yang Anda terima tinggal 7 hari atau kurang. Siapkan koordinasi dengan owner.`, href: "/client/device" });
     if (stats.optIns.pending > stats.optIns.approved && stats.optIns.pending > 0) tips.push({ type: "info", text: "Opt-in pending lebih banyak dari approved. Kirim reminder persetujuan ke kontak yang belum approve.", href: "/client/optin" });
     if (!stats.campaigns.total && hasDevice) tips.push({ type: "info", text: "Buat campaign pertama untuk broadcast terjadwal dari kontak atau template.", href: "/client/campaign" });
     if (!stats.contacts && hasDevice) tips.push({ type: "info", text: "Sinkronkan atau tambah kontak agar campaign lebih mudah dikelola.", href: "/client/contact" });
     if (!tips.length) tips.push({ type: "success", text: "Operasional terlihat sehat. Pantau queue dan failed message secara berkala.", href: "/client/reports" });
 
     return tips.slice(0, 5);
+}
+
+function buildShareAlerts(shares) {
+    const buckets = { critical: [], warning: [], healthy: [], nearest: null };
+    const now = Date.now();
+    const sorted = (shares || [])
+        .map((share) => {
+            const expiresAt = share.expires_at ? new Date(share.expires_at).getTime() : null;
+            const daysLeft = expiresAt ? Math.max(0, Math.ceil((expiresAt - now) / (24 * 60 * 60 * 1000))) : null;
+            return { ...share, days_left: daysLeft };
+        })
+        .filter((share) => share.days_left !== null)
+        .sort((a, b) => a.days_left - b.days_left);
+
+    sorted.forEach((share) => {
+        if (share.days_left <= 3) buckets.critical.push(share);
+        else if (share.days_left <= 7) buckets.warning.push(share);
+        else buckets.healthy.push(share);
+    });
+
+    buckets.nearest = sorted[0] || null;
+    return buckets;
 }

@@ -10,7 +10,11 @@
   const webhooks = dash.webhooks || {};
   const deviceStatus = dash.deviceStatus || {};
   const packageAlerts = dash.packageAlerts || {};
+  const shareAlerts = dash.shareAlerts || {};
+  const receivedShareAlerts = dash.receivedShareAlerts || {};
   const nearestPackage = packageAlerts.nearest || null;
+  const nearestShare = shareAlerts.nearest || null;
+  const nearestReceivedShare = receivedShareAlerts.nearest || null;
   const packageAlertClass = nearestPackage && Number(nearestPackage.life_time || 0) <= 3
     ? 'border-danger'
     : (nearestPackage && Number(nearestPackage.life_time || 0) <= 7 ? 'border-warning' : 'border-success');
@@ -30,6 +34,42 @@
     <a href="/client/device" class="btn btn-outline-secondary btn-sm"><i class="fa fa-mobile-alt me-1"></i> Device</a>
   </div>
 </div>
+
+<% if (nearestShare) {
+  const shareDays = Number(nearestShare.days_left || 0);
+  const shareAlertClass = shareDays <= 3 ? 'alert-danger' : (shareDays <= 7 ? 'alert-warning' : 'alert-info');
+%>
+  <div class="alert <%= shareAlertClass %> d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+      <strong><i class="fa fa-share-nodes me-2"></i>Device share mendekati kedaluwarsa</strong>
+      <div>
+        Akses <strong><%= nearestShare.shared_name || nearestShare.shared_email || 'penerima' %></strong>
+        ke device <strong><%= nearestShare.device_name || nearestShare.device_key || '-' %></strong>
+        tersisa <strong><%= shareDays %> hari</strong>.
+      </div>
+      <small>Buat kode share baru atau cabut lalu bagikan ulang jika akses masih dibutuhkan.</small>
+    </div>
+    <a href="/client/device" class="btn btn-sm btn-outline-dark">Kelola Share</a>
+  </div>
+<% } %>
+
+<% if (nearestReceivedShare) {
+  const receivedDays = Number(nearestReceivedShare.days_left || 0);
+  const receivedAlertClass = receivedDays <= 3 ? 'alert-danger' : (receivedDays <= 7 ? 'alert-warning' : 'alert-info');
+%>
+  <div class="alert <%= receivedAlertClass %> d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+      <strong><i class="fa fa-handshake me-2"></i>Shared device yang Anda terima</strong>
+      <div>
+        Akses ke <strong><%= nearestReceivedShare.device_name || nearestReceivedShare.device_key || '-' %></strong>
+        dari <strong><%= nearestReceivedShare.owner_name || nearestReceivedShare.owner_email || 'owner' %></strong>
+        tersisa <strong><%= receivedDays %> hari</strong>.
+      </div>
+      <small>Hubungi owner jika akses ini perlu diperpanjang.</small>
+    </div>
+    <a href="/client/device" class="btn btn-sm btn-outline-dark">Lihat Device</a>
+  </div>
+<% } %>
 
 <div class="row g-3 mb-4">
   <div class="col-md-3">
@@ -81,6 +121,76 @@
     </div>
   </div>
 </div>
+
+<% if ((shareAlerts.critical || []).length || (shareAlerts.warning || []).length) { %>
+  <div class="row g-3 mb-4">
+    <div class="col-12">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0"><i class="fa fa-share-nodes me-2"></i>Pengingat Device Share</h5>
+          <a href="/client/device" class="btn btn-sm btn-outline-secondary">Kelola Share</a>
+        </div>
+        <div class="row g-2">
+          <% (shareAlerts.critical || []).concat(shareAlerts.warning || []).slice(0, 4).forEach(function(share) {
+            const days = Number(share.days_left || 0);
+            const badgeClass = days <= 3 ? 'bg-danger' : 'bg-warning text-dark';
+          %>
+            <div class="col-md-6">
+              <div class="package-reminder">
+                <div>
+                  <strong><%= share.device_name || share.device_key || '-' %></strong><br>
+                  <small class="text-muted"><%= share.shared_name || share.shared_email || 'Penerima belum jelas' %></small>
+                </div>
+                <span class="badge <%= badgeClass %>"><%= days %> hari</span>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<% const receivedShareList = (receivedShareAlerts.critical || []).concat(receivedShareAlerts.warning || [], receivedShareAlerts.healthy || []).slice(0, 4); %>
+<% if (receivedShareList.length) { %>
+  <div class="row g-3 mb-4">
+    <div class="col-12">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0"><i class="fa fa-handshake me-2"></i>Masa Akses Shared Device</h5>
+          <a href="/client/device" class="btn btn-sm btn-outline-secondary">Lihat Device</a>
+        </div>
+        <div class="row g-2">
+          <% receivedShareList.forEach(function(share) {
+            const days = Number(share.days_left || 0);
+            const badgeClass = days <= 3 ? 'bg-danger' : (days <= 7 ? 'bg-warning text-dark' : 'bg-success');
+            const startMs = share.created_at ? new Date(share.created_at).getTime() : Date.now();
+            const endMs = share.expires_at ? new Date(share.expires_at).getTime() : Date.now();
+            const totalMs = Math.max(1, endMs - startMs);
+            const remainingMs = Math.max(0, endMs - Date.now());
+            const remainingPercent = Math.max(0, Math.min(100, Math.round((remainingMs / totalMs) * 100)));
+          %>
+            <div class="col-md-6">
+              <div class="package-reminder d-block">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                  <div>
+                    <strong><%= share.device_name || share.device_key || '-' %></strong><br>
+                    <small class="text-muted">Owner: <%= share.owner_name || share.owner_email || '-' %></small>
+                  </div>
+                  <span class="badge <%= badgeClass %>"><%= days %> hari</span>
+                </div>
+                <div class="progress mt-2" style="height: 8px">
+                  <div class="progress-bar <%= days <= 3 ? 'bg-danger' : (days <= 7 ? 'bg-warning' : 'bg-success') %>" style="width: <%= remainingPercent %>%"></div>
+                </div>
+                <small class="text-muted"><%= remainingPercent %>% sisa akses</small>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>
 
 <div class="row g-3 mb-4">
   <div class="col-lg-5">

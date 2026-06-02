@@ -9,9 +9,7 @@ module.exports = ({ messageManager, deviceManager }) => {
       const apiKey = req.session.user.api_key;
       await messageManager.syncOptInsFromInbox(uid);
       const optins = await messageManager.getOptIns(uid);
-      const devices = await deviceManager.getDevices(apiKey, {
-        includeShared: false,
-      });
+      const devices = await deviceManager.getDevices(apiKey);
 
       res.render("client/optin", {
         optins: optins || [],
