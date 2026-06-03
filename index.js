@@ -113,6 +113,7 @@ const momentTimezone = require("moment-timezone");
 app.use((req, res, next) => {
   res.locals.moment = moment;
   res.locals.momentTimezone = momentTimezone;
+  res.locals.adminImpersonator = req.session?.adminImpersonator || null;
   next();
 });
 

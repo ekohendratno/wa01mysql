@@ -8,12 +8,12 @@
 
   .auth-shell {
     min-height: 100vh;
-    background: #f7faf9;
+    background: linear-gradient(135deg, #fbfffd, #eefdf4);
   }
 
   .auth-form-side {
     min-height: 100vh;
-    background: #fff;
+    background: rgba(255, 255, 255, 0.92);
   }
 
   .auth-brand {
@@ -66,11 +66,11 @@
   .auth-visual {
     min-height: 100vh;
     background:
-      linear-gradient(135deg, rgba(157, 23, 38, 0.94), rgba(0, 49, 38, 0.9)),
+      linear-gradient(135deg, rgba(249, 255, 252, 0.96), rgba(224, 250, 235, 0.92)),
       url("https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1400&q=80");
     background-size: cover;
     background-position: center;
-    color: #fff;
+    color: #0b221e;
     position: relative;
     overflow: hidden;
   }
@@ -81,7 +81,7 @@
     height: 12px;
     border-radius: 999px;
     overflow: hidden;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.24);
+    box-shadow: 0 0 0 1px rgba(7, 94, 84, 0.08);
   }
 
   .indonesia-ribbon span:first-child {
@@ -95,18 +95,19 @@
   }
 
   .benefit-card {
-    background: rgba(12, 27, 24, 0.76);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid #dff1e9;
     border-radius: 8px;
     padding: 18px;
-    backdrop-filter: blur(10px);
+    box-shadow: 0 18px 54px rgba(10, 84, 65, 0.12);
+    backdrop-filter: blur(8px);
   }
 
   .benefit-row {
     display: flex;
     gap: 12px;
     padding: 11px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid #e3f2eb;
   }
 
   .benefit-row:last-child {
@@ -116,6 +117,15 @@
   .benefit-row i {
     color: var(--wa-brand);
     margin-top: 3px;
+  }
+
+  .auth-visual .bg-white.bg-opacity-10 {
+    background: rgba(255, 255, 255, 0.86) !important;
+    border-color: #dff1e9 !important;
+  }
+
+  .auth-visual .text-white-50 {
+    color: #5f756f !important;
   }
 
   @media (max-width: 992px) {

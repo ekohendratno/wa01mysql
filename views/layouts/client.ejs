@@ -476,7 +476,21 @@
         </div>
       </div>
       <!-- Main Content -->
-      <div class="main-content" id="mainContent"><%- body %></div>
+      <div class="main-content" id="mainContent">
+        <% if (adminImpersonator) { %>
+          <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+              <strong><i class="fa fa-user-shield me-1"></i>Mode Admin:</strong>
+              Anda sedang masuk sebagai client ini.
+              <small class="d-block text-muted">Admin: <%= adminImpersonator.name || adminImpersonator.email || adminImpersonator.uid %></small>
+            </div>
+            <button class="btn btn-sm btn-dark" type="button" onclick="stopImpersonation()">
+              <i class="fa fa-arrow-left me-1"></i>Kembali ke Admin
+            </button>
+          </div>
+        <% } %>
+        <%- body %>
+      </div>
     </div>
 
     <script>
@@ -515,6 +529,25 @@
         if (confirm("Yakin ingin logout?")) {
           window.location.href = "/auth/logout";
         }
+      }
+
+      function stopImpersonation() {
+        fetch("/auth/stop-impersonation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+        })
+          .then((r) => r.json())
+          .then((res) => {
+            if (res.status) {
+              window.location.href = res.redirect || "/admin/users";
+              return;
+            }
+            alert(res.message || "Gagal kembali ke admin.");
+          })
+          .catch((error) => {
+            console.error(error);
+            alert("Server error");
+          });
       }
 
       const toggleSidebarButton = document.getElementById("toggleSidebar");

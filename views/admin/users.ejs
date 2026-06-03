@@ -90,12 +90,28 @@
                 >
                   Edit
                 </button>
+                <% if (u.status === 'active') { %>
+                <button
+                  class="btn btn-sm btn-success ms-1"
+                  onclick="impersonateUser('<%= u.uid %>', '<%= (u.name || u.email || '').replace(/'/g, '&#39;') %>')"
+                  title="Masuk sebagai client ini"
+                >
+                  <i class="fa fa-right-to-bracket"></i>
+                </button>
+                <% } %>
                 <button
                   class="btn btn-sm btn-outline-secondary ms-1"
                   onclick="duplicateUser('<%= u.uid %>')"
                   title="Duplikat user ini lalu edit sebagai user baru"
                 >
                   <i class="fa fa-copy"></i>
+                </button>
+                <button
+                  class="btn btn-sm btn-warning ms-1"
+                  onclick="openResetPassword('<%= u.uid %>', '<%= (u.name || u.email || '').replace(/'/g, '&#39;') %>')"
+                  title="Reset password user"
+                >
+                  <i class="fa fa-key"></i>
                 </button>
                 <button
                   class="btn btn-sm btn-danger ms-1"
@@ -190,10 +206,48 @@
   </div>
 </div>
 
+<div id="resetPasswordModal" class="modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Reset Password User</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="resetPasswordUid" />
+        <div class="alert alert-warning small">
+          Password lama akan diganti. User dapat login menggunakan password baru ini.
+        </div>
+        <div class="mb-3">
+          <label class="form-label">User</label>
+          <input type="text" id="resetPasswordUserLabel" class="form-control" readonly />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Password Baru</label>
+          <input type="password" id="resetPasswordValue" class="form-control" minlength="6" autocomplete="new-password" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Konfirmasi Password</label>
+          <input type="password" id="resetPasswordConfirm" class="form-control" minlength="6" autocomplete="new-password" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="button" id="btnResetPassword" class="btn btn-warning" onclick="resetUserPassword()">
+          <i class="fa fa-key me-1"></i>Reset Password
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   let userModal;
+  let resetPasswordModal;
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
   document.addEventListener("DOMContentLoaded", function () {
     userModal = new bootstrap.Modal(document.getElementById("formUser"));
+    resetPasswordModal = new bootstrap.Modal(document.getElementById("resetPasswordModal"));
   });
 
   function formTambahUser() {
@@ -274,7 +328,7 @@
 
     fetch("/admin/users/save", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
       body: JSON.stringify(payload),
     })
       .then((r) => r.json())
@@ -298,7 +352,10 @@
   function hapusUser(uid) {
     if (!confirm("Hapus user ini? \nPERINGATAN: Data tidak bisa dikembalikan."))
       return;
-    fetch(`/admin/users/delete/${uid}`, { method: "DELETE" })
+    fetch(`/admin/users/delete/${uid}`, {
+      method: "DELETE",
+      headers: { "X-CSRF-Token": csrfToken },
+    })
       .then((r) => r.json())
       .then((res) => {
         if (res.status) location.reload();
@@ -307,6 +364,78 @@
       .catch((e) => {
         console.error(e);
         alert("Error");
+      });
+  }
+
+  function impersonateUser(uid, name) {
+    if (!confirm(`Masuk sebagai client ${name || uid}? Session admin akan disimpan sementara.`)) {
+      return;
+    }
+
+    fetch(`/admin/users/impersonate/${uid}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.status) {
+          window.location.href = res.redirect || "/client";
+        } else {
+          alert(res.message || "Gagal masuk sebagai client.");
+        }
+      })
+      .catch((e) => {
+        console.error(e);
+        alert("Server error");
+      });
+  }
+
+  function openResetPassword(uid, name) {
+    document.getElementById("resetPasswordUid").value = uid;
+    document.getElementById("resetPasswordUserLabel").value = `${name || "User"} (UID ${uid})`;
+    document.getElementById("resetPasswordValue").value = "";
+    document.getElementById("resetPasswordConfirm").value = "";
+    if (resetPasswordModal) resetPasswordModal.show();
+  }
+
+  function resetUserPassword() {
+    const uid = document.getElementById("resetPasswordUid").value;
+    const password = document.getElementById("resetPasswordValue").value;
+    const repassword = document.getElementById("resetPasswordConfirm").value;
+    const btn = document.getElementById("btnResetPassword");
+
+    if (!password || password.length < 6) {
+      alert("Password minimal 6 karakter.");
+      return;
+    }
+    if (password !== repassword) {
+      alert("Konfirmasi password tidak cocok.");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i>Menyimpan...';
+    fetch(`/admin/users/reset-password/${uid}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+      body: JSON.stringify({ password, repassword }),
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.status) {
+          alert(res.message || "Password user berhasil direset.");
+          if (resetPasswordModal) resetPasswordModal.hide();
+          return;
+        }
+        alert(res.message || "Gagal reset password.");
+      })
+      .catch((e) => {
+        console.error(e);
+        alert("Server error");
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa fa-key me-1"></i>Reset Password';
       });
   }
 </script>

@@ -86,6 +86,63 @@ module.exports = ({ pool } = {}) => {
     }
   });
 
+  router.post("/impersonate/:uid", authMiddleware, async (req, res) => {
+    try {
+      const adminUser = req.session.user;
+      if (!adminUser || adminUser.role !== "admin") {
+        return res.status(403).json({
+          status: false,
+          message: "Hanya admin yang bisa masuk sebagai client.",
+        });
+      }
+
+      const [rows] = await pool.query(
+        "SELECT uid, name, email, phone, api_key, active FROM users WHERE uid = ? LIMIT 1",
+        [req.params.uid],
+      );
+      if (rows.length === 0) {
+        return res.status(404).json({ status: false, message: "Client tidak ditemukan." });
+      }
+
+      const target = rows[0];
+      if (Number(target.active) !== 1) {
+        return res.status(403).json({
+          status: false,
+          message: "Client sedang nonaktif/suspended.",
+        });
+      }
+
+      req.session.adminImpersonator = {
+        uid: adminUser.uid,
+        name: adminUser.name,
+        email: adminUser.email,
+        phone: adminUser.phone,
+        role: "admin",
+        api_key: adminUser.api_key || null,
+      };
+      req.session.user = {
+        uid: target.uid,
+        name: target.name,
+        email: target.email,
+        phone: target.phone,
+        role: "client",
+        api_key: target.api_key,
+        impersonated_by_admin: adminUser.uid,
+      };
+
+      req.session.save(() => {
+        res.json({
+          status: true,
+          message: `Masuk sebagai ${target.name || target.email}.`,
+          redirect: "/client",
+        });
+      });
+    } catch (e) {
+      console.error("Impersonate user error:", e);
+      res.status(500).json({ status: false, message: e.message });
+    }
+  });
+
   // Save User (Add/Edit)
   router.post("/save", authMiddleware, async (req, res) => {
     const { uid, name, email, phone, password, status } = req.body;
@@ -142,6 +199,50 @@ module.exports = ({ pool } = {}) => {
       res.json({ status: false, message: e.message });
     } finally {
       connection.release();
+    }
+  });
+
+  router.post("/reset-password/:uid", authMiddleware, async (req, res) => {
+    const uid = parseInt(req.params.uid || "0", 10);
+    const { password, repassword } = req.body;
+
+    if (!uid) {
+      return res.status(400).json({ status: false, message: "UID tidak valid." });
+    }
+    if (!password || !repassword) {
+      return res.status(400).json({
+        status: false,
+        message: "Password dan konfirmasi password wajib diisi.",
+      });
+    }
+    if (String(password).length < 6) {
+      return res.status(400).json({
+        status: false,
+        message: "Password minimal 6 karakter.",
+      });
+    }
+    if (password !== repassword) {
+      return res.status(400).json({
+        status: false,
+        message: "Konfirmasi password tidak cocok.",
+      });
+    }
+
+    try {
+      const [result] = await pool.query(
+        "UPDATE users SET password = ? WHERE uid = ?",
+        [hashPassword(password), uid],
+      );
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          status: false,
+          message: "User tidak ditemukan.",
+        });
+      }
+      res.json({ status: true, message: "Password user berhasil direset." });
+    } catch (e) {
+      console.error("Reset user password error:", e);
+      res.status(500).json({ status: false, message: e.message });
     }
   });
 

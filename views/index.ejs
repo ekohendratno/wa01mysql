@@ -15,11 +15,11 @@
   .home-hero {
     min-height: calc(100vh - 76px);
     background:
-      linear-gradient(90deg, rgba(92, 13, 20, 0.95) 0%, rgba(0, 49, 38, 0.88) 50%, rgba(92, 13, 20, 0.58) 100%),
+      linear-gradient(90deg, rgba(248, 255, 251, 0.98) 0%, rgba(236, 255, 244, 0.94) 48%, rgba(255, 255, 255, 0.74) 100%),
       url("https://images.unsplash.com/photo-1556745757-8d76bdb6984b?auto=format&fit=crop&w=1800&q=80");
     background-size: cover;
     background-position: center;
-    color: #fff;
+    color: #0b221e;
     display: flex;
     align-items: center;
     position: relative;
@@ -35,8 +35,8 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.24);
-    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #cfeee0;
+    background: rgba(255, 255, 255, 0.78);
     border-radius: 999px;
     padding: 8px 14px;
     font-size: 0.9rem;
@@ -49,7 +49,7 @@
     height: 12px;
     border-radius: 999px;
     overflow: hidden;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.24);
+    box-shadow: 0 0 0 1px rgba(7, 94, 84, 0.08);
   }
 
   .indonesia-ribbon span:first-child {
@@ -73,7 +73,7 @@
   .hero-lead {
     max-width: 660px;
     font-size: 1.15rem;
-    color: rgba(255, 255, 255, 0.78);
+    color: #566a64;
     margin-bottom: 30px;
   }
 
@@ -84,6 +84,19 @@
     margin-bottom: 30px;
   }
 
+  .home-hero .btn-outline-light,
+  .cta-band .btn-light {
+    border-color: #128c7e;
+    color: #075e54;
+    background: #ffffff;
+  }
+
+  .home-hero .btn-outline-light:hover,
+  .cta-band .btn-light:hover {
+    background: #e9f8ef;
+    color: #075e54;
+  }
+
   .hero-metrics {
     display: grid;
     grid-template-columns: repeat(3, minmax(120px, 1fr));
@@ -92,7 +105,7 @@
   }
 
   .hero-metric {
-    border-left: 1px solid rgba(255, 255, 255, 0.24);
+    border-left: 1px solid #cfeee0;
     padding-left: 14px;
   }
 
@@ -102,7 +115,7 @@
   }
 
   .hero-metric span {
-    color: rgba(255, 255, 255, 0.68);
+    color: #687d76;
     font-size: 0.88rem;
   }
 
@@ -113,12 +126,17 @@
   }
 
   .product-window {
-    background: #111b1a;
-    color: #dbe7e3;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #ffffff;
+    color: #0b221e;
+    border: 1px solid #dff1e9;
     border-radius: 8px;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+    box-shadow: 0 24px 80px rgba(10, 84, 65, 0.14);
     overflow: hidden;
+  }
+
+  .product-window .text-white-50,
+  .code-panel .text-white-50 {
+    color: #6f817b !important;
   }
 
   .window-bar {
@@ -126,8 +144,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    background: #0b1413;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: #f1fbf6;
+    border-bottom: 1px solid #dff1e9;
   }
 
   .window-dot {
@@ -146,21 +164,21 @@
   }
 
   .preview-panel {
-    background: #172523;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #fbfffd;
+    border: 1px solid #e3f2eb;
     border-radius: 8px;
     padding: 16px;
   }
 
   .preview-stat {
-    background: #203330;
+    background: #f0fbf5;
     border-radius: 8px;
     padding: 14px;
     min-height: 92px;
   }
 
   .preview-stat small {
-    color: #9fb0ac;
+    color: #6f817b;
   }
 
   .preview-stat strong {
@@ -182,12 +200,32 @@
     margin-bottom: 14px;
   }
 
+  .soft-pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .soft-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #ffffff;
+    border: 1px solid #dff1e9;
+    border-radius: 999px;
+    padding: 8px 12px;
+    color: #31564d;
+    font-size: 0.88rem;
+    box-shadow: 0 8px 24px rgba(5, 85, 61, 0.06);
+  }
+
   .message-row {
     display: flex;
     justify-content: space-between;
     gap: 12px;
     padding: 10px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid #e3f2eb;
   }
 
   .section-heading {
@@ -203,6 +241,16 @@
     border-radius: 8px;
     padding: 24px;
     transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feature-tile::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: linear-gradient(90deg, #25d366, #38bdf8, #fbbf24);
   }
 
   .feature-tile:hover {
@@ -227,29 +275,71 @@
     background: #f4f8f6;
   }
 
+  .ai-band {
+    background: #fbfffd;
+  }
+
+  .ai-panel {
+    background: #ffffff;
+    border: 1px solid #dff1e9;
+    border-radius: 8px;
+    padding: 24px;
+    height: 100%;
+    box-shadow: 0 16px 46px rgba(5, 85, 61, 0.08);
+  }
+
+  .ai-mode {
+    border: 1px solid #e4efeb;
+    border-radius: 8px;
+    padding: 14px;
+    background: #fbfffd;
+  }
+
+  .insight-bar {
+    height: 9px;
+    background: #e8f1ed;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .insight-fill {
+    height: 100%;
+    border-radius: inherit;
+  }
+
   .workflow-step {
     border-left: 3px solid #25d366;
     padding-left: 18px;
   }
 
   .code-panel {
-    background: #0d1514;
+    background: #ffffff;
+    border: 1px solid #dff1e9;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(5, 25, 22, 0.18);
+    box-shadow: 0 20px 60px rgba(5, 85, 61, 0.1);
   }
 
   .code-panel pre {
-    color: #d7e7e2;
+    color: #223b35;
     margin: 0;
     padding: 22px;
     font-size: 0.88rem;
   }
 
   .pricing-band {
-    background:
-      linear-gradient(135deg, rgba(157, 23, 38, 0.96), rgba(11, 34, 30, 0.98));
-    color: #fff;
+    background: linear-gradient(135deg, #f7fffb, #e9fbf0);
+    color: #0b221e;
+  }
+
+  .pricing-band .text-white,
+  .cta-band .text-white {
+    color: #0b221e !important;
+  }
+
+  .pricing-band .text-white-50,
+  .cta-band .text-white-50 {
+    color: #5d746d !important;
   }
 
   .pricing-card {
@@ -276,17 +366,17 @@
 
   .cta-band {
     background:
-      linear-gradient(90deg, rgba(157, 23, 38, 0.94), rgba(7, 94, 84, 0.94)),
+      linear-gradient(90deg, rgba(239, 255, 246, 0.96), rgba(220, 248, 232, 0.94)),
       url("https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1600&q=80");
     background-size: cover;
     background-position: center;
-    color: #fff;
+    color: #0b221e;
   }
 
   @media (max-width: 992px) {
     .product-strip {
       margin-top: 0;
-      background: #0b221e;
+      background: #f7fffb;
       padding-top: 24px;
     }
 
@@ -319,11 +409,11 @@
     <div class="hero-copy">
       <div class="hero-kicker">
         <span class="indonesia-ribbon" aria-hidden="true"><span></span><span></span></span>
-        WhatsApp gateway buatan untuk bisnis Indonesia
+        WhatsApp gateway + AI assistant untuk operasional Indonesia
       </div>
       <h1 class="hero-title">w@pi</h1>
       <p class="hero-lead">
-        Kirim notifikasi pesanan, broadcast promo, reminder pembayaran, auto reply, dan webhook WhatsApp untuk UMKM, toko online, sekolah, komunitas, dan developer lokal.
+        Kirim notifikasi, campaign, pesan presensi, webhook, dan balasan AI dari satu dashboard yang tetap ringan untuk sekolah, UMKM, komunitas, dan developer lokal.
       </p>
       <div class="hero-actions">
         <a href="/auth/register" class="btn btn-brand btn-lg px-4">
@@ -335,17 +425,22 @@
       </div>
       <div class="hero-metrics">
         <div class="hero-metric">
-          <strong>API + Dashboard</strong>
-          <span>Untuk developer dan admin</span>
+          <strong>AI Auto Reply</strong>
+          <span>Knowledge base dari teks dan link</span>
         </div>
         <div class="hero-metric">
-          <strong>Webhook</strong>
-          <span>Order, pembayaran, dan chat</span>
+          <strong>Device Share</strong>
+          <span>Akses, limit, dan expired terkontrol</span>
         </div>
         <div class="hero-metric">
-          <strong>Campaign</strong>
-          <span>Promo, kelas, dan komunitas</span>
+          <strong>API + Logs</strong>
+          <span>Queue, retry, cron, dan webhook</span>
         </div>
+      </div>
+      <div class="soft-pill-row">
+        <span class="soft-pill"><i class="fas fa-robot text-success"></i> OpenRouter, Gemini, Groq, Ollama</span>
+        <span class="soft-pill"><i class="fas fa-user-shield text-primary"></i> Admin bisa bantu client</span>
+        <span class="soft-pill"><i class="fas fa-clock text-warning"></i> Alert masa aktif paket</span>
       </div>
     </div>
   </div>
@@ -360,30 +455,30 @@
           <span class="window-dot bg-warning"></span>
           <span class="window-dot bg-success"></span>
         </div>
-        <small class="text-white-50">Preview dashboard operasional Indonesia</small>
+        <small class="text-white-50">Preview dashboard operasional w@pi</small>
       </div>
       <div class="preview-grid">
         <div class="preview-panel">
           <div class="row g-3">
             <div class="col-md-4">
               <div class="preview-stat">
-                <small>Nomor WA Aktif</small>
+                <small>Device Aktif</small>
                 <strong>4/5</strong>
-                <span class="small text-white-50">1 perlu scan ulang</span>
+                <span class="small text-white-50">Share dan owner terpantau</span>
               </div>
             </div>
             <div class="col-md-4">
               <div class="preview-stat">
-                <small>Notifikasi Hari Ini</small>
+                <small>Pesan Hari Ini</small>
                 <strong>1.248</strong>
-                <span class="small text-white-50">97% terkirim</span>
+                <span class="small text-white-50">Limit harian berjalan</span>
               </div>
             </div>
             <div class="col-md-4">
               <div class="preview-stat">
-                <small>Antrean Pending</small>
-                <strong>36</strong>
-                <span class="small text-white-50">8 terjadwal</span>
+                <small>AI Terjawab</small>
+                <strong>86</strong>
+                <span class="small text-white-50">Draft dan auto reply</span>
               </div>
             </div>
           </div>
@@ -406,24 +501,24 @@
           </div>
           <div class="message-row">
             <div>
-              <strong>OTP Login Pelanggan</strong><br>
+              <strong>AI menjawab pertanyaan jurusan</strong><br>
               <small class="text-white-50">62812xxxx890</small>
             </div>
-            <span class="text-success">sent</span>
+            <span class="text-success">auto</span>
           </div>
           <div class="message-row">
             <div>
-              <strong>Promo Harbolnas</strong><br>
-              <small class="text-white-50">2.500 penerima</small>
+              <strong>Retry pesan presensi</strong><br>
+              <small class="text-white-50">Ganti device tujuan</small>
             </div>
-            <span class="text-warning">queued</span>
+            <span class="text-warning">pending</span>
           </div>
           <div class="message-row">
             <div>
-              <strong>Webhook order.paid</strong><br>
-              <small class="text-white-50">200 OK</small>
+              <strong>Device share hampir expired</strong><br>
+              <small class="text-white-50">7 hari tersisa</small>
             </div>
-            <span class="text-success">success</span>
+            <span class="text-danger">alert</span>
           </div>
           <a href="/auth/register" class="btn btn-brand w-100 mt-3">Buat Akun</a>
         </div>
@@ -438,7 +533,7 @@
       <div class="nusantara-badge"><i class="fas fa-map-marker-alt"></i> Dibuat untuk alur kerja lokal</div>
       <h2 class="fw-bold">Fitur yang langsung kepakai untuk bisnis Indonesia</h2>
       <p class="text-muted mb-0">
-        w@pi menggabungkan endpoint developer dengan tools operasional untuk admin toko, CS, dan tim lapangan.
+        w@pi menggabungkan endpoint developer, dashboard client, kontrol admin, dan AI assistant yang bisa dipakai bertahap.
       </p>
     </div>
     <div class="row g-4">
@@ -446,42 +541,117 @@
         <div class="feature-tile">
           <div class="feature-icon"><i class="fas fa-paper-plane"></i></div>
           <h5 class="fw-bold">Kirim Pesan API</h5>
-          <p class="text-muted mb-0">Endpoint HTTP untuk OTP, invoice, tracking, reminder, dan pesan grup dengan status pengiriman.</p>
+          <p class="text-muted mb-0">Endpoint HTTP untuk OTP, invoice, presensi, reminder, personal, grup, dan bulk dengan status pengiriman.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-4">
         <div class="feature-tile">
           <div class="feature-icon"><i class="fas fa-bullhorn"></i></div>
           <h5 class="fw-bold">Campaign & Scheduler</h5>
-          <p class="text-muted mb-0">Buat broadcast promo tanggal kembar, info kelas, pengumuman warga, atau reminder iuran.</p>
+          <p class="text-muted mb-0">Jadwalkan broadcast, template, dan antrean pesan untuk promo, kelas, pengumuman, atau reminder rutin.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-4">
         <div class="feature-tile">
-          <div class="feature-icon"><i class="fas fa-reply"></i></div>
-          <h5 class="fw-bold">Auto Reply</h5>
-          <p class="text-muted mb-0">Balas otomatis untuk cek harga, alamat toko, status pesanan, atau format pendaftaran.</p>
+          <div class="feature-icon"><i class="fas fa-robot"></i></div>
+          <h5 class="fw-bold">AI Integration</h5>
+          <p class="text-muted mb-0">Client bisa atur provider, API key, model, instruksi, knowledge base, draft mode, atau auto reply WhatsApp.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-4">
         <div class="feature-tile">
           <div class="feature-icon"><i class="fas fa-link"></i></div>
-          <h5 class="fw-bold">Webhook Logs</h5>
-          <p class="text-muted mb-0">Pantau event masuk, response endpoint, dan error webhook dari dashboard.</p>
+          <h5 class="fw-bold">Device Share</h5>
+          <p class="text-muted mb-0">Bagikan akses kirim pesan ke client lain dengan expired, limit harian, mode AI, dan progress bar.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-4">
         <div class="feature-tile">
           <div class="feature-icon"><i class="fas fa-user-check"></i></div>
           <h5 class="fw-bold">Opt-In & Contacts</h5>
-          <p class="text-muted mb-0">Kelola kontak pelanggan, wali murid, member komunitas, atau reseller dengan lebih rapi.</p>
+          <p class="text-muted mb-0">Kelola kontak, inbox, persetujuan opt-in, stop/block, dan tampilan kolom sesuai pengaturan client.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-4">
         <div class="feature-tile">
           <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
-          <h5 class="fw-bold">Reports</h5>
-          <p class="text-muted mb-0">Lihat success rate, queue, failed message, inbox, dan performa device harian.</p>
+          <h5 class="fw-bold">Dashboard & Reports</h5>
+          <p class="text-muted mb-0">Pantau paket, lifetime, limit pesan harian, success rate, pending, failed, dan performa 14 hari.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-tile">
+          <div class="feature-icon"><i class="fas fa-rotate-right"></i></div>
+          <h5 class="fw-bold">Retry Pintar</h5>
+          <p class="text-muted mb-0">Retry pesan gagal dengan konfirmasi dan pilihan device tujuan agar pengiriman tetap fleksibel.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-tile">
+          <div class="feature-icon"><i class="fas fa-code"></i></div>
+          <h5 class="fw-bold">Developer API</h5>
+          <p class="text-muted mb-0">Dokumentasi endpoint, base URL produksi, webhook, API key, dan contoh request siap integrasi.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feature-tile">
+          <div class="feature-icon"><i class="fas fa-screwdriver-wrench"></i></div>
+          <h5 class="fw-bold">Admin Monitoring</h5>
+          <p class="text-muted mb-0">Admin bisa cek cron, logs, users, device, paket, reset password, dan bantu masuk sebagai client.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ai-band py-5">
+  <div class="container py-5">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-5">
+        <div class="nusantara-badge"><i class="fas fa-wand-magic-sparkles"></i> AI yang bisa dikendalikan</div>
+        <h2 class="fw-bold mb-3">Bukan cuma auto reply keyword</h2>
+        <p class="text-muted">
+          AI bisa membaca knowledge base dari teks atau link, lalu menjawab pertanyaan yang berkaitan. Client tetap punya kontrol penuh: mode draft untuk uji coba, auto reply untuk produksi, dan audit log untuk meninjau jawaban.
+        </p>
+        <div class="soft-pill-row">
+          <span class="soft-pill"><i class="fas fa-link text-primary"></i> Sinkron konten dari link</span>
+          <span class="soft-pill"><i class="fas fa-key text-success"></i> API key milik client</span>
+          <span class="soft-pill"><i class="fas fa-share-nodes text-warning"></i> Aturan khusus share device</span>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="ai-panel">
+              <div class="feature-icon"><i class="fas fa-book-open"></i></div>
+              <h5 class="fw-bold">Knowledge Base</h5>
+              <p class="text-muted mb-0">Simpan informasi sekolah, produk, FAQ, link website, atau catatan layanan.</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="ai-panel">
+              <div class="feature-icon"><i class="fas fa-comments"></i></div>
+              <h5 class="fw-bold">Draft Dulu</h5>
+              <p class="text-muted mb-0">Lihat saran jawaban AI sebelum diaktifkan otomatis ke WhatsApp.</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="ai-panel">
+              <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+              <h5 class="fw-bold">Ambil Alih</h5>
+              <p class="text-muted mb-0">AI bisa menjawab chat pribadi yang tidak cocok dengan opt-in atau auto reply biasa.</p>
+            </div>
+          </div>
+        </div>
+        <div class="ai-mode mt-3">
+          <div class="d-flex justify-content-between mb-2">
+            <strong>Contoh kesiapan operasional</strong>
+            <span class="text-success fw-semibold">82% siap</span>
+          </div>
+          <div class="insight-bar mb-2">
+            <div class="insight-fill bg-success" style="width: 82%;"></div>
+          </div>
+          <small class="text-muted">Provider aktif, knowledge base tersedia, dan mode balasan bisa dipilih per client atau per share device.</small>
         </div>
       </div>
     </div>
@@ -493,18 +663,18 @@
     <div class="row align-items-center g-5">
       <div class="col-lg-5">
         <div class="nusantara-badge"><i class="fas fa-bolt"></i> Praktis untuk tim kecil</div>
-        <h2 class="fw-bold mb-4">Dari scan QR sampai pesan pertama dalam beberapa menit</h2>
+        <h2 class="fw-bold mb-4">Dari scan QR sampai automation berjalan dalam beberapa menit</h2>
         <div class="workflow-step mb-4">
-          <h5 class="fw-bold">1. Daftar dan tambah device</h5>
-          <p class="text-muted mb-0">Buat akun, pilih paket, lalu scan QR nomor WhatsApp bisnis dari dashboard client.</p>
+          <h5 class="fw-bold">1. Daftar, tambah device, atau terima share</h5>
+          <p class="text-muted mb-0">Client bisa memakai device sendiri atau akses device yang dibagikan dengan masa aktif dan limit yang jelas.</p>
         </div>
         <div class="workflow-step mb-4">
-          <h5 class="fw-bold">2. Kirim lewat API atau dashboard</h5>
-          <p class="text-muted mb-0">Integrasikan ke toko online, aplikasi sekolah, CRM, atau kirim manual dari menu Message/Campaign.</p>
+          <h5 class="fw-bold">2. Kirim lewat API, dashboard, campaign, atau AI</h5>
+          <p class="text-muted mb-0">Integrasikan ke aplikasi, kirim manual, jadwalkan campaign, atau biarkan AI membantu menjawab chat masuk.</p>
         </div>
         <div class="workflow-step">
-          <h5 class="fw-bold">3. Pantau queue dan hasil</h5>
-          <p class="text-muted mb-0">Cek sent, pending, failed, webhook logs, inbox, dan rekomendasi dari dashboard.</p>
+          <h5 class="fw-bold">3. Pantau hasil dan tindak lanjuti</h5>
+          <p class="text-muted mb-0">Cek limit harian, paket, queue, retry, failed message, AI logs, webhook, dan cron dari dashboard.</p>
         </div>
       </div>
       <div class="col-lg-7">
@@ -531,16 +701,16 @@
 <section id="pricing" class="pricing-band py-5">
   <div class="container py-5">
     <div class="section-heading">
-      <h2 class="fw-bold text-white">Paket fleksibel untuk UMKM sampai tim operasional</h2>
-      <p class="text-white-50 mb-0">Pilih paket sesuai jumlah nomor, limit harian, dan masa aktif.</p>
+      <h2 class="fw-bold text-white">Paket fleksibel, tetap bisa disesuaikan admin</h2>
+      <p class="text-white-50 mb-0">Pilih paket awal sesuai masa aktif dan limit harian. Admin tetap bisa membantu penyesuaian device tertentu tanpa memotong billing.</p>
     </div>
     <div class="row g-4 justify-content-center">
       <div class="col-lg-4">
         <div class="pricing-card">
           <div class="d-flex justify-content-between align-items-start mb-3">
             <div>
-              <h4 class="fw-bold">Warung Digital</h4>
-              <p class="text-muted mb-0">Untuk mencoba integrasi pertama.</p>
+              <h4 class="fw-bold">Orientasi</h4>
+              <p class="text-muted mb-0">Untuk mencoba dashboard dan integrasi awal.</p>
             </div>
             <i class="fas fa-seedling text-success fs-3"></i>
           </div>
@@ -551,6 +721,7 @@
             <li class="mb-2"><i class="fas fa-check text-success me-2"></i>1 device aktif</li>
             <li class="mb-2"><i class="fas fa-check text-success me-2"></i>API dasar</li>
             <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Dashboard client</li>
+            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Opt-in dan inbox dasar</li>
           </ul>
           <a href="/auth/register" class="btn btn-outline-success w-100 mt-3">Daftar Gratis</a>
         </div>
@@ -560,7 +731,7 @@
           <div class="d-flex justify-content-between align-items-start mb-3">
             <div>
               <h4 class="fw-bold"><%= highlightPackage ? highlightPackage.name : 'Bisnis Lokal' %></h4>
-              <p class="text-muted mb-0">Untuk operasional rutin dan campaign.</p>
+              <p class="text-muted mb-0">Untuk operasional rutin, share device, campaign, dan AI.</p>
             </div>
             <span class="badge bg-success">Rekomendasi</span>
           </div>
@@ -571,7 +742,7 @@
             <li class="mb-2"><i class="fas fa-check text-success me-2"></i><%= highlightPackage ? (highlightPackage.limit_daily || 0) : 250 %> pesan per hari</li>
             <li class="mb-2"><i class="fas fa-check text-success me-2"></i><%= highlightPackage ? (highlightPackage.life_time || 30) : 30 %> hari masa aktif</li>
             <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Campaign, template, webhook, report</li>
-            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Auto reply dan opt-in</li>
+            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>AI integration, auto reply, opt-in, dan retry</li>
           </ul>
           <a href="/auth/register" class="btn btn-brand w-100 mt-3">Mulai Sekarang</a>
         </div>
@@ -585,28 +756,35 @@
     <div class="section-heading">
       <div class="nusantara-badge"><i class="fas fa-store"></i> Use case harian</div>
       <h2 class="fw-bold">Cocok untuk kebutuhan komunikasi di Indonesia</h2>
-      <p class="text-muted mb-0">Mulai dari notifikasi transaksi sampai broadcast komunitas dan sekolah.</p>
+      <p class="text-muted mb-0">Mulai dari notifikasi transaksi, presensi sekolah, customer support, sampai integrasi developer.</p>
     </div>
     <div class="row g-4">
       <div class="col-md-4">
         <div class="usecase-card">
           <i class="fas fa-receipt text-success fs-3 mb-3"></i>
           <h5 class="fw-bold">Toko Online & UMKM</h5>
-          <p class="text-muted mb-0">Kirim invoice, status pembayaran, resi, reminder transfer, dan promo pelanggan.</p>
+          <p class="text-muted mb-0">Kirim invoice, status pembayaran, resi, reminder transfer, promo pelanggan, dan AI untuk pertanyaan umum.</p>
         </div>
       </div>
       <div class="col-md-4">
         <div class="usecase-card">
-          <i class="fas fa-key text-success fs-3 mb-3"></i>
+          <i class="fas fa-school text-success fs-3 mb-3"></i>
           <h5 class="fw-bold">Sekolah & Kursus</h5>
-          <p class="text-muted mb-0">Kirim info kelas, tagihan, pengumuman, dan reminder ke wali murid atau peserta.</p>
+          <p class="text-muted mb-0">Kirim presensi, pengumuman, tagihan, info jurusan, dan jawab pertanyaan dari wali murid.</p>
         </div>
       </div>
       <div class="col-md-4">
         <div class="usecase-card">
           <i class="fas fa-users text-success fs-3 mb-3"></i>
-          <h5 class="fw-bold">Komunitas & Reseller</h5>
-          <p class="text-muted mb-0">Kelola kontak, opt-in, template, jadwal, dan laporan broadcast komunitas.</p>
+          <h5 class="fw-bold">Komunitas, CS & Reseller</h5>
+          <p class="text-muted mb-0">Kelola kontak, opt-in, template, jadwal, shared device, dan laporan broadcast yang mudah dipantau.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="usecase-card">
+          <i class="fas fa-code-branch text-success fs-3 mb-3"></i>
+          <h5 class="fw-bold">Developer & Integrator</h5>
+          <p class="text-muted mb-0">Gunakan API, webhook, device key, logs, dan dokumentasi untuk menghubungkan aplikasi internal.</p>
         </div>
       </div>
     </div>
@@ -617,8 +795,8 @@
   <div class="container py-5">
     <div class="row align-items-center g-4">
       <div class="col-lg-8">
-        <h2 class="fw-bold mb-3">Siap membuat WhatsApp bisnis Anda lebih rapi?</h2>
-        <p class="lead text-white-50 mb-0">Buat akun, scan nomor, lalu kirim pesan pertama dari dashboard atau API.</p>
+        <h2 class="fw-bold mb-3">Siap membuat WhatsApp operasional lebih rapi?</h2>
+        <p class="lead text-white-50 mb-0">Mulai dari dashboard, sambungkan device, tambahkan knowledge base, lalu pantau pesan dari satu tempat.</p>
       </div>
       <div class="col-lg-4 text-lg-end">
         <a href="/auth/register" class="btn btn-brand btn-lg me-lg-2 mb-2 mb-lg-0">Daftar</a>

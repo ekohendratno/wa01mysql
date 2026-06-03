@@ -50,6 +50,20 @@ module.exports = ({ aiManager }) => {
     }
   });
 
+  router.post("/knowledge/sync-links", authMiddleware, async (req, res) => {
+    try {
+      const result = await aiManager.syncKnowledgeLinks(req.session.user.uid);
+      res.json({
+        status: true,
+        message: `Sinkronisasi selesai. ${result.updated}/${result.total} link diperbarui.`,
+        data: result,
+      });
+    } catch (error) {
+      console.error("AI knowledge link sync error:", error);
+      res.status(500).json({ status: false, message: error.message });
+    }
+  });
+
   router.post("/test", authMiddleware, async (req, res) => {
     try {
       const result = await aiManager.testPrompt(req.session.user.uid, req.body.prompt);

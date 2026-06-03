@@ -108,6 +108,9 @@
         <div class="mb-3">
           <label class="form-label">Konten / Catatan</label>
           <textarea id="knowledgeContent" class="form-control" rows="6" placeholder="Masukkan informasi yang boleh dijadikan dasar jawaban AI."></textarea>
+          <small class="text-muted">
+            Untuk tipe link, catatan boleh kosong. AI tetap memakai judul dan URL sebagai petunjuk, tetapi isi ringkasan akan membuat jawaban lebih detail.
+          </small>
         </div>
         <div class="form-check form-switch mb-3">
           <input class="form-check-input" type="checkbox" id="knowledgeActive" checked>
@@ -121,7 +124,12 @@
 
   <div class="col-lg-7">
     <div class="stat-card h-100">
-      <h5 class="mb-3"><i class="fa fa-book-open me-2"></i>Knowledge Base</h5>
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h5 class="mb-0"><i class="fa fa-book-open me-2"></i>Knowledge Base</h5>
+        <button class="btn btn-sm btn-outline-success" type="button" id="syncKnowledgeLinksBtn">
+          <i class="fa fa-rotate me-1"></i> Sinkronkan Link
+        </button>
+      </div>
       <div class="table-responsive">
         <table class="table table-sm align-middle">
           <thead>
@@ -298,6 +306,26 @@
       },
       error: function (xhr) {
         showToast(xhr.responseJSON?.message || "Gagal menyimpan knowledge.", "danger");
+      },
+    });
+  });
+
+  $("#syncKnowledgeLinksBtn").on("click", function () {
+    const button = $(this);
+    button.prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-1"></i> Sinkron...');
+    $.ajax({
+      url: "/client/ai/knowledge/sync-links",
+      method: "POST",
+      headers: aiCsrfHeaders,
+      success: function (result) {
+        showToast(result.message || "Link knowledge berhasil disinkronkan.", "success");
+        setTimeout(() => window.location.reload(), 700);
+      },
+      error: function (xhr) {
+        showToast(xhr.responseJSON?.message || "Gagal sinkron link knowledge.", "danger");
+      },
+      complete: function () {
+        button.prop("disabled", false).html('<i class="fa fa-rotate me-1"></i> Sinkronkan Link');
       },
     });
   });
