@@ -1,0 +1,263 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="text-success mb-1"><i class="fa fa-mobile-alt me-2"></i>Devices</h4>
+    <div class="text-muted">Pantau semua device milik client.</div>
+  </div>
+</div>
+
+<div class="stat-card">
+  <form class="row g-2 align-items-end" method="get">
+    <div class="col-md-3">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-select">
+        <option value="">Semua</option>
+        <% ['connected','disconnected','connecting'].forEach(function(s) { %>
+          <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Cari user/device</label>
+      <input name="user" class="form-control" value="<%= filters.user || '' %>" placeholder="Nama user, email, device, nomor">
+    </div>
+    <div class="col-md-3">
+      <button class="btn btn-success w-100"><i class="fa fa-search me-1"></i> Filter</button>
+    </div>
+  </form>
+</div>
+
+<div class="stat-card">
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <% (summaryRows || []).forEach(function(row) { %>
+      <span class="badge bg-secondary"><%= row.status || 'unknown' %>: <%= row.cnt %></span>
+    <% }) %>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle">
+      <thead>
+        <tr>
+          <th>Device</th>
+          <th>User</th>
+          <th>Status</th>
+          <th>Kuota</th>
+          <th>Pesan</th>
+          <th>Paket</th>
+          <th>Webhook</th>
+          <th>Update</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (devices && devices.length) { %>
+          <% devices.forEach(function(d) { %>
+            <tr>
+              <td>
+                <strong><%= d.name || '-' %></strong><br>
+                <small class="text-muted"><%= d.phone || d.device_key || '-' %></small>
+              </td>
+              <td><%= d.user_name || '-' %><br><small class="text-muted"><%= d.user_email || '-' %></small></td>
+              <td><span class="badge <%= d.status === 'connected' ? 'bg-success' : 'bg-secondary' %>"><%= d.status || '-' %></span></td>
+              <td><%= d.limit_daily || 0 %>/hari<br><small class="text-muted"><%= d.life_time || 0 %> hari</small></td>
+              <td>
+                <span class="text-success"><%= d.sent_messages || 0 %></span> sent,
+                <span class="text-warning"><%= d.pending_messages || 0 %></span> pending,
+                <span class="text-danger"><%= d.failed_messages || 0 %></span> failed
+              </td>
+              <td>
+                <%= d.package_name || '-' %><br>
+                <small class="text-muted"><%= d.packageId || '-' %></small>
+              </td>
+              <td><small><%= d.webhook_url || '-' %></small></td>
+              <td><small><%= d.updated_at ? new Date(d.updated_at).toLocaleString('id-ID') : '-' %></small></td>
+              <td>
+                <% const devicePayload = encodeURIComponent(JSON.stringify(d)); %>
+                <button
+                  class="btn btn-sm btn-outline-primary"
+                  onclick="openEditDevicePayload('<%= devicePayload %>')"
+                  title="Detail / edit device"
+                >
+                  <i class="fa fa-pen-to-square"></i>
+                </button>
+              </td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="9" class="text-muted">Tidak ada device.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="editDeviceModal" class="modal" style="display: none">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="editDeviceForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Detail & Edit Device</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editDeviceId">
+          <div class="alert alert-info small">
+            Perubahan dari admin tidak memotong saldo/billing client. Gunakan untuk koreksi paket, limit, atau masa aktif secara manual.
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Device Key</label>
+              <input id="editDeviceKey" class="form-control" readonly>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Client</label>
+              <input id="editDeviceUser" class="form-control" readonly>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Nama Device</label>
+              <input id="editDeviceName" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Nomor WA</label>
+              <input id="editDevicePhone" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Status</label>
+              <select id="editDeviceStatus" class="form-select">
+                <% ['connected','disconnected','connecting','error','removed'].forEach(function(s) { %>
+                  <option value="<%= s %>"><%= s %></option>
+                <% }) %>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Life Time</label>
+              <input type="number" min="0" id="editDeviceLifeTime" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Limit Harian</label>
+              <input type="number" min="0" id="editDeviceLimitDaily" class="form-control">
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Paket Device</label>
+              <select id="editDevicePackageId" class="form-select">
+                <option value="">Tanpa paket / manual</option>
+                <% (packages || []).forEach(function(pkg) { %>
+                  <option
+                    value="<%= pkg.id %>"
+                    data-life="<%= pkg.life_time || 0 %>"
+                    data-limit="<%= pkg.limit_daily || 0 %>"
+                  >
+                    <%= pkg.name %> - Rp <%= Number(pkg.price || 0).toLocaleString('id-ID') %> - <%= pkg.life_time || 0 %> hari - <%= pkg.limit_daily || 0 %> pesan/hari
+                  </option>
+                <% }) %>
+              </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="editApplyPackageDefaults">
+                <label class="form-check-label" for="editApplyPackageDefaults">Terapkan default paket</label>
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Webhook URL</label>
+              <input id="editDeviceWebhook" class="form-control" placeholder="https://...">
+            </div>
+          </div>
+
+          <div class="row g-2 mt-3">
+            <div class="col-md-3"><span class="badge bg-success">Sent: <span id="editDeviceSent">0</span></span></div>
+            <div class="col-md-3"><span class="badge bg-warning text-dark">Pending: <span id="editDevicePending">0</span></span></div>
+            <div class="col-md-3"><span class="badge bg-danger">Failed: <span id="editDeviceFailed">0</span></span></div>
+            <div class="col-md-3"><span class="badge bg-secondary">Total: <span id="editDeviceTotal">0</span></span></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-success">
+            <i class="fa fa-save me-1"></i> Simpan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openEditDevicePayload(encodedPayload) {
+    try {
+      openEditDevice(JSON.parse(decodeURIComponent(encodedPayload)));
+    } catch (error) {
+      showToast("Data device tidak valid.", "danger");
+    }
+  }
+
+  function openEditDevice(device) {
+    $("#editDeviceId").val(device.id || "");
+    $("#editDeviceKey").val(device.device_key || "");
+    $("#editDeviceUser").val(`${device.user_name || "-"} (${device.user_email || "-"})`);
+    $("#editDeviceName").val(device.name || "");
+    $("#editDevicePhone").val(device.phone || "");
+    $("#editDeviceStatus").val(device.status || "connecting");
+    $("#editDeviceLifeTime").val(device.life_time || 0);
+    $("#editDeviceLimitDaily").val(device.limit_daily || 0);
+    $("#editDevicePackageId").val(device.packageId || "");
+    $("#editApplyPackageDefaults").prop("checked", false);
+    $("#editDeviceWebhook").val(device.webhook_url || "");
+    $("#editDeviceSent").text(device.sent_messages || 0);
+    $("#editDevicePending").text(device.pending_messages || 0);
+    $("#editDeviceFailed").text(device.failed_messages || 0);
+    $("#editDeviceTotal").text(device.total_messages || 0);
+
+    const modal = new bootstrap.Modal(document.getElementById("editDeviceModal"));
+    modal.show();
+  }
+
+  $("#editDevicePackageId").on("change", function () {
+    if (!$("#editApplyPackageDefaults").is(":checked")) return;
+    const option = $(this).find("option:selected");
+    const life = option.data("life");
+    const limit = option.data("limit");
+    if (life !== undefined) $("#editDeviceLifeTime").val(life || 0);
+    if (limit !== undefined) $("#editDeviceLimitDaily").val(limit || 0);
+  });
+
+  $("#editApplyPackageDefaults").on("change", function () {
+    if (this.checked) $("#editDevicePackageId").trigger("change");
+  });
+
+  $("#editDeviceForm").on("submit", function (event) {
+    event.preventDefault();
+    const button = $(this).find('button[type="submit"]');
+    button.prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-1"></i> Menyimpan...');
+
+    $.ajax({
+      url: "/admin/devices/update",
+      method: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({
+        id: $("#editDeviceId").val(),
+        name: $("#editDeviceName").val(),
+        phone: $("#editDevicePhone").val(),
+        status: $("#editDeviceStatus").val(),
+        life_time: $("#editDeviceLifeTime").val(),
+        limit_daily: $("#editDeviceLimitDaily").val(),
+        packageId: $("#editDevicePackageId").val(),
+        webhook_url: $("#editDeviceWebhook").val(),
+        applyPackageDefaults: $("#editApplyPackageDefaults").is(":checked"),
+      }),
+      success: function (result) {
+        if (!result.status) {
+          showToast(result.message || "Gagal update device.", "danger");
+          return;
+        }
+        showToast(result.message || "Device berhasil diperbarui.", "success");
+        setTimeout(() => window.location.reload(), 500);
+      },
+      error: function (xhr) {
+        showToast(xhr.responseJSON?.message || "Gagal update device.", "danger");
+      },
+      complete: function () {
+        button.prop("disabled", false).html('<i class="fa fa-save me-1"></i> Simpan');
+      },
+    });
+  });
+</script>

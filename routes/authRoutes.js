@@ -16,6 +16,13 @@ module.exports = ({ sessionManager, userManager }) => {
     try {
       const { username, password } = req.body;
       const user = await userManager.loginUser(username, password);
+      const role = user && (user.role === "admin" || user.role === "client")
+        ? user.role
+        : null;
+
+      if (!role) {
+        throw new Error("Role akun tidak valid. Silakan hubungi admin.");
+      }
 
       // Simpan data pengguna ke dalam sesi
       req.session.user = {
@@ -23,11 +30,11 @@ module.exports = ({ sessionManager, userManager }) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        role: user.role,
+        role,
         api_key: user.api_key,
       };
 
-      res.redirect(`/${user.role}`);
+      res.redirect(`/${role}`);
     } catch (error) {
       res.render("auth/login", {
         path: req.originalUrl,
@@ -48,8 +55,41 @@ module.exports = ({ sessionManager, userManager }) => {
   });
 
   router.post("/register", redirectIfLoggedIn, async (req, res) => {
+    let name = "";
+    let email = "";
+    let phone = "";
+    let ref = "";
+
+    const renderRegisterError = (message) =>
+      res.status(400).render("auth/register", {
+        error: message || "Registrasi gagal",
+        name,
+        email,
+        phone,
+        ref,
+        path: req.originalUrl,
+        title: "Registrasi - w@pi",
+        layout: "layouts/main",
+      });
+
     try {
-      const { name, email, phone, ref, password, repassword } = req.body;
+      ({ name = "", email = "", phone = "", ref = "" } = req.body);
+      const { password, repassword } = req.body;
+
+      name = String(name).trim();
+      email = String(email).trim().toLowerCase();
+      phone = String(phone).trim();
+      ref = String(ref).trim();
+
+      if (!name) {
+        throw new Error("Nama lengkap harus diisi");
+      }
+      if (!email) {
+        throw new Error("Email harus diisi");
+      }
+      if (!phone) {
+        throw new Error("Nomor WhatsApp harus diisi");
+      }
 
       if (!password || !repassword) {
         throw new Error("Password dan Konfirmasi Password harus diisi");
@@ -73,11 +113,7 @@ module.exports = ({ sessionManager, userManager }) => {
       req.session.user = user;
       res.redirect("/client");
     } catch (error) {
-      res.render("auth/register", {
-        error: error.message || "Registrasi gagal",
-        title: "Registrasi - w@pi",
-        layout: "layouts/main",
-      });
+      return renderRegisterError(error.message || "Registrasi gagal");
     }
   });
 

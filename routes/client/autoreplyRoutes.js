@@ -10,6 +10,7 @@ module.exports = ({ sessionManager, autoreplyManager, deviceManager }) => {
     );
     const devices = await deviceManager.getDevices(apiKey, {
       status: "connected",
+      includeShared: false,
     });
     res.render("client/autoreply", {
       apiKey,

@@ -1,0 +1,72 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="text-success mb-1"><i class="fa fa-bullhorn me-2"></i>Campaigns</h4>
+    <div class="text-muted">Ringkasan broadcast/campaign dari semua client.</div>
+  </div>
+</div>
+
+<div class="stat-card">
+  <form class="row g-2 align-items-end" method="get">
+    <div class="col-md-3">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-select">
+        <option value="">Semua</option>
+        <% ['queued','scheduled','completed','failed'].forEach(function(s) { %>
+          <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Cari</label>
+      <input name="keyword" class="form-control" value="<%= filters.keyword || '' %>" placeholder="Campaign, user, device">
+    </div>
+    <div class="col-md-3">
+      <button class="btn btn-success w-100"><i class="fa fa-search me-1"></i> Filter</button>
+    </div>
+  </form>
+</div>
+
+<div class="stat-card">
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <% (summaryRows || []).forEach(function(row) { %>
+      <span class="badge bg-secondary"><%= row.status || 'unknown' %>: <%= row.cnt %></span>
+    <% }) %>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle">
+      <thead>
+        <tr>
+          <th>Campaign</th>
+          <th>User / Device</th>
+          <th>Target</th>
+          <th>Progress Pesan</th>
+          <th>Status</th>
+          <th>Jadwal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (campaigns && campaigns.length) { %>
+          <% campaigns.forEach(function(c) { %>
+            <tr>
+              <td>
+                <strong><%= c.name %></strong><br>
+                <small class="text-muted"><%= (c.message || '').length > 90 ? (c.message.substring(0, 90) + '...') : c.message %></small>
+              </td>
+              <td><%= c.user_name || '-' %><br><small class="text-muted"><%= c.device_name || '-' %></small></td>
+              <td><%= c.recipients_count || 0 %></td>
+              <td>
+                <span class="text-success"><%= c.sent_messages || 0 %></span> sent,
+                <span class="text-warning"><%= c.pending_messages || 0 %></span> pending,
+                <span class="text-danger"><%= c.failed_messages || 0 %></span> failed
+              </td>
+              <td><span class="badge bg-secondary"><%= c.status || '-' %></span></td>
+              <td><small><%= c.scheduled_at ? new Date(c.scheduled_at).toLocaleString('id-ID') : new Date(c.created_at).toLocaleString('id-ID') %></small></td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="6" class="text-muted">Tidak ada campaign.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>

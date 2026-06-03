@@ -1,0 +1,305 @@
+<div class="docs-wrapper mt-5 pt-4">
+  <div class="row g-0">
+    <!-- Sidebar Navigation -->
+    <div class="col-lg-3 d-none d-lg-block">
+      <div class="docs-sidebar sticky-top" style="top: 100px; height: calc(100vh - 120px); overflow-y: auto; padding-right: 20px;">
+        <nav id="docs-nav" class="nav flex-column ps-4 mb-5">
+          <h6 class="text-uppercase text-muted fw-bold mb-3 small" style="letter-spacing: 1px;">Mulai Cepat</h6>
+          <a class="nav-link active" href="#pengenalan">Pengenalan</a>
+          <a class="nav-link" href="#otentikasi">Otentikasi</a>
+          <a class="nav-link" href="#endpoint">Endpoint Dasar</a>
+          
+          <h6 class="text-uppercase text-muted fw-bold mt-4 mb-3 small" style="letter-spacing: 1px;">API Reference</h6>
+          <a class="nav-link" href="#kirim-pesan">Mengirim Pesan</a>
+          <a class="nav-link" href="#api-optin">API Opt-In</a>
+          <a class="nav-link disabled" href="#">Webhook (Segera)</a>
+          
+          <h6 class="text-uppercase text-muted fw-bold mt-4 mb-3 small" style="letter-spacing: 1px;">Bantuan</h6>
+          <a class="nav-link" href="#error-codes">Status Code</a>
+          <a class="nav-link" href="#support">Dukungan</a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-lg-7 px-4">
+      <div class="docs-content pb-5">
+        
+        <!-- Section: Pengenalan -->
+        <section id="pengenalan" class="mb-5 scroll-mt">
+          <h1 class="display-5 fw-bold mb-4">Dokumentasi API v1</h1>
+          <p class="lead text-muted">
+            Selamat datang di dokumentasi resmi <strong>w@pi</strong>. API kami memungkinkan Anda untuk mengotomatiskan 
+            pesan WhatsApp dengan skalabilitas tinggi menggunakan protokol HTTP yang standar.
+          </p>
+          <div class="alert alert-info border-0 shadow-sm rounded-4 b-4 mt-4">
+            <div class="d-flex gap-3">
+              <i class="fas fa-lightbulb fs-4 text-info mt-1"></i>
+              <div>
+                <h6 class="fw-bold mb-1">Mulai Gratis</h6>
+                <p class="mb-0 small">Dapatkan API Key Gratis Anda dengan mendaftar di dashboard kami sekarang juga.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section: Otentikasi -->
+        <section id="otentikasi" class="mb-5 scroll-mt">
+          <h3 class="fw-bold mb-3">Otentikasi</h3>
+          <p>
+            API ini menggunakan <code>apiKey</code> sebagai metode otentikasi. Anda harus menyertakan 
+            <code>apiKey</code> di dalam <strong>Body Request (JSON)</strong> pada setiap permintaan API.
+          </p>
+          <div class="p-3 bg-light border-start border-4 border-warning rounded">
+            <strong>Penting:</strong> Simpan API Key Anda dengan aman. Jangan membagikannya ke publik atau menyisipkannya langsung di kode frontend.
+          </div>
+        </section>
+
+        <!-- Section: Endpoint -->
+        <section id="endpoint" class="mb-5 scroll-mt">
+          <h3 class="fw-bold mb-3">Endpoint Dasar</h3>
+          <p>Semua permintaan harus dilakukan ke Base URL berikut:</p>
+          <div class="code-block border rounded-3 overflow-hidden shadow-sm">
+            <div class="code-header d-flex justify-content-between px-3 py-2 bg-dark border-bottom border-secondary">
+              <span class="small text-white-50">BASE URL</span>
+              <span class="badge bg-success">HTTPS</span>
+            </div>
+            <pre class="bg-dark text-white p-3 mb-0"><code>https://wapi.jasaedukasi.com/v1</code></pre>
+          </div>
+        </section>
+
+        <hr class="my-5 opacity-25">
+
+        <!-- Section: Kirim Pesan -->
+        <section id="kirim-pesan" class="mb-5 scroll-mt">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary px-3">POST</span>
+            <h3 class="fw-bold mb-0">/message</h3>
+          </div>
+          <p>Endpoint ini digunakan untuk mengirim pesan teks ke perorangan atau grup WhatsApp.</p>
+
+          <div class="code-block my-4 border rounded-3 overflow-hidden shadow-sm">
+            <div class="code-header px-3 py-2 bg-light border-bottom d-flex justify-content-between align-items-center">
+              <span class="small fw-bold text-muted text-uppercase">JSON Request Body</span>
+            </div>
+            <pre class="bg-dark text-white p-3 mb-0"><code>{
+  "apiKey"    : "MASUKKAN_API_KEY_ANDA",
+  "deviceKey" : "ID_PERANGKAT",
+  "to"        : "628123456789",
+  "text"      : "Halo! Pesan ini dikirim melalui w@pi API 🚀",
+  "isGroup"   : false
+}</code></pre>
+          </div>
+
+          <h5 class="fw-bold mt-4 small text-uppercase" style="letter-spacing: 1px;">Daftar Parameter</h5>
+          <div class="table-responsive mt-3">
+            <table class="table table-hover border align-middle">
+              <thead class="bg-light">
+                <tr>
+                  <th class="ps-3">Nama</th>
+                  <th>Tipe</th>
+                  <th>Wajib</th>
+                  <th>Keterangan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="ps-3"><code>apiKey</code></td>
+                  <td>String</td>
+                  <td><span class="text-danger small fw-bold">YA</span></td>
+                  <td>Kunci API unik dari profil dashboard Anda.</td>
+                </tr>
+                <tr>
+                  <td class="ps-3"><code>deviceKey</code></td>
+                  <td>String</td>
+                  <td><span class="text-danger small fw-bold">YA</span></td>
+                  <td>ID unik perangkat yang Anda hubungkan.</td>
+                </tr>
+                <tr>
+                  <td class="ps-3"><code>to</code></td>
+                  <td>String</td>
+                  <td><span class="text-danger small fw-bold">YA</span></td>
+                  <td>Nomor WA (Gunakan kode negara, misal: 628xxx) atau JID Grup.</td>
+                </tr>
+                <tr>
+                  <td class="ps-3"><code>text</code></td>
+                  <td>String</td>
+                  <td><span class="text-danger small fw-bold">YA</span></td>
+                  <td>Konten pesan teks yang ingin dikirim.</td>
+                </tr>
+                <tr>
+                  <td class="ps-3"><code>isGroup</code></td>
+                  <td>Boolean</td>
+                  <td>TIDAK</td>
+                  <td>Set <code>true</code> jika tujuan adalah ID Grup. Default: <code>false</code>.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Section: API Opt-In -->
+        <section id="api-optin" class="mb-5 scroll-mt">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary px-3">POST</span>
+            <h3 class="fw-bold mb-0">/optin</h3>
+          </div>
+          <p>Gunakan endpoint ini untuk mendaftarkan persetujuan (opt-in) nomor telepon secara manual ke sistem database Anda.</p>
+          
+          <div class="code-block border rounded-3 overflow-hidden shadow-sm">
+            <pre class="bg-dark text-white p-3 mb-0"><code>{
+  "apiKey" : "MASUKKAN_API_KEY_ANDA",
+  "number" : "628123456789",
+  "status" : "approved",
+  "source" : "landing_page"
+}</code></pre>
+          </div>
+        </section>
+
+        <!-- Section: Status Code -->
+        <section id="error-codes" class="mb-5 scroll-mt">
+          <h3 class="fw-bold mb-4">HTTP Status Codes</h3>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="p-3 border rounded-3 h-100 shadow-sm">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <div class="bg-success rounded-circle" style="width: 10px; height: 10px;"></div>
+                  <strong class="text-success">201 Created</strong>
+                </div>
+                <p class="small text-muted mb-0">Pesan berhasil diterima sistem dan masuk antrean pengiriman.</p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-3 border rounded-3 h-100 shadow-sm">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <div class="bg-warning rounded-circle" style="width: 10px; height: 10px;"></div>
+                  <strong class="text-warning">400 Bad Request</strong>
+                </div>
+                <p class="small text-muted mb-0">Parameter tidak lengkap, format salah, atau limit harian tercapai.</p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-3 border rounded-3 h-100 shadow-sm">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <div class="bg-danger rounded-circle" style="width: 10px; height: 10px;"></div>
+                  <strong class="text-danger">401 Unauthorized</strong>
+                </div>
+                <p class="small text-muted mb-0">API Key tidak terdaftar atau tidak memiliki akses.</p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-3 border rounded-3 h-100 shadow-sm">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <div class="bg-secondary rounded-circle" style="width: 10px; height: 10px;"></div>
+                  <strong class="text-secondary">500 Server Error</strong>
+                </div>
+                <p class="small text-muted mb-0">Terjadi kesalahan teknis pada server. Silakan coba beberapa saat lagi.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="support" class="mb-5 scroll-mt text-center bg-light p-5 rounded-4 border">
+          <h3 class="fw-bold">Butuh bantuan integrasi?</h3>
+          <p class="text-muted mb-4">Tim teknis kami siap membantu Anda 24/7 melalui WhatsApp atau Email.</p>
+          <div class="d-flex justify-content-center gap-3">
+            <a href="https://wa.me/628123456789" class="btn btn-success px-4 py-2 shadow-sm"><i class="fab fa-whatsapp me-2"></i>Hubungi Kami</a>
+            <a href="/auth/register" class="btn btn-brand px-4 py-2 shadow-sm">Daftar Sekarang</a>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- Right: On this page Navigation -->
+    <div class="col-lg-2 d-none d-xl-block">
+      <div class="sticky-top py-2" style="top: 100px;">
+        <h6 class="text-uppercase text-muted fw-bold mb-3 small" style="letter-spacing: 1px;">On This Page</h6>
+        <ul class="list-unstyled small border-start ps-3 py-1">
+          <li class="mb-2"><a href="#pengenalan" class="text-decoration-none text-muted doc-right-link">Pengenalan</a></li>
+          <li class="mb-2"><a href="#otentikasi" class="text-decoration-none text-muted doc-right-link">Otentikasi</a></li>
+          <li class="mb-2"><a href="#kirim-pesan" class="text-decoration-none text-muted doc-right-link">Mengirim Pesan</a></li>
+          <li class="mb-2"><a href="#api-optin" class="text-decoration-none text-muted doc-right-link">API Opt-In</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  :root {
+    --brand-color: #25d366;
+    --sidebar-bg: #ffffff;
+  }
+  body {
+    background-color: #ffffff;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  .scroll-mt {
+    scroll-margin-top: 120px;
+  }
+  .docs-sidebar .nav-link {
+    color: #555;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: 0.2s;
+    font-size: 0.95rem;
+  }
+  .docs-sidebar .nav-link:hover {
+    color: var(--brand-color);
+    background: rgba(37, 211, 102, 0.05);
+  }
+  .docs-sidebar .nav-link.active {
+    color: var(--brand-color);
+    background: rgba(37, 211, 102, 0.1);
+    font-weight: 600;
+  }
+  pre code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace !important;
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+  .doc-right-link:hover {
+    color: var(--brand-color) !important;
+  }
+  .table code {
+    color: #d63384;
+    background: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+  }
+  @media (max-width: 991px) {
+    .docs-wrapper {
+      padding: 0 15px;
+    }
+  }
+</style>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const observerOptions = {
+      rootMargin: '-100px 0px -70% 0px'
+    };
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        const id = entry.target.getAttribute('id');
+        if (entry.isIntersecting) {
+            document.querySelectorAll('.docs-sidebar .nav-link, .doc-right-link').forEach(link => {
+                link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+                if(link.classList.contains('doc-right-link')) {
+                   link.style.color = link.getAttribute('href') === `#${id}` ? 'var(--brand-color)' : '';
+                   link.style.fontWeight = link.getAttribute('href') === `#${id}` ? '600' : '';
+                }
+            });
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('section[id]').forEach((section) => {
+      observer.observe(section);
+    });
+  });
+</script>

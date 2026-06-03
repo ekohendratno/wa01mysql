@@ -1,0 +1,103 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="text-success mb-1"><i class="fa fa-paper-plane me-2"></i>Messages</h4>
+    <div class="text-muted">Monitor antrean dan histori pengiriman semua user.</div>
+  </div>
+</div>
+
+<div class="stat-card">
+  <form class="row g-2 align-items-end" method="get">
+    <div class="col-md-2">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-select">
+        <option value="">Semua</option>
+        <% ['pending','processing','sent','failed'].forEach(function(s) { %>
+          <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Tipe</label>
+      <select name="type" class="form-select">
+        <option value="">Semua</option>
+        <% ['personal','bulk','group'].forEach(function(t) { %>
+          <option value="<%= t %>" <%= filters.type === t ? 'selected' : '' %>><%= t %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Cari</label>
+      <input name="keyword" class="form-control" value="<%= filters.keyword || '' %>" placeholder="Nomor, isi pesan, user, device">
+    </div>
+    <div class="col-md-2">
+      <button class="btn btn-success w-100"><i class="fa fa-search me-1"></i> Filter</button>
+    </div>
+  </form>
+</div>
+
+<div class="stat-card">
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <% (summaryRows || []).forEach(function(row) { %>
+      <span class="badge bg-secondary"><%= row.status || 'unknown' %>: <%= row.cnt %></span>
+    <% }) %>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle">
+      <thead>
+        <tr>
+          <th>Jadwal</th>
+          <th>User / Device</th>
+          <th>Target</th>
+          <th>Pesan</th>
+          <th>Status</th>
+          <th>Response</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (messages && messages.length) { %>
+          <% messages.forEach(function(m) { %>
+            <tr>
+              <td>
+                <small><%= m.scheduled_at ? new Date(m.scheduled_at).toLocaleString('id-ID') : new Date(m.created_at).toLocaleString('id-ID') %></small>
+                <% if (m.campaign_name) { %><br><span class="badge bg-info"><%= m.campaign_name %></span><% } %>
+              </td>
+              <td><%= m.user_name || '-' %><br><small class="text-muted"><%= m.device_name || '-' %></small></td>
+              <td><%= m.number || '-' %><br><small class="text-muted"><%= m.type || '-' %></small></td>
+              <td><%= (m.message || '').length > 120 ? (m.message.substring(0, 120) + '...') : (m.message || '-') %></td>
+              <td><span class="badge bg-secondary"><%= m.status || '-' %></span></td>
+              <td><small><%= (m.response || '').length > 90 ? (m.response.substring(0, 90) + '...') : (m.response || '-') %></small></td>
+              <td>
+                <% if (m.status === 'failed') { %>
+                  <button class="btn btn-sm btn-warning" onclick="retryMessage(<%= m.id %>)">
+                    <i class="fa fa-rotate-right"></i>
+                  </button>
+                <% } else { %>
+                  <span class="text-muted">-</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="7" class="text-muted">Tidak ada pesan.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  function retryMessage(id) {
+    if (!confirm("Retry pesan gagal ini?")) return;
+    fetch(`/admin/messages/retry/${id}`, { method: "POST" })
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.status) location.reload();
+        else alert(result.message || "Gagal retry pesan");
+      })
+      .catch((error) => {
+        console.error(error);
+        alert("Server error");
+      });
+  }
+</script>

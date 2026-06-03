@@ -1,0 +1,282 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="text-success">
+        <i class="fa fa-user-check me-2"></i>Daftar Opt-In (Persetujuan)
+    </h4>
+    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalImport">
+        <i class="fa fa-file-import me-1"></i> Import Bulk
+    </button>
+</div>
+
+<div class="stat-card">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Nomor</th>
+                    <th>Device</th>
+                    <th>Status</th>
+                    <th>Sumber</th>
+                    <th>Disetujui Pada</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (optins && optins.length > 0) { %>
+                    <% optins.forEach(opt => { %>
+                        <tr>
+                            <td><strong><%= opt.number %></strong></td>
+                            <td><span class="badge bg-light text-dark border"><%= opt.device_name || 'Global / All' %></span></td>
+                            <td>
+                                <span class="badge bg-<%= opt.status === 'approved' ? 'success' : (opt.status === 'blocked' ? 'danger' : 'warning') %>">
+                                    <%= opt.status.toUpperCase() %>
+                                </span>
+                            </td>
+                            <td><small class="text-muted"><%= opt.source %></small></td>
+                            <td><%= opt.agreed_at ? moment(opt.agreed_at).format('DD/MM/YYYY HH:mm') : '-' %></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick='editOptIn(<%= JSON.stringify(opt) %>)'>
+                                    <i class="fa fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="removeOptIn('<%= opt.id %>')">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="6" class="text-center py-4">Belum ada nomor yang melakukan Opt-In.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<button class="floating-button" data-bs-toggle="modal" data-bs-target="#modalAdd" title="Tambah Nomor Opt-In">
+    <i class="fas fa-plus"></i>
+</button>
+
+<!-- Modal Add -->
+<div class="modal fade" id="modalAdd" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tambah Nomor Opt-In</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAdd">
+                    <input type="hidden" name="apiKey" value="<%= apiKey %>">
+                    <div class="mb-3">
+                        <label class="form-label">Nomor WhatsApp</label>
+                        <input type="text" class="form-control" name="number" placeholder="628xxxx" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Scope Device (Opsional)</label>
+                        <select class="form-select" name="deviceId">
+                            <option value="0">Semua Device (Global)</option>
+                            <% devices.forEach(d => { %>
+                                <option value="<%= d.id %>"><%= d.name %> (<%= d.device_key %>)</option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="approved" selected>Disetujui (Approved)</option>
+                            <option value="blocked">Dibatalkan (Blocked)</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-success" onclick="submitAdd()">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Import -->
+<div class="modal fade" id="modalImport" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import Bulk Nomor Opt-In</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formImport">
+                    <input type="hidden" name="apiKey" value="<%= apiKey %>">
+                    <div class="mb-3">
+                        <label class="form-label">Daftar Nomor (Satu per baris atau pisahkan dengan koma)</label>
+                        <textarea class="form-control" name="numbers" rows="10" placeholder="62812345678&#10;62812345679&#10;62812345680" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Scope Device (Opsional)</label>
+                        <select class="form-select" name="deviceId">
+                            <option value="0">Semua Device (Global)</option>
+                            <% devices.forEach(d => { %>
+                                <option value="<%= d.id %>"><%= d.name %> (<%= d.device_key %>)</option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="approved" selected>Disetujui (Approved)</option>
+                            <option value="blocked">Dibatalkan (Blocked)</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" onclick="submitImport()">Import Sekarang</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit -->
+<div class="modal fade" id="modalEdit" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Status Opt-In</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEdit">
+                    <input type="hidden" name="id" id="editId">
+                    <div class="mb-3">
+                        <label class="form-label">Nomor WhatsApp</label>
+                        <input type="text" class="form-control" id="editNumber" readonly disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Scope Device</label>
+                        <select class="form-select" name="deviceId" id="editDeviceId">
+                            <option value="0">Semua Device (Global)</option>
+                            <% devices.forEach(d => { %>
+                                <option value="<%= d.id %>"><%= d.name %> (<%= d.device_key %>)</option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status" id="editStatus">
+                            <option value="approved">Disetujui (Approved)</option>
+                            <option value="blocked">Dibatalkan (Blocked)</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" onclick="submitEdit()">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function submitAdd() {
+        const formData = new FormData(document.getElementById('formAdd'));
+        const data = Object.fromEntries(formData.entries());
+        
+        $.ajax({
+            url: '/client/optin/add',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(res) {
+                if (res.status) {
+                    showToast('Nomor berhasil ditambahkan', 'success');
+                    location.reload();
+                } else {
+                    showToast(res.message, 'danger');
+                }
+            },
+            error: function() { showToast('Terjadi kesalahan', 'danger'); }
+        });
+    }
+
+    function submitImport() {
+        const formData = new FormData(document.getElementById('formImport'));
+        const data = Object.fromEntries(formData.entries());
+        
+        const btn = event.target;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengimport...';
+
+        $.ajax({
+            url: '/client/optin/import',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(res) {
+                if (res.status) {
+                    showToast(res.message, 'success');
+                    location.reload();
+                } else {
+                    showToast(res.message, 'danger');
+                    btn.disabled = false;
+                    btn.innerHTML = 'Import Sekarang';
+                }
+            },
+            error: function() { 
+                showToast('Terjadi kesalahan', 'danger');
+                btn.disabled = false;
+                btn.innerHTML = 'Import Sekarang';
+            }
+        });
+    }
+
+    function removeOptIn(id) {
+        if (!confirm('Hapus persetujuan nomor ini? Pengiriman pesan ke nomor ini akan dibatasi kembali.')) return;
+
+        $.ajax({
+            url: '/client/optin/remove/' + id,
+            method: 'POST',
+            success: function(res) {
+                if (res.status) {
+                    showToast('Berhasil dihapus', 'success');
+                    location.reload();
+                } else {
+                    showToast(res.message, 'danger');
+                }
+            },
+            error: function() { showToast('Terjadi kesalahan', 'danger'); }
+        });
+    }
+
+    function editOptIn(opt) {
+        $("#editId").val(opt.id);
+        $("#editNumber").val(opt.number);
+        $("#editDeviceId").val(opt.device_id || 0);
+        $("#editStatus").val(opt.status);
+        $("#modalEdit").modal("show");
+    }
+
+    function submitEdit() {
+        const formData = new FormData(document.getElementById('formEdit'));
+        const data = Object.fromEntries(formData.entries());
+
+        $.ajax({
+            url: '/client/optin/update',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(res) {
+                if (res.status) {
+                    showToast('Berhasil diperbarui', 'success');
+                    location.reload();
+                } else {
+                    showToast(res.message, 'danger');
+                }
+            },
+            error: function() { showToast('Terjadi kesalahan', 'danger'); }
+        });
+    }
+</script>

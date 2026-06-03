@@ -1,7 +1,5 @@
-# wa01mysql
- 
-pm2 start wapi
+Description:
+Open-source WhatsApp API gateway for automation, notifications, and school/customer service workflows.
 
-pm2 start ecosystem.config.js
-pm2 save
-pm2 startup
+Topics:
+whatsapp-api, nodejs, ejs, automation, school, customer-support, open-source, indonesia

@@ -1,0 +1,364 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <h4 class="text-success mb-1"><i class="fa fa-robot me-2"></i>AI Integration</h4>
+    <div class="text-muted">Atur provider AI, knowledge base, test jawaban, dan audit log.</div>
+  </div>
+  <span class="badge <%= settings.active ? 'bg-success' : 'bg-secondary' %>">
+    <%= settings.active ? 'AI Aktif' : 'AI Nonaktif' %>
+  </span>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-5">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-sliders me-2"></i>Provider AI</h5>
+      <form id="aiSettingsForm">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Provider</label>
+            <select id="provider" class="form-select">
+              <% ['openai','gemini','groq','openrouter','ollama','custom'].forEach(function(provider) { %>
+                <option value="<%= provider %>" <%= settings.provider === provider ? 'selected' : '' %>><%= provider %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Model</label>
+            <input id="model" class="form-control" value="<%= settings.model || '' %>" placeholder="gpt-4o-mini">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Base URL</label>
+            <input id="base_url" class="form-control" value="<%= settings.base_url || '' %>" placeholder="https://api.openai.com/v1">
+          </div>
+          <div class="col-12">
+            <label class="form-label">API Key</label>
+            <input id="api_key" type="password" class="form-control" placeholder="<%= settings.api_key ? 'Tersimpan. Isi hanya jika ingin mengganti.' : 'Masukkan API key provider' %>">
+            <small class="text-muted">Untuk Ollama/local biasanya boleh dikosongkan.</small>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Temperature</label>
+            <input id="temperature" type="number" min="0" max="1" step="0.1" class="form-control" value="<%= settings.temperature || 0.3 %>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Max Token</label>
+            <input id="max_tokens" type="number" min="100" max="4000" class="form-control" value="<%= settings.max_tokens || 600 %>">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Instruksi Sistem</label>
+            <textarea id="system_prompt" class="form-control" rows="4"><%= settings.system_prompt || '' %></textarea>
+          </div>
+          <div class="col-12">
+            <div class="d-flex flex-wrap gap-3 mb-3">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="active" <%= settings.active ? 'checked' : '' %>>
+                <label class="form-check-label" for="active">Aktifkan AI</label>
+              </div>
+            </div>
+            <label class="form-label">Mode Balasan WhatsApp</label>
+            <select id="reply_mode" class="form-select">
+              <option value="off" <%= !settings.auto_reply_enabled ? 'selected' : '' %>>Nonaktif - AI hanya untuk test</option>
+              <option value="draft" <%= settings.auto_reply_enabled && settings.draft_only ? 'selected' : '' %>>Draft only - AI menyiapkan jawaban di log</option>
+              <option value="auto" <%= settings.auto_reply_enabled && !settings.draft_only ? 'selected' : '' %>>Ambil alih auto reply - kirim otomatis ke WhatsApp</option>
+            </select>
+            <small id="replyModeHelp" class="text-muted d-block mt-2"></small>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+          <button class="btn btn-success" type="submit"><i class="fa fa-save me-1"></i> Simpan Provider</button>
+          <button class="btn btn-outline-success" type="button" id="takeoverAiBtn"><i class="fa fa-bolt me-1"></i> Ambil Alih Auto Reply</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-comments me-2"></i>Test AI</h5>
+      <form id="aiTestForm">
+        <label class="form-label">Pertanyaan / simulasi chat masuk</label>
+        <textarea id="testPrompt" class="form-control" rows="5" placeholder="Contoh: Berapa biaya paket bulanan dan bagaimana cara daftar?"></textarea>
+        <button class="btn btn-primary mt-3" type="submit"><i class="fa fa-wand-magic-sparkles me-1"></i> Test Jawaban</button>
+      </form>
+      <div id="aiTestResult" class="alert alert-light border mt-3 d-none"></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-5">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-database me-2"></i>Tambah Knowledge</h5>
+      <form id="knowledgeForm">
+        <input type="hidden" id="knowledgeId">
+        <div class="mb-3">
+          <label class="form-label">Judul</label>
+          <input id="knowledgeTitle" class="form-control" placeholder="FAQ biaya, jam layanan, profil sekolah">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Tipe</label>
+          <select id="knowledgeType" class="form-select">
+            <option value="text">Text / FAQ</option>
+            <option value="link">Link referensi</option>
+          </select>
+        </div>
+        <div class="mb-3" id="knowledgeUrlGroup">
+          <label class="form-label">URL</label>
+          <input id="knowledgeUrl" class="form-control" placeholder="https://...">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Konten / Catatan</label>
+          <textarea id="knowledgeContent" class="form-control" rows="6" placeholder="Masukkan informasi yang boleh dijadikan dasar jawaban AI."></textarea>
+        </div>
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="knowledgeActive" checked>
+          <label class="form-check-label" for="knowledgeActive">Aktif</label>
+        </div>
+        <button class="btn btn-success" type="submit"><i class="fa fa-save me-1"></i> Simpan Knowledge</button>
+        <button class="btn btn-outline-secondary" type="button" onclick="resetKnowledgeForm()">Reset</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-book-open me-2"></i>Knowledge Base</h5>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Judul</th>
+              <th>Tipe</th>
+              <th>Status</th>
+              <th>Update</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (knowledge && knowledge.length) { %>
+              <% knowledge.forEach(function(item) { %>
+                <tr>
+                  <td>
+                    <strong><%= item.title %></strong><br>
+                    <small class="text-muted"><%= item.source_type === 'link' ? (item.url || '-') : ((item.content || '').slice(0, 80) + ((item.content || '').length > 80 ? '...' : '')) %></small>
+                  </td>
+                  <td><span class="badge bg-light text-dark border"><%= item.source_type %></span></td>
+                  <td><span class="badge <%= item.active ? 'bg-success' : 'bg-secondary' %>"><%= item.active ? 'aktif' : 'nonaktif' %></span></td>
+                  <td><small><%= item.updated_at ? new Date(item.updated_at).toLocaleString('id-ID') : '-' %></small></td>
+                  <td>
+                    <% const payload = encodeURIComponent(JSON.stringify(item)); %>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editKnowledge('<%= payload %>')"><i class="fa fa-pen"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteKnowledge('<%= item.id %>')"><i class="fa fa-trash"></i></button>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="5" class="text-muted text-center">Belum ada knowledge base.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="stat-card">
+  <h5 class="mb-3"><i class="fa fa-clock-rotate-left me-2"></i>AI Logs</h5>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead>
+        <tr>
+          <th>Waktu</th>
+          <th>Provider</th>
+          <th>Prompt</th>
+          <th>Response</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (logs && logs.length) { %>
+          <% logs.forEach(function(log) { %>
+            <tr>
+              <td><small><%= log.created_at ? new Date(log.created_at).toLocaleString('id-ID') : '-' %></small></td>
+              <td><%= log.provider || '-' %><br><small class="text-muted"><%= log.model || '-' %></small></td>
+              <td><small><%= (log.prompt || '').slice(0, 120) %></small></td>
+              <td><small><%= (log.response || log.error_message || '-').slice(0, 160) %></small></td>
+              <td>
+                <span class="badge <%= log.status === 'success' ? 'bg-success' : (log.status === 'draft' ? 'bg-warning text-dark' : 'bg-danger') %>">
+                  <%= log.status %>
+                </span>
+              </td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="5" class="text-muted text-center">Belum ada log AI.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const providerDefaults = {
+    openai: { base_url: "https://api.openai.com/v1", model: "gpt-4o-mini" },
+    gemini: { base_url: "https://generativelanguage.googleapis.com/v1beta", model: "gemini-1.5-flash" },
+    groq: { base_url: "https://api.groq.com/openai/v1", model: "llama-3.1-8b-instant" },
+    openrouter: { base_url: "https://openrouter.ai/api/v1", model: "openai/gpt-4o-mini" },
+    ollama: { base_url: "http://localhost:11434", model: "llama3.1" },
+    custom: { base_url: "", model: "" },
+  };
+  const aiCsrfHeaders = {
+    "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content || "",
+  };
+
+  $("#provider").on("change", function () {
+    const defaults = providerDefaults[$(this).val()] || providerDefaults.openai;
+    if (!$("#base_url").val()) $("#base_url").val(defaults.base_url);
+    if (!$("#model").val()) $("#model").val(defaults.model);
+  });
+
+  $("#knowledgeType").on("change", function () {
+    $("#knowledgeUrlGroup").toggleClass("d-none", $(this).val() !== "link");
+  }).trigger("change");
+
+  function refreshReplyModeHelp() {
+    const mode = $("#reply_mode").val();
+    const help = {
+      off: "AI tidak membalas chat WhatsApp. Gunakan mode ini saat konfigurasi provider belum selesai.",
+      draft: "AI membaca chat masuk dan menyimpan draft jawaban di AI Logs, tanpa mengirim ke WhatsApp.",
+      auto: "AI membalas otomatis untuk chat pribadi yang tidak cocok dengan keyword opt-in/stop dan tidak cocok auto reply biasa.",
+    };
+    $("#replyModeHelp").text(help[mode] || help.off);
+  }
+
+  $("#reply_mode").on("change", refreshReplyModeHelp);
+  refreshReplyModeHelp();
+
+  $("#takeoverAiBtn").on("click", function () {
+    $("#active").prop("checked", true);
+    $("#reply_mode").val("auto").trigger("change");
+    showToast("Mode ambil alih dipilih. Simpan konfigurasi agar aktif.", "info");
+  });
+
+  $("#aiSettingsForm").on("submit", function (event) {
+    event.preventDefault();
+    const button = $(this).find('button[type="submit"]');
+    button.prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-1"></i> Menyimpan...');
+    $.ajax({
+      url: "/client/ai/settings",
+      method: "POST",
+      contentType: "application/json",
+      headers: aiCsrfHeaders,
+      beforeSend: function () {
+        const mode = $("#reply_mode").val();
+        $("#aiSettingsForm").data("replyMode", mode);
+      },
+      data: JSON.stringify({
+        provider: $("#provider").val(),
+        base_url: $("#base_url").val(),
+        api_key: $("#api_key").val(),
+        model: $("#model").val(),
+        temperature: $("#temperature").val(),
+        max_tokens: $("#max_tokens").val(),
+        system_prompt: $("#system_prompt").val(),
+        active: $("#active").is(":checked"),
+        draft_only: $("#reply_mode").val() !== "auto",
+        auto_reply_enabled: $("#reply_mode").val() !== "off",
+      }),
+      success: function (result) {
+        showToast(result.message || "Konfigurasi AI disimpan.", "success");
+        setTimeout(() => window.location.reload(), 500);
+      },
+      error: function (xhr) {
+        showToast(xhr.responseJSON?.message || "Gagal menyimpan konfigurasi AI.", "danger");
+      },
+      complete: function () {
+        button.prop("disabled", false).html('<i class="fa fa-save me-1"></i> Simpan Provider');
+      },
+    });
+  });
+
+  $("#knowledgeForm").on("submit", function (event) {
+    event.preventDefault();
+    $.ajax({
+      url: "/client/ai/knowledge",
+      method: "POST",
+      contentType: "application/json",
+      headers: aiCsrfHeaders,
+      data: JSON.stringify({
+        id: $("#knowledgeId").val(),
+        title: $("#knowledgeTitle").val(),
+        source_type: $("#knowledgeType").val(),
+        url: $("#knowledgeUrl").val(),
+        content: $("#knowledgeContent").val(),
+        active: $("#knowledgeActive").is(":checked"),
+      }),
+      success: function (result) {
+        showToast(result.message || "Knowledge disimpan.", "success");
+        setTimeout(() => window.location.reload(), 500);
+      },
+      error: function (xhr) {
+        showToast(xhr.responseJSON?.message || "Gagal menyimpan knowledge.", "danger");
+      },
+    });
+  });
+
+  $("#aiTestForm").on("submit", function (event) {
+    event.preventDefault();
+    const button = $(this).find('button[type="submit"]');
+    const resultBox = $("#aiTestResult");
+    button.prop("disabled", true).html('<i class="fa fa-spinner fa-spin me-1"></i> Meminta jawaban...');
+    resultBox.removeClass("d-none alert-danger").addClass("alert-light").html("Memproses jawaban AI...");
+    $.ajax({
+      url: "/client/ai/test",
+      method: "POST",
+      contentType: "application/json",
+      headers: aiCsrfHeaders,
+      data: JSON.stringify({ prompt: $("#testPrompt").val() }),
+      success: function (result) {
+        resultBox.removeClass("alert-light").addClass("alert-success").html(`<strong>Jawaban AI:</strong><br>${escapeHtml(result.data?.text || "-").replace(/\n/g, "<br>")}`);
+      },
+      error: function (xhr) {
+        resultBox.removeClass("alert-light").addClass("alert-danger").text(xhr.responseJSON?.message || "AI gagal menjawab.");
+      },
+      complete: function () {
+        button.prop("disabled", false).html('<i class="fa fa-wand-magic-sparkles me-1"></i> Test Jawaban');
+      },
+    });
+  });
+
+  function editKnowledge(encodedPayload) {
+    const item = JSON.parse(decodeURIComponent(encodedPayload));
+    $("#knowledgeId").val(item.id || "");
+    $("#knowledgeTitle").val(item.title || "");
+    $("#knowledgeType").val(item.source_type || "text").trigger("change");
+    $("#knowledgeUrl").val(item.url || "");
+    $("#knowledgeContent").val(item.content || "");
+    $("#knowledgeActive").prop("checked", Number(item.active || 0) === 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function resetKnowledgeForm() {
+    $("#knowledgeId").val("");
+    $("#knowledgeTitle").val("");
+    $("#knowledgeType").val("text").trigger("change");
+    $("#knowledgeUrl").val("");
+    $("#knowledgeContent").val("");
+    $("#knowledgeActive").prop("checked", true);
+  }
+
+  function deleteKnowledge(id) {
+    if (!confirm("Hapus knowledge ini?")) return;
+    $.ajax({
+      url: `/client/ai/knowledge/${id}`,
+      method: "DELETE",
+      headers: aiCsrfHeaders,
+      success: function () {
+        showToast("Knowledge dihapus.", "success");
+        setTimeout(() => window.location.reload(), 500);
+      },
+      error: function (xhr) {
+        showToast(xhr.responseJSON?.message || "Gagal menghapus knowledge.", "danger");
+      },
+    });
+  }
+</script>

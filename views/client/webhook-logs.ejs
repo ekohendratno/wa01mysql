@@ -1,0 +1,54 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="text-success">
+    <i class="fa fa-clock-rotate-left me-2"></i>Webhook Logs
+  </h4>
+  <a href="/client/webhook" class="btn btn-outline-primary">
+    <i class="fa fa-gears me-1"></i> Setting
+  </a>
+</div>
+
+<div class="stat-card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Waktu</th>
+          <th>Device</th>
+          <th>Event</th>
+          <th>Status</th>
+          <th>HTTP</th>
+          <th>URL</th>
+          <th>Error</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!logs || logs.length === 0) { %>
+        <tr>
+          <td colspan="7" class="text-center py-4 text-muted">Belum ada webhook log.</td>
+        </tr>
+        <% } else { %>
+          <% logs.forEach((log) => { %>
+          <tr>
+            <td><small><%= moment(log.created_at).format("DD MMM YYYY, HH:mm:ss") %></small></td>
+            <td>
+              <strong><%= log.device_name || "-" %></strong><br />
+              <small class="text-muted"><%= log.device_key || "-" %></small>
+            </td>
+            <td><code><%= log.event %></code></td>
+            <td>
+              <% if (log.status === "success") { %>
+              <span class="badge bg-success">success</span>
+              <% } else { %>
+              <span class="badge bg-danger">failed</span>
+              <% } %>
+            </td>
+            <td><%= log.http_status || "-" %></td>
+            <td style="max-width: 260px"><div class="text-truncate"><%= log.webhook_url %></div></td>
+            <td style="max-width: 320px"><small class="text-muted text-truncate d-block"><%= log.error_message || "-" %></small></td>
+          </tr>
+          <% }) %>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>

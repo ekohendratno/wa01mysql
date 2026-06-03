@@ -28,5 +28,32 @@ module.exports = (billingManager) => {
     }
   });
 
+  router.get("/users", authMiddleware, async (req, res) => {
+    try {
+      const users = await billingManager.getAdminBalanceUsers();
+      res.json({ success: true, users });
+    } catch (error) {
+      console.error("Error fetching billing users:", error.message);
+      res.status(500).json({
+        success: false,
+        message: "Gagal mengambil daftar pengguna.",
+      });
+    }
+  });
+
+  router.post("/send-balance", authMiddleware, async (req, res) => {
+    try {
+      const { uid, amount, note } = req.body;
+      const result = await billingManager.sendBalanceToUser(uid, amount, note);
+      res.json(result);
+    } catch (error) {
+      console.error("Error sending balance:", error.message);
+      res.status(400).json({
+        success: false,
+        message: error.message || "Gagal mengirim saldo.",
+      });
+    }
+  });
+
   return router;
 };

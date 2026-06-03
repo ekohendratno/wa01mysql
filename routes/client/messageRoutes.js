@@ -6,12 +6,19 @@ module.exports = ({ sessionManager, messageManager, deviceManager }) => {
   router.get("/", authMiddleware, async (req, res) => {
     try {
       const apiKey = req.session.user.api_key;
+      const uid = req.session.user.uid;
       const devices = await deviceManager.getDevices(apiKey, {
         status: "connected",
       });
+      const [[userOptIn]] = await messageManager.pool.query(
+        "SELECT opt_in_required FROM users WHERE uid = ? LIMIT 1",
+        [uid],
+      );
+
       res.render("client/message", {
         apiKey,
         devices: devices || [],
+        showOptInColumn: Number(userOptIn?.opt_in_required || 0) === 1,
         title: "Messages - w@pi",
         layout: "layouts/client",
       });
@@ -22,15 +29,13 @@ module.exports = ({ sessionManager, messageManager, deviceManager }) => {
   });
 
   router.get("/data", authMiddleware, async (req, res) => {
-    const { status = "all", page = 1, limit = 30 } = req.query;
+    const { status = "all", page, limit } = req.query;
+    const p = parseInt(page) || 1;
+    const l = parseInt(limit) || 30;
+
     try {
       const apiKey = req.session.user.api_key;
-      const messages = await messageManager.getMessages(
-        apiKey,
-        status,
-        parseInt(page),
-        parseInt(limit)
-      );
+      const messages = await messageManager.getMessages(apiKey, status, p, l);
 
       res.json({
         success: true,
@@ -40,6 +45,17 @@ module.exports = ({ sessionManager, messageManager, deviceManager }) => {
       });
     } catch (error) {
       console.error(error);
+      res.status(500).json({ success: false, message: "Terjadi kesalahan" });
+    }
+  });
+
+  router.get("/insights", authMiddleware, async (req, res) => {
+    try {
+      const apiKey = req.session.user.api_key;
+      const insights = await messageManager.getMessageInsights(apiKey);
+      res.json({ success: true, insights });
+    } catch (error) {
+      console.error("Message insights error:", error);
       res.status(500).json({ success: false, message: "Terjadi kesalahan" });
     }
   });
@@ -61,8 +77,10 @@ module.exports = ({ sessionManager, messageManager, deviceManager }) => {
 
   router.post("/retry", authMiddleware, async (req, res) => {
     try {
-      const { apiKey, id } = req.query;
-      const result = await messageManager.retryMessage(apiKey, id);
+      const apiKey = req.session.user.api_key;
+      const id = req.body.id || req.query.id;
+      const deviceKey = req.body.deviceKey || req.query.deviceKey || null;
+      const result = await messageManager.retryMessage(apiKey, id, deviceKey);
       res.json({ status: true, message: "Message retry successfully" });
     } catch (error) {
       console.error("Retry message error:", error);

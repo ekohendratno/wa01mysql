@@ -45,11 +45,13 @@
                   class="btn btn-sm btn-primary"
                   >Edit</a
                 >
-                <a
-                  href="/admin/package/delete/<%= pkg.id %>"
+                <button
+                  type="button"
+                  onclick="hapusPackage('<%= pkg.id %>')"
                   class="btn btn-sm btn-danger ms-1"
-                  >Delete</a
                 >
+                  Delete
+                </button>
               </td>
             </tr>
             <tr>
@@ -84,6 +86,7 @@
 <!-- Floating Button -->
 <button
   class="floating-button"
+  onclick="bukaFormTambahPackage()"
   data-bs-toggle="modal"
   data-bs-target="#formPackage"
 >

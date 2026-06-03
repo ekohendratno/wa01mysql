@@ -1,0 +1,113 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="text-success">
+    <i class="fa fa-list-check me-2"></i>Queue Pesan
+  </h4>
+  <button class="btn btn-warning" onclick="retryFailed()">
+    <i class="fa fa-rotate-right me-1"></i> Retry Semua Failed
+  </button>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="stat-card">
+      <h5>Pending</h5>
+      <h2 class="text-secondary"><%= stats.pending || 0 %></h2>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <h5>Processing</h5>
+      <h2 class="text-warning"><%= stats.processing || 0 %></h2>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <h5>Failed</h5>
+      <h2 class="text-danger"><%= stats.failed || 0 %></h2>
+    </div>
+  </div>
+</div>
+
+<div class="stat-card">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">Antrean Aktif</h5>
+    <select id="queueStatus" class="form-control" style="max-width: 180px" onchange="loadQueue()">
+      <option value="failed">Failed</option>
+      <option value="pending">Pending</option>
+      <option value="processing">Processing</option>
+      <option value="all">Semua</option>
+    </select>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Jadwal</th>
+          <th>Tujuan</th>
+          <th>Pesan</th>
+          <th>Device</th>
+          <th>Campaign</th>
+          <th>Status</th>
+          <th>Response</th>
+        </tr>
+      </thead>
+      <tbody id="queueBody">
+        <tr>
+          <td colspan="7" class="text-center py-4">Memuat antrean...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  function formatDate(value) {
+    if (!value) return "-";
+    return new Date(value).toLocaleString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  function statusBadge(status) {
+    const map = { pending: "secondary", processing: "warning", failed: "danger" };
+    return `<span class="badge bg-${map[status] || "info"}">${status}</span>`;
+  }
+
+  async function loadQueue() {
+    const status = document.getElementById("queueStatus").value;
+    const response = await fetch(`/client/queue/data?status=${status}`);
+    const result = await response.json();
+    const body = document.getElementById("queueBody");
+
+    if (!result.status || !result.messages || result.messages.length === 0) {
+      body.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Tidak ada data antrean.</td></tr>';
+      return;
+    }
+
+    body.innerHTML = result.messages.map((message) => `
+      <tr>
+        <td><small>${formatDate(message.scheduled_at || message.created_at)}</small></td>
+        <td>${escapeHtml(message.number || "-")}</td>
+        <td style="max-width: 320px"><div class="text-truncate">${escapeHtml(message.message || "")}</div></td>
+        <td><span class="badge bg-light text-dark border">${escapeHtml(message.device_key || "-")}</span></td>
+        <td>${escapeHtml(message.campaign_name || "-")}</td>
+        <td>${statusBadge(message.status)}</td>
+        <td style="max-width: 280px"><small class="text-muted text-truncate d-block">${escapeHtml(message.response || "-")}</small></td>
+      </tr>
+    `).join("");
+  }
+
+  async function retryFailed() {
+    if (!confirm("Retry semua pesan failed?")) return;
+    const response = await fetch("/client/queue/retry-failed", { method: "POST" });
+    const result = await response.json();
+    showToast(result.message || "Queue diperbarui", result.status ? "success" : "danger");
+    if (result.status) setTimeout(() => location.reload(), 900);
+  }
+
+  document.addEventListener("DOMContentLoaded", loadQueue);
+</script>

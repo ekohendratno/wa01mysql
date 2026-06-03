@@ -2,6 +2,13 @@
   <h4 class="text-success">
     <i class="fa fa-mobile-alt me-2"></i>Manajemen Perangkat
   </h4>
+  <button
+    class="btn btn-outline-success"
+    data-bs-toggle="modal"
+    data-bs-target="#formTerimaShare"
+  >
+    <i class="fa fa-link me-1"></i> Terima Share
+  </button>
 </div>
 
 <!-- Statistik Perangkat -->
@@ -50,16 +57,62 @@
                 Tidak ada device terdaftar
               </td>
             </tr>
-            <% } else { %> <% devices.forEach(device=> { %>
-
+            <% } else { %> <% // Separate main devices and sub-sessions const
+            mainDevices = devices.filter(d => !d.session_parent); const
+            subDevices = devices.filter(d => d.session_parent);
+            mainDevices.forEach(device => { %>
+            <!-- Main Device Row -->
             <tr>
               <td><code><%= device.device_key %></code></td>
-              <td><%= device.name %></td>
+              <td>
+                <strong><%= device.name %></strong>
+                <% if (device.access_type === 'shared') { %>
+                <br /><span class="badge bg-primary">Shared dari <%= device.owner_name || 'owner' %></span>
+                <% if (device.share_expires_at) {
+                  const shareStart = device.share_created_at ? new Date(device.share_created_at) : null;
+                  const shareEnd = new Date(device.share_expires_at);
+                  const shareStartIso = shareStart && !Number.isNaN(shareStart.getTime()) ? shareStart.toISOString() : '';
+                  const shareEndIso = !Number.isNaN(shareEnd.getTime()) ? shareEnd.toISOString() : '';
+                %>
+                  <div class="shared-device-countdown mt-2" data-start="<%= shareStartIso %>" data-end="<%= shareEndIso %>">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <small class="shared-device-countdown-text fw-semibold">-</small>
+                      <small class="shared-device-countdown-percent text-muted">-</small>
+                    </div>
+                    <div class="progress mt-1" style="height: 7px; max-width: 280px">
+                      <div class="progress-bar shared-device-countdown-bar bg-success" style="width: 0%"></div>
+                    </div>
+                    <small class="shared-device-countdown-note text-muted">-</small>
+                  </div>
+                <% } %>
+                <% } %>
+                <% if (subDevices.some(s => s.session_parent ===
+                device.device_key)) { %>
+                <br /><small class="text-info"
+                  ><i class="fa fa-link me-1"></i>Memiliki Sub Session</small
+                >
+                <% } %>
+              </td>
               <td><%= device.phone %></td>
               <td><%= (device.life_time || 0) %> hari</td>
               <td>
-                <%= (device.message_count_today.total || 0) %>/<%=
-                (device.limit_daily || 0) %> pesan
+                <%
+                  const dailyUsed = Number(device.message_count_today?.total || 0);
+                  const dailyLimit = Number(device.limit_daily || 0);
+                  const dailyRemaining = Math.max(0, dailyLimit - dailyUsed);
+                  const dailyPercent = dailyLimit > 0 ? Math.min(100, Math.round((dailyUsed / dailyLimit) * 100)) : 0;
+                  const dailyBarClass = dailyPercent >= 90 ? 'bg-danger' : (dailyPercent >= 75 ? 'bg-warning' : 'bg-success');
+                %>
+                <div class="daily-limit-progress" style="min-width: 180px">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span><%= dailyUsed %>/<%= dailyLimit %> pesan</span>
+                    <small class="text-muted"><%= dailyPercent %>%</small>
+                  </div>
+                  <div class="progress" style="height: 8px">
+                    <div class="progress-bar <%= dailyBarClass %>" style="width: <%= dailyPercent %>%"></div>
+                  </div>
+                  <small class="text-muted"><%= dailyRemaining %> pesan tersisa hari ini</small>
+                </div>
               </td>
               <td>
                 <% const statusClass={ 'connected' : 'connected' ,
@@ -75,50 +128,235 @@
                 </span>
               </td>
               <td>
-                <% if (['connecting', 'disconnected' ].includes(device.status))
-                { %>
-                <a
-                  href="/client/device/status?deviceKey=<%= device.device_key %>"
-                  class="btn btn-sm btn-success btn-action"
-                >
-                  <i class="fa fa-qrcode"></i> Scan QR
-                </a>
-                <% } else { %>
+                <% if (device.access_type === 'shared') { %>
                 <button
                   class="btn btn-sm btn-info btn-action"
                   onclick="addDeviceSession('<%= device.device_key %>')"
                   data-bs-toggle="modal"
                   data-bs-target="#formKirimPesan"
+                  title="Kirim Pesan"
                 >
                   <i class="fa fa-envelope"></i>
                 </button>
-                <% } %>
-
+                <% } else if (['connecting', 'disconnected'].includes(device.status)) { %>
                 <a
-                  title="Group"
-                  href="/client/device/group?deviceKey=<%= device.device_key %>"
-                  class="btn btn-sm btn-secondary btn-action"
+                  href="/client/device/status?deviceKey=<%= device.device_key %>"
+                  class="btn btn-sm btn-success btn-action"
+                  title="Scan QR Code"
                 >
-                  <i class="fas fa-user-group"></i>
+                  <i class="fa fa-qrcode"></i> Scan QR
                 </a>
+                <% } else { %>
                 <a
-                  title="Lihat"
+                  title="Lihat Detail / Kirim Pesan"
                   href="/client/device/status?deviceKey=<%= device.device_key %>"
                   class="btn btn-sm btn-success btn-action"
                 >
                   <i class="fa fa-eye"></i>
                 </a>
+                <button
+                  class="btn btn-sm btn-info btn-action"
+                  onclick="addDeviceSession('<%= device.device_key %>')"
+                  data-bs-toggle="modal"
+                  data-bs-target="#formKirimPesan"
+                  title="Kirim Pesan"
+                >
+                  <i class="fa fa-envelope"></i>
+                </button>
+                <% } %>
+
+                <% if (device.access_type !== 'shared') { %>
+                <a
+                  title="Manajemen Grup"
+                  href="/client/device/group?deviceKey=<%= device.device_key %>"
+                  class="btn btn-sm btn-secondary btn-action"
+                >
+                  <i class="fas fa-user-group"></i>
+                </a>
+
+                <% if (device.status === 'connected') { %>
+                <button
+                  class="btn btn-sm btn-warning btn-action"
+                  onclick="confirmDisconnect('<%= device.device_key %>')"
+                  title="Disconnect (Logout)"
+                >
+                  <i class="fa fa-power-off"></i>
+                </button>
+                <% } %>
+
+                <button
+                  class="btn btn-sm btn-outline-primary btn-action"
+                  onclick="openShareDevice('<%= device.device_key %>', '<%= (device.name || '').replace(/'/g, '&#39;') %>')"
+                  title="Bagikan Perangkat"
+                >
+                  <i class="fa fa-share-nodes"></i>
+                </button>
+
                 <a
                   href="javascript:void()"
-                  title="Hapus"
+                  title="Hapus Perangkat"
                   class="btn btn-sm btn-danger btn-action"
                   onclick="confirmDelete('<%= device.device_key %>')"
                 >
                   <i class="fa fa-trash"></i>
                 </a>
+                <% } %>
               </td>
             </tr>
 
+            <!-- Nested Sub Sessions -->
+            <% subDevices.filter(s => s.session_parent ===
+            device.device_key).forEach(sub => { %>
+            <tr class="table-light">
+              <td class="ps-4">
+                <i class="fa fa-level-up-alt fa-rotate-90 text-muted me-2"></i>
+                <code><%= sub.device_key %></code>
+              </td>
+              <td>
+                <%= sub.name %>
+                <br /><span
+                  class="badge bg-info text-white"
+                  style="font-size: 0.65rem"
+                  >Sub Session</span
+                >
+              </td>
+              <td><%= sub.phone %></td>
+              <td><%= (sub.life_time || 0) %> hari</td>
+              <td>
+                <%= (sub.message_count_today.total || 0) %>/<%= (sub.limit_daily
+                || 0) %> pesan
+              </td>
+              <td>
+                <% const subStatusClass={ 'connected' : 'connected' ,
+                'disconnected' : 'disconnected' , 'connecting' : 'connecting'
+                }[sub.status] || 'disconnected' %>
+                <span class="status-badge <%= subStatusClass %>">
+                  <i
+                    class="fa fa-<%= subStatusClass === 'connected' ? 'check' : 'times' %>-circle"
+                    style="color:<%= subStatusClass === 'connected' ? 'green' : 'red' %>"
+                  ></i>
+                  <%= sub.status.charAt(0).toUpperCase() + sub.status.slice(1)
+                  %>
+                </span>
+              </td>
+              <td>
+                <% if (['connecting', 'disconnected'].includes(sub.status)) { %>
+                <a
+                  title="Scan QR Code"
+                  href="/client/device/status?deviceKey=<%= sub.device_key %>"
+                  class="btn btn-sm btn-success btn-action"
+                >
+                  <i class="fa fa-qrcode"></i> Scan
+                </a>
+                <% } else { %>
+                <a
+                  title="Lihat Detail"
+                  href="/client/device/status?deviceKey=<%= sub.device_key %>"
+                  class="btn btn-sm btn-success btn-action"
+                >
+                  <i class="fa fa-eye"></i>
+                </a>
+                <% } %>
+
+                <a
+                  title="Manajemen Grup"
+                  href="/client/device/group?deviceKey=<%= sub.device_key %>"
+                  class="btn btn-sm btn-secondary btn-action"
+                >
+                  <i class="fas fa-user-group"></i>
+                </a>
+
+                <% if (sub.status === 'connected') { %>
+                <button
+                  class="btn btn-sm btn-warning btn-action"
+                  onclick="confirmDisconnect('<%= sub.device_key %>')"
+                  title="Disconnect (Logout)"
+                >
+                  <i class="fa fa-power-off"></i>
+                </button>
+                <% } %>
+
+                <a
+                  href="javascript:void()"
+                  title="Hapus Perangkat"
+                  class="btn btn-sm btn-danger btn-action"
+                  onclick="confirmDelete('<%= sub.device_key %>')"
+                >
+                  <i class="fa fa-trash"></i>
+                </a>
+              </td>
+            </tr>
+            <% }) %> <% }) %> <% const orphanSubs = subDevices.filter(s =>
+            !mainDevices.some(m => m.device_key === s.session_parent));
+            orphanSubs.forEach(sub => { %>
+            <tr class="table-warning">
+              <td><code><%= sub.device_key %></code></td>
+              <td>
+                <%= sub.name %>
+                <br /><span
+                  class="badge bg-warning text-dark"
+                  style="font-size: 0.65rem"
+                  >Orphan Sub Session</span
+                >
+              </td>
+              <td><%= sub.phone %></td>
+              <td><%= (sub.life_time || 0) %> hari</td>
+              <td>
+                <%= (sub.message_count_today.total || 0) %>/<%= (sub.limit_daily
+                || 0) %> pesan
+              </td>
+              <td>
+                <% const subStatusClass={ 'connected' : 'connected' ,
+                'disconnected' : 'disconnected' , 'connecting' : 'connecting'
+                }[sub.status] || 'disconnected' %>
+                <span class="status-badge <%= subStatusClass %>">
+                  <i
+                    class="fa fa-<%= subStatusClass === 'connected' ? 'check' : 'times' %>-circle"
+                    style="color:<%= subStatusClass === 'connected' ? 'green' : 'red' %>"
+                  ></i>
+                  <%= sub.status.charAt(0).toUpperCase() + sub.status.slice(1)
+                  %>
+                </span>
+              </td>
+              <td>
+                <% if (['connecting', 'disconnected'].includes(sub.status)) { %>
+                <a
+                  title="Scan QR Code"
+                  href="/client/device/status?deviceKey=<%= sub.device_key %>"
+                  class="btn btn-sm btn-success btn-action"
+                >
+                  <i class="fa fa-qrcode"></i> Scan
+                </a>
+                <% } else { %>
+                <a
+                  title="Lihat Detail"
+                  href="/client/device/status?deviceKey=<%= sub.device_key %>"
+                  class="btn btn-sm btn-success btn-action"
+                >
+                  <i class="fa fa-eye"></i>
+                </a>
+                <% } %>
+
+                <% if (sub.status === 'connected') { %>
+                <button
+                  class="btn btn-sm btn-warning btn-action"
+                  onclick="confirmDisconnect('<%= sub.device_key %>')"
+                  title="Disconnect (Logout)"
+                >
+                  <i class="fa fa-power-off"></i>
+                </button>
+                <% } %>
+
+                <a
+                  href="javascript:void()"
+                  title="Hapus Perangkat"
+                  class="btn btn-sm btn-danger btn-action"
+                  onclick="confirmDelete('<%= sub.device_key %>')"
+                >
+                  <i class="fa fa-trash"></i>
+                </a>
+              </td>
+            </tr>
             <% }) %> <% } %>
           </tbody>
         </table>
@@ -128,22 +366,217 @@
   <div class="col-md-12">
     <div class="stat-card">
       <h5 class="mb-4"><i class="fa fa-history me-2"></i>Riwayat Perangkat</h5>
-        <ul class="list-group">
-          <% if (typeof deviceHistory !== 'undefined' && deviceHistory.length>0) { %>
-            <% deviceHistory.forEach(h => { %>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                  <strong><%= h.device_key %></strong>
-                  <div class="text-muted small"><%= h.note %></div>
-                  <div>Status: <em><%= h.status %></em></div>
-                </div>
-                <div class="text-end text-muted small"><%= h.when %></div>
-              </li>
-            <% }) %>
-          <% } else { %>
-              <li class="list-group-item">Belum ada riwayat perangkat.</li>
-          <% } %>
-        </ul>
+      <ul class="list-group">
+        <% if (typeof deviceHistory !== 'undefined' && deviceHistory.length>0) {
+        %> <% deviceHistory.forEach(h => { %>
+        <li
+          class="list-group-item d-flex justify-content-between align-items-center"
+        >
+          <div>
+            <strong><%= h.device_key %></strong>
+            <div class="text-muted small"><%= h.note %></div>
+            <div>Status: <em><%= h.status %></em></div>
+          </div>
+          <div class="text-end text-muted small"><%= h.when %></div>
+        </li>
+        <% }) %> <% } else { %>
+        <li class="list-group-item">Belum ada riwayat perangkat.</li>
+        <% } %>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-md-12">
+    <div class="stat-card">
+      <h5 class="mb-3"><i class="fa fa-share-nodes me-2"></i>Device yang Dibagikan</h5>
+      <p class="text-muted small mb-3">
+        Kode undangan hanya memberi akses kirim pesan. Penerima tidak bisa scan QR,
+        disconnect, menghapus, atau mengubah webhook device owner.
+      </p>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Device</th>
+              <th>Kode</th>
+              <th>Penerima</th>
+              <th>Status</th>
+              <th>Pesan Share</th>
+              <th>Kedaluwarsa</th>
+              <th>Sisa Akses</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (deviceShares && deviceShares.length) { %>
+              <% deviceShares.forEach(function(share) {
+                const shareStart = share.created_at ? new Date(share.created_at) : null;
+                const shareEnd = share.expires_at ? new Date(share.expires_at) : null;
+                const shareStartIso = shareStart && !Number.isNaN(shareStart.getTime()) ? shareStart.toISOString() : '';
+                const shareEndIso = shareEnd && !Number.isNaN(shareEnd.getTime()) ? shareEnd.toISOString() : '';
+              %>
+                <tr>
+                  <td><%= share.device_name || '-' %><br><small class="text-muted"><%= share.device_key %></small></td>
+                  <td><code><%= share.invite_code %></code></td>
+                  <td>
+                    <% if (share.shared_name) { %>
+                      <%= share.shared_name %><br><small class="text-muted"><%= share.shared_email || '-' %></small>
+                    <% } else { %>
+                      <span class="text-muted">Belum diterima</span>
+                    <% } %>
+                    <br>
+                    <small class="text-muted">
+                      Limit: <%= share.limit_daily_override || share.device_limit_daily || 0 %> pesan/hari
+                      <% if (share.limit_daily_override) { %>
+                        <span class="badge bg-info text-dark">custom</span>
+                      <% } %>
+                    </small>
+                    <br>
+                    <small class="text-muted">
+                      AI Share:
+                      <% if (share.ai_reply_mode === 'auto') { %>
+                        <span class="badge bg-success">auto reply</span>
+                      <% } else if (share.ai_reply_mode === 'draft') { %>
+                        <span class="badge bg-warning text-dark">draft only</span>
+                      <% } else { %>
+                        <span class="badge bg-secondary">off</span>
+                      <% } %>
+                    </small>
+                  </td>
+                  <td><span class="badge bg-secondary"><%= share.status %></span></td>
+                  <td style="min-width: 260px">
+                    <%
+                      const shareLimit = Number(share.limit_daily_override || share.device_limit_daily || 0);
+                      const shareTodayTotal = Number(share.today_total || 0);
+                      const shareTodaySent = Number(share.today_sent || 0);
+                      const shareTodayPending = Number(share.today_pending || 0);
+                      const shareTodayProcessing = Number(share.today_processing || 0);
+                      const shareTodayFailed = Number(share.today_failed || 0);
+                      const shareUsedPercent = shareLimit > 0 ? Math.min(100, Math.round((shareTodayTotal / shareLimit) * 100)) : 0;
+                      const shareSuccessRate = Number(share.week_total || 0) > 0 ? Math.round((Number(share.week_sent || 0) / Number(share.week_total || 0)) * 100) : 0;
+                      const shareLimitBar = shareUsedPercent >= 90 ? 'bg-danger' : (shareUsedPercent >= 75 ? 'bg-warning' : 'bg-success');
+                    %>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <strong><%= shareTodayTotal %>/<%= shareLimit %> hari ini</strong>
+                      <small class="text-muted"><%= shareUsedPercent %>%</small>
+                    </div>
+                    <div class="progress" style="height: 8px">
+                      <div class="progress-bar <%= shareLimitBar %>" style="width: <%= shareUsedPercent %>%"></div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-1 mt-2">
+                      <span class="badge bg-success">sent <%= shareTodaySent %></span>
+                      <span class="badge bg-secondary">pending <%= shareTodayPending %></span>
+                      <span class="badge bg-warning text-dark">process <%= shareTodayProcessing %></span>
+                      <span class="badge bg-danger">failed <%= shareTodayFailed %></span>
+                    </div>
+                    <small class="text-muted d-block mt-1">Success rate 7 hari: <%= shareSuccessRate %>%</small>
+                  </td>
+                  <td><small><%= share.expires_at ? new Date(share.expires_at).toLocaleString('id-ID') : '-' %></small></td>
+                  <td style="min-width: 220px">
+                    <% if (shareEndIso && share.status !== 'revoked') { %>
+                      <div class="share-countdown" data-start="<%= shareStartIso %>" data-end="<%= shareEndIso %>">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                          <small class="share-countdown-text fw-semibold">-</small>
+                          <small class="share-countdown-percent text-muted">-</small>
+                        </div>
+                        <div class="progress" style="height: 8px">
+                          <div class="progress-bar share-countdown-bar bg-success" style="width: 0%"></div>
+                        </div>
+                        <small class="share-countdown-note text-muted d-block mt-1">-</small>
+                      </div>
+                    <% } else { %>
+                      <small class="text-muted">Tidak ada batas waktu</small>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (share.status !== 'revoked') { %>
+                      <button
+                        class="btn btn-sm btn-outline-primary"
+                        onclick="openEditShareExpiry('<%= share.id %>', '<%= share.shared_name || share.shared_email || 'Penerima' %>', '<%= share.device_name || share.device_key || '-' %>', '<%= shareEndIso %>', '<%= share.limit_daily_override || '' %>', '<%= share.device_limit_daily || 0 %>', '<%= share.ai_reply_mode || 'off' %>')"
+                        title="Edit masa aktif share"
+                      >
+                        <i class="fa fa-pen-to-square"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" onclick="revokeShare('<%= share.id %>')">
+                        <i class="fa fa-ban"></i>
+                      </button>
+                    <% } else { %>
+                      <span class="text-muted">-</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="8" class="text-muted text-center">Belum ada device yang dibagikan.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="formEditShareExpiry" class="modal" style="display: none">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="editShareExpiryForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Masa Aktif Share</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editShareId" />
+          <div class="alert alert-info small">
+            Perubahan ini hanya mengatur masa akses penerima ke device share. Device owner tetap tidak berubah.
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Share</label>
+            <input type="text" id="editShareLabel" class="form-control" readonly />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Kedaluwarsa Saat Ini</label>
+            <input type="text" id="editShareCurrentExpiry" class="form-control" readonly />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Mode Perubahan</label>
+            <select id="editShareMode" class="form-control">
+              <option value="add">Tambah/Kurangi Hari</option>
+              <option value="date">Set Tanggal Kedaluwarsa</option>
+            </select>
+          </div>
+          <div class="mb-3" id="editShareDaysGroup">
+            <label class="form-label">Jumlah Hari</label>
+            <input type="number" id="editShareDays" class="form-control" value="7" min="-365" max="365" />
+            <small class="text-muted">Gunakan angka negatif untuk mengurangi masa aktif.</small>
+          </div>
+          <div class="mb-3 d-none" id="editShareDateGroup">
+            <label class="form-label">Tanggal Kedaluwarsa Baru</label>
+            <input type="datetime-local" id="editShareExpiresAt" class="form-control" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Limit Pesan Harian Share</label>
+            <input type="number" id="editShareLimitDaily" class="form-control" min="1" placeholder="Ikuti limit device" />
+            <small class="text-muted" id="editShareLimitHelp">Kosongkan untuk mengikuti limit harian device owner.</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">AI Auto Reply Share</label>
+            <select id="editShareAiMode" class="form-control">
+              <option value="off">Tidak izinkan AI penerima share - gunakan AI owner jika aktif</option>
+              <option value="draft">Draft only - hanya simpan jawaban di AI Logs penerima</option>
+              <option value="auto">Auto reply - AI penerima boleh membalas via device ini</option>
+            </select>
+            <small class="text-muted">
+              Provider dan knowledge penerima tetap diatur oleh penerima share. Jika mode off, balasan AI tetap mengikuti konfigurasi owner device.
+            </small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-success">
+            <i class="fa fa-save"></i> Simpan
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -220,6 +653,83 @@
   </div>
 </div>
 
+<!-- Share Device Modal -->
+<div id="formShareDevice" class="modal" style="display: none">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="shareDeviceForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Bagikan Perangkat</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="shareDeviceKey" />
+          <div class="alert alert-info small">
+            Penerima kode hanya dapat memakai device untuk kirim pesan dari akunnya.
+          </div>
+          <div class="mb-3">
+            <label>Device</label>
+            <input type="text" id="shareDeviceName" class="form-control" readonly />
+          </div>
+          <div class="mb-3">
+            <label>Masa berlaku kode</label>
+            <select id="shareExpiresInDays" class="form-control">
+              <option value="1">1 hari</option>
+              <option value="7" selected>7 hari</option>
+              <option value="14">14 hari</option>
+              <option value="30">30 hari</option>
+            </select>
+          </div>
+          <div id="shareResult" class="d-none">
+            <label>Kode Undangan</label>
+            <div class="input-group">
+              <input type="text" id="shareInviteCode" class="form-control" readonly />
+              <button type="button" class="btn btn-outline-secondary" onclick="copyShareCode()">
+                <i class="fa fa-copy"></i>
+              </button>
+            </div>
+            <small class="text-muted">Bagikan kode ini ke akun penerima.</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+          <button id="createShareButton" class="btn btn-success" type="submit">
+            Buat Kode
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Accept Share Modal -->
+<div id="formTerimaShare" class="modal" style="display: none">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="acceptShareForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Terima Share Device</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small">
+            Masukkan kode undangan dari pemilik device. Setelah diterima,
+            device akan muncul di daftar perangkat Anda sebagai shared device.
+          </p>
+          <label>Kode Undangan</label>
+          <input type="text" id="acceptInviteCode" class="form-control text-uppercase" placeholder="Contoh: A1B2C3D4E5" required />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button id="acceptShareButton" class="btn btn-success" type="submit">
+            Terima
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <!-- Send Message Modal -->
 <div id="formKirimPesan" class="modal" style="display: none">
   <div class="modal-dialog" role="document">
@@ -261,6 +771,13 @@
               placeholder="Tulis pesan Anda..."
               required
             ></textarea>
+            <div class="form-group mt-2">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="isOptInInvitation">
+                <label class="form-check-label" for="isOptInInvitation">Kirim sebagai Undangan Opt-In (Lewati blokir)</label>
+              </div>
+              <small class="text-muted">Gunakan ini hanya untuk mengajak user menyetujui notifikasi.</small>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -281,6 +798,16 @@
   function addDeviceSession(key) {
     $("#deviceKey").val(key);
   }
+
+  $("#isOptInInvitation").change(function() {
+    if (this.checked) {
+      const oldText = $("#text").val().trim();
+      const template = "Halo, ini adalah layanan notifikasi otomatis. Balas pesan ini dengan ketik 'SETUJU' untuk menerima informasi dan pembaruan dari kami secara otomatis melalui WhatsApp. Balas 'STOP' jika ingin berhenti berlangganan. Terima kasih!";
+      if (oldText === "") {
+        $("#text").val(template);
+      }
+    }
+  });
 
   $("#sendMessageForm").submit(function (event) {
     event.preventDefault();
@@ -310,6 +837,7 @@
         to: to,
         text: text,
         group: group,
+        tags: $("#isOptInInvitation").is(":checked") ? "opt-in" : "",
       }),
       success: function (response) {
         showToast("Pesan berhasil dikirim:", "success");
@@ -319,7 +847,12 @@
         $("#text").val("");
       },
       error: function (xhr, status, error) {
-        showToast("Terjadi kesalahan saat mengirim pesan.", "danger");
+        let errorMsg = "Terjadi kesalahan saat mengirim pesan.";
+        try {
+          const response = JSON.parse(xhr.responseText);
+          if (response && response.message) errorMsg = response.message;
+        } catch (e) {}
+        showToast(errorMsg, "danger");
         console.error("Gagal mengirim pesan:", xhr.responseText || error);
       },
       complete: function () {
@@ -362,9 +895,17 @@
       }),
       success: function (result) {
         if (!result.status) {
-          showToast(response.message, "danger");
+          showToast(result.message, "danger");
           if (result.redirect) {
-            window.location.href = result.redirect;
+            // Jangan langsung redirect (toast tidak terlihat).
+            // Tampilkan pesan dulu dan biarkan user memilih lanjut ke billing atau tetap di halaman.
+            setTimeout(() => {
+              const go = confirm(
+                (result.message || "Saldo tidak cukup.") +
+                  "\n\nKlik OK untuk menuju halaman Billing/Top Up, atau Cancel untuk tetap di halaman ini.",
+              );
+              if (go) window.location.href = result.redirect;
+            }, 350);
           }
         } else {
           showToast("Device berhasil ditambahkan.", "success");
@@ -373,10 +914,16 @@
       },
       error: function (xhr) {
         let response = xhr.responseJSON;
-        if (xhr.status === 400 && response) {
+        if (response && response.message) {
           showToast(response.message, "danger");
           if (response.redirect) {
-            window.location.href = response.redirect;
+            setTimeout(() => {
+              const go = confirm(
+                (response.message || "Saldo tidak cukup.") +
+                  "\n\nKlik OK untuk menuju halaman Billing/Top Up, atau Cancel untuk tetap di halaman ini.",
+              );
+              if (go) window.location.href = response.redirect;
+            }, 350);
           }
         } else {
           showToast("Terjadi kesalahan saat menambahkan device.", "danger");
@@ -387,6 +934,130 @@
       },
     });
   });
+
+  function openShareDevice(deviceKey, deviceName) {
+    $("#shareDeviceKey").val(deviceKey);
+    $("#shareDeviceName").val(`${deviceName || "-"} (${deviceKey})`);
+    $("#shareExpiresInDays").val("7");
+    $("#shareResult").addClass("d-none");
+    $("#shareInviteCode").val("");
+
+    const modal = new bootstrap.Modal(document.getElementById("formShareDevice"));
+    modal.show();
+  }
+
+  $("#shareDeviceForm").submit(function (event) {
+    event.preventDefault();
+
+    const button = $(this).find('button[type="submit"]');
+    button.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Membuat...');
+
+    $.ajax({
+      url: "/client/device/share/create",
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({
+        deviceKey: $("#shareDeviceKey").val(),
+        expiresInDays: $("#shareExpiresInDays").val(),
+      }),
+      success: function (result) {
+        if (!result.status) {
+          showToast(result.message || "Gagal membuat kode share.", "danger");
+          return;
+        }
+
+        const inviteCode = result.data?.invite_code || result.inviteCode || "";
+        if (!inviteCode) {
+          showToast("Kode share berhasil dibuat, tapi response tidak berisi kode.", "danger");
+          return;
+        }
+
+        $("#shareInviteCode").val(inviteCode);
+        $("#shareResult").removeClass("d-none");
+        showToast("Kode share berhasil dibuat.", "success");
+      },
+      error: function (xhr) {
+        const message = xhr.responseJSON?.message || "Gagal membuat kode share.";
+        showToast(message, "danger");
+      },
+      complete: function () {
+        button.prop("disabled", false).html('<i class="fa fa-key"></i> Buat Kode');
+      },
+    });
+  });
+
+  function copyShareCode() {
+    const code = $("#shareInviteCode").val();
+    if (!code) return;
+
+    navigator.clipboard.writeText(code)
+      .then(() => showToast("Kode share disalin.", "success"))
+      .catch(() => {
+        $("#shareInviteCode").trigger("select");
+        document.execCommand("copy");
+        showToast("Kode share disalin.", "success");
+      });
+  }
+
+  $("#acceptShareForm").submit(function (event) {
+    event.preventDefault();
+
+    const inviteCode = $("#acceptInviteCode").val().trim();
+    if (!inviteCode) {
+      showToast("Kode undangan wajib diisi.", "danger");
+      return;
+    }
+
+    const button = $(this).find('button[type="submit"]');
+    button.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Memproses...');
+
+    $.ajax({
+      url: "/client/device/share/accept",
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({ inviteCode }),
+      success: function (result) {
+        if (!result.status) {
+          showToast(result.message || "Kode share tidak bisa digunakan.", "danger");
+          return;
+        }
+
+        showToast("Device shared berhasil ditambahkan ke akun Anda.", "success");
+        setTimeout(() => window.location.reload(), 500);
+      },
+      error: function (xhr) {
+        const message = xhr.responseJSON?.message || "Kode share tidak bisa digunakan.";
+        showToast(message, "danger");
+      },
+      complete: function () {
+        button.prop("disabled", false).html('<i class="fa fa-check"></i> Terima Share');
+      },
+    });
+  });
+
+  function revokeShare(shareId) {
+    if (!confirm("Cabut akses share device ini?")) return;
+
+    $.ajax({
+      url: "/client/device/share/revoke",
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({ shareId }),
+      success: function (result) {
+        if (!result.status) {
+          showToast(result.message || "Share tidak ditemukan.", "danger");
+          return;
+        }
+
+        showToast("Akses share berhasil dicabut.", "success");
+        setTimeout(() => window.location.reload(), 500);
+      },
+      error: function (xhr) {
+        const message = xhr.responseJSON?.message || "Gagal mencabut akses share.";
+        showToast(message, "danger");
+      },
+    });
+  }
 
   // Fungsi untuk mengonfirmasi penghapusan perangkat
   async function confirmDelete(deviceKey) {
@@ -422,4 +1093,172 @@
       showToast(`Error: ${error.message}`, "danger");
     }
   }
+
+  async function confirmDisconnect(deviceKey) {
+    if (!confirm(`Apakah Anda yakin ingin memutuskan (disconnect) perangkat ${deviceKey}?`))
+      return;
+
+    try {
+      const response = await fetch(`/client/device/disconnect?deviceKey=${encodeURIComponent(deviceKey)}`);
+      const result = await response.json();
+
+      if (result.status) {
+        showToast("Perangkat berhasil diputuskan!", "success");
+        window.location.reload();
+      } else {
+        throw new Error(result.message || "Gagal memutuskan perangkat");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      showToast(`Error: ${error.message}`, "danger");
+    }
+  }
+
+  function toDatetimeLocalValue(date) {
+    if (!date || Number.isNaN(date.getTime())) return "";
+    const pad = (value) => String(value).padStart(2, "0");
+    return [
+      date.getFullYear(),
+      pad(date.getMonth() + 1),
+      pad(date.getDate()),
+    ].join("-") + "T" + [pad(date.getHours()), pad(date.getMinutes())].join(":");
+  }
+
+  function openEditShareExpiry(shareId, recipient, deviceName, expiresAtRaw, limitDailyOverride, deviceLimitDaily, aiReplyMode) {
+    const expiresAt = expiresAtRaw ? new Date(expiresAtRaw) : null;
+    const maxLimit = Number(deviceLimitDaily || 0);
+    $("#editShareId").val(shareId);
+    $("#editShareLabel").val(`${recipient || "Penerima"} - ${deviceName || "-"}`);
+    $("#editShareCurrentExpiry").val(expiresAt ? expiresAt.toLocaleString("id-ID") : "-");
+    $("#editShareMode").val("add");
+    $("#editShareDays").val("7");
+    $("#editShareExpiresAt").val(toDatetimeLocalValue(expiresAt || new Date(Date.now() + 7 * 86400000)));
+    $("#editShareLimitDaily").val(limitDailyOverride || "");
+    $("#editShareAiMode").val(aiReplyMode || "off");
+    $("#editShareLimitDaily").attr("max", maxLimit > 0 ? maxLimit : null);
+    $("#editShareLimitHelp").text(
+      maxLimit > 0
+        ? `Kosongkan untuk mengikuti limit device (${maxLimit} pesan/hari). Isi angka untuk membatasi penerima share.`
+        : "Kosongkan untuk mengikuti limit harian device owner."
+    );
+    $("#editShareDaysGroup").removeClass("d-none");
+    $("#editShareDateGroup").addClass("d-none");
+
+    const modal = new bootstrap.Modal(document.getElementById("formEditShareExpiry"));
+    modal.show();
+  }
+
+  $("#editShareMode").on("change", function () {
+    const mode = $(this).val();
+    $("#editShareDaysGroup").toggleClass("d-none", mode !== "add");
+    $("#editShareDateGroup").toggleClass("d-none", mode !== "date");
+  });
+
+  $("#editShareExpiryForm").submit(function (event) {
+    event.preventDefault();
+
+    const button = $(this).find('button[type="submit"]');
+    const mode = $("#editShareMode").val();
+    const payload = {
+      shareId: $("#editShareId").val(),
+    };
+
+    if (mode === "date") {
+      payload.expiresAt = $("#editShareExpiresAt").val();
+      if (!payload.expiresAt) {
+        showToast("Tanggal kedaluwarsa baru wajib diisi.", "danger");
+        return;
+      }
+    } else {
+      payload.additionalDays = $("#editShareDays").val();
+      if (!payload.additionalDays || Number(payload.additionalDays) === 0) {
+        showToast("Jumlah hari tidak boleh kosong atau 0.", "danger");
+        return;
+      }
+    }
+
+    payload.limitDailyOverride = $("#editShareLimitDaily").val().trim();
+    payload.aiReplyMode = $("#editShareAiMode").val();
+
+    button.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Menyimpan...');
+
+    $.ajax({
+      url: "/client/device/share/update-expiry",
+      type: "POST",
+      contentType: "application/json",
+      headers: {
+        "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content || "",
+      },
+      data: JSON.stringify(payload),
+      success: function (result) {
+        if (!result.status) {
+          showToast(result.message || "Gagal memperbarui masa aktif share.", "danger");
+          return;
+        }
+        showToast("Masa aktif share berhasil diperbarui.", "success");
+        setTimeout(() => window.location.reload(), 500);
+      },
+      error: function (xhr) {
+        const message = xhr.responseJSON?.message || "Gagal memperbarui masa aktif share.";
+        showToast(message, "danger");
+      },
+      complete: function () {
+        button.prop("disabled", false).html('<i class="fa fa-save"></i> Simpan');
+      },
+    });
+  });
+
+  function formatShareDuration(totalSeconds) {
+    const seconds = Math.max(0, Math.floor(totalSeconds));
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+
+    if (days > 0) return `${days} hari ${hours} jam`;
+    if (hours > 0) return `${hours} jam ${minutes} menit`;
+    if (minutes > 0) return `${minutes} menit`;
+    return `${seconds % 60} detik`;
+  }
+
+  function updateShareCountdowns() {
+    document.querySelectorAll(".share-countdown, .shared-device-countdown").forEach(function (el) {
+      const startRaw = el.getAttribute("data-start");
+      const endRaw = el.getAttribute("data-end");
+      const start = startRaw ? new Date(startRaw).getTime() : Date.now();
+      const end = endRaw ? new Date(endRaw).getTime() : NaN;
+      const now = Date.now();
+
+      if (Number.isNaN(end)) return;
+
+      const total = Math.max(1, end - start);
+      const remaining = Math.max(0, end - now);
+      const usedPercent = Math.max(0, Math.min(100, ((now - start) / total) * 100));
+      const remainingDays = Math.ceil(remaining / 86400000);
+
+      const text = el.querySelector(".share-countdown-text, .shared-device-countdown-text");
+      const percent = el.querySelector(".share-countdown-percent, .shared-device-countdown-percent");
+      const bar = el.querySelector(".share-countdown-bar, .shared-device-countdown-bar");
+      const note = el.querySelector(".share-countdown-note, .shared-device-countdown-note");
+
+      if (text) text.textContent = remaining > 0 ? formatShareDuration(remaining / 1000) : "Kedaluwarsa";
+      if (percent) percent.textContent = remaining > 0 ? `${Math.max(0, 100 - Math.round(usedPercent))}% sisa` : "0% sisa";
+      if (bar) {
+        bar.style.width = `${100 - usedPercent}%`;
+        bar.classList.remove("bg-success", "bg-warning", "bg-danger", "bg-secondary");
+        if (remaining <= 0) bar.classList.add("bg-secondary");
+        else if (remainingDays <= 3) bar.classList.add("bg-danger");
+        else if (remainingDays <= 7) bar.classList.add("bg-warning");
+        else bar.classList.add("bg-success");
+      }
+      if (note) {
+        if (remaining <= 0) note.textContent = "Akses share sudah kedaluwarsa.";
+        else if (remainingDays <= 3) note.textContent = "Segera buat kode share baru jika masih dibutuhkan.";
+        else if (remainingDays <= 7) note.textContent = "Siapkan perpanjangan akses share.";
+        else note.textContent = "Akses share masih aman.";
+      }
+    });
+  }
+
+  updateShareCountdowns();
+  setInterval(updateShareCountdowns, 1000);
 </script>

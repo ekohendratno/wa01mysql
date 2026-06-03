@@ -1,0 +1,259 @@
+<%
+  const firstDevice = devices && devices.length ? devices[0] : null;
+  const sampleDeviceKey = firstDevice ? firstDevice.device_key : "DEVICE_KEY";
+  const apiBase = `${baseUrl}/v1`;
+%>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h4 class="text-success mb-0">
+    <i class="fa fa-code me-2"></i>Developer API
+  </h4>
+  <div class="d-flex gap-2">
+    <a href="/client/dokumentasi" class="btn btn-outline-success">
+      <i class="fa fa-book me-1"></i> Dokumentasi Lengkap
+    </a>
+    <a href="/client/device" class="btn btn-success">
+      <i class="fa fa-mobile-alt me-1"></i> Kelola Device
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-4 col-lg-5">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Credential</h5>
+        <span class="badge bg-success">Aktif</span>
+      </div>
+
+      <label class="form-label small text-muted mb-1">API Key</label>
+      <div class="input-group mb-3">
+        <input id="apiKeyInput" class="form-control" value="<%= apiKey %>" readonly />
+        <button class="btn btn-outline-secondary" type="button" onclick="copyText('apiKeyInput', 'API key disalin.')">
+          <i class="fa fa-copy"></i>
+        </button>
+      </div>
+
+      <label class="form-label small text-muted mb-1">Base URL</label>
+      <div class="input-group mb-3">
+        <input id="baseUrlInput" class="form-control" value="<%= apiBase %>" readonly />
+        <button class="btn btn-outline-secondary" type="button" onclick="copyText('baseUrlInput', 'Base URL disalin.')">
+          <i class="fa fa-copy"></i>
+        </button>
+      </div>
+
+      <button class="btn btn-outline-danger w-100" onclick="regenerateKey()">
+        <i class="fa fa-rotate me-1"></i> Regenerate API Key
+      </button>
+      <p class="text-muted small mt-3 mb-0">
+        Regenerate key akan membuat integrasi lama berhenti sampai key baru dipakai.
+      </p>
+    </div>
+  </div>
+
+  <div class="col-xl-8 col-lg-7">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Device Key</h5>
+        <span class="text-muted small"><%= devices ? devices.length : 0 %> device</span>
+      </div>
+
+      <% if (!devices || devices.length === 0) { %>
+        <div class="alert alert-warning mb-0">
+          Belum ada device. Tambahkan dan hubungkan device terlebih dahulu sebelum memakai API.
+        </div>
+      <% } else { %>
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Nama</th>
+                <th>Device Key</th>
+                <th>Status</th>
+                <th class="text-end">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% devices.forEach((device, index) => { %>
+                <tr>
+                  <td>
+                    <strong><%= device.name || "Tanpa Nama" %></strong>
+                    <% if (index === 0) { %>
+                      <span class="badge bg-light text-dark ms-1">contoh</span>
+                    <% } %>
+                  </td>
+                  <td><code id="deviceKey<%= index %>"><%= device.device_key %></code></td>
+                  <td>
+                    <span class="badge <%= device.status === 'connected' ? 'bg-success' : 'bg-secondary' %>">
+                      <%= device.status || "unknown" %>
+                    </span>
+                  </td>
+                  <td class="text-end">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="copyCode('deviceKey<%= index %>', 'Device key disalin.')">
+                      <i class="fa fa-copy"></i>
+                    </button>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-lg-6">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-paper-plane me-2"></i>Kirim Pesan via Queue</h5>
+      <p class="text-muted">
+        Endpoint ini mendaftarkan pesan ke antrean. Cron akan mengirim sesuai status device, limit harian, jadwal, dan aturan opt-in.
+      </p>
+      <pre class="bg-dark text-white p-3 rounded"><code>curl --location '<%= apiBase %>/message' \
+--header 'Content-Type: application/json' \
+--data '{
+  "apiKey": "<%= apiKey %>",
+  "deviceKey": "<%= sampleDeviceKey %>",
+  "to": "6281234567890",
+  "text": "Halo dari w@pi",
+  "isGroup": 0,
+  "tags": "notifikasi"
+}'</code></pre>
+      <button class="btn btn-sm btn-outline-success" type="button" onclick="copyBlock(this)">
+        <i class="fa fa-copy me-1"></i> Salin contoh
+      </button>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-calendar-clock me-2"></i>Pesan Terjadwal</h5>
+      <p class="text-muted">
+        Gunakan <code>scheduledAt</code> dengan zona waktu Asia/Jakarta untuk menahan pesan sampai waktu tertentu.
+      </p>
+      <pre class="bg-dark text-white p-3 rounded"><code>{
+  "apiKey": "<%= apiKey %>",
+  "deviceKey": "<%= sampleDeviceKey %>",
+  "to": "6281234567890",
+  "text": "Pengingat rapat besok pukul 09.00",
+  "isGroup": 0,
+  "scheduledAt": "2026-05-30 08:00:00",
+  "tags": "reminder"
+}</code></pre>
+      <button class="btn btn-sm btn-outline-success" type="button" onclick="copyBlock(this)">
+        <i class="fa fa-copy me-1"></i> Salin body
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-lg-6">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-user-check me-2"></i>Opt-In Manual</h5>
+      <p class="text-muted">
+        Pakai endpoint ini untuk mencatat persetujuan dari form, sistem eksternal, atau import data yang sudah punya izin.
+      </p>
+      <pre class="bg-dark text-white p-3 rounded"><code>curl --location '<%= apiBase %>/optin' \
+--header 'Content-Type: application/json' \
+--data '{
+  "apiKey": "<%= apiKey %>",
+  "number": "6281234567890",
+  "status": "approved",
+  "source": "web_form"
+}'</code></pre>
+      <div class="small text-muted">
+        Status: <code>approved</code>, <code>pending</code>, atau <code>blocked</code>.
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-signal me-2"></i>Cek Session</h5>
+      <p class="text-muted">
+        Endpoint session berguna untuk health check integrasi dan memastikan device masih terhubung.
+      </p>
+      <pre class="bg-dark text-white p-3 rounded"><code>curl --location '<%= baseUrl %>/session?key=<%= sampleDeviceKey %>'</code></pre>
+      <pre class="bg-light p-3 rounded"><code>{
+  "status": true,
+  "message": "Session status retrieved successfully.",
+  "data": {
+    "key": "<%= sampleDeviceKey %>",
+    "connected": true
+  }
+}</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="stat-card mt-4">
+  <h5 class="mb-3">Endpoint Cepat</h5>
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 110px">Method</th>
+          <th>Endpoint</th>
+          <th>Kegunaan</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge bg-primary">POST</span></td>
+          <td><code><%= apiBase %>/message</code></td>
+          <td>Daftarkan pesan personal, bulk, grup, atau terjadwal ke antrean.</td>
+        </tr>
+        <tr>
+          <td><span class="badge bg-primary">POST</span></td>
+          <td><code><%= apiBase %>/optin</code></td>
+          <td>Catat status persetujuan nomor penerima.</td>
+        </tr>
+        <tr>
+          <td><span class="badge bg-success">GET</span></td>
+          <td><code><%= baseUrl %>/session?key=DEVICE_KEY</code></td>
+          <td>Cek apakah session WhatsApp device sedang connected.</td>
+        </tr>
+        <tr>
+          <td><span class="badge bg-primary">POST</span></td>
+          <td><code><%= baseUrl %>/message/send</code></td>
+          <td>Kirim langsung melalui session aktif. Untuk produksi, utamakan endpoint queue <code>/v1/message</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  function copyText(inputId, message) {
+    const input = document.getElementById(inputId);
+    input.select();
+    navigator.clipboard.writeText(input.value);
+    showToast(message, "success");
+  }
+
+  function copyCode(elementId, message) {
+    const element = document.getElementById(elementId);
+    navigator.clipboard.writeText(element.innerText.trim());
+    showToast(message, "success");
+  }
+
+  function copyBlock(button) {
+    const code = button.parentElement.querySelector("pre code");
+    navigator.clipboard.writeText(code.innerText);
+    showToast("Contoh disalin.", "success");
+  }
+
+  async function regenerateKey() {
+    if (!confirm("Regenerate API key sekarang? Integrasi lama perlu diperbarui.")) return;
+    const response = await fetch("/client/developer/regenerate-key", { method: "POST" });
+    const result = await response.json();
+    if (result.status) {
+      document.getElementById("apiKeyInput").value = result.apiKey;
+      showToast("API key baru dibuat.", "success");
+    } else {
+      showToast(result.message || "Gagal regenerate API key", "danger");
+    }
+  }
+</script>

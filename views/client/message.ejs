@@ -1,33 +1,241 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h4 class="text-success">
-    <i class="fa fa-comment me-2"></i>Manajemen Pesan
-  </h4>
+﻿<style>
+  .message-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .message-kpi {
+    min-height: 112px;
+  }
+
+  .message-kpi h5 {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .message-kpi h2 {
+    font-size: 30px;
+    margin: 0;
+  }
+
+  .message-kpi .kpi-sub {
+    display: block;
+    margin-top: 8px;
+    color: #6c757d;
+    font-size: 13px;
+  }
+
+  .message-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .message-tabs {
+    border-bottom: 1px solid #dee2e6;
+    gap: 6px;
+  }
+
+  .message-tabs .nav-link {
+    border-radius: 6px 6px 0 0;
+    padding: 8px 14px;
+  }
+
+  .message-search {
+    position: relative;
+  }
+
+  .message-search i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+  }
+
+  .message-search input {
+    padding-left: 40px;
+  }
+
+  .message-table {
+    table-layout: fixed;
+  }
+
+  .message-table th {
+    font-size: 13px;
+    color: #495057;
+    white-space: nowrap;
+  }
+
+  .message-time {
+    width: 112px;
+    color: #495057;
+    font-size: 13px;
+  }
+
+  .message-recipient {
+    width: 190px;
+  }
+
+  .message-body-cell {
+    min-width: 360px;
+  }
+
+  .message-preview {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.45;
+  }
+
+  .message-meta {
+    margin-top: 6px;
+    color: #6c757d;
+    font-size: 12px;
+  }
+
+  .message-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+
+  .message-actions .btn {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .badge-status {
+    min-width: 70px;
+    text-transform: capitalize;
+  }
+
+  .message-insight-card {
+    min-height: 220px;
+  }
+
+  .message-chart-box {
+    height: 170px;
+    position: relative;
+  }
+
+  .insight-progress-label {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+    color: #495057;
+  }
+
+  .failed-reason-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .failed-reason-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #edf0f2;
+    font-size: 13px;
+  }
+
+  @media (max-width: 992px) {
+    .message-table {
+      table-layout: auto;
+      min-width: 980px;
+    }
+  }
+</style>
+
+<div class="message-toolbar mb-4">
+  <div>
+    <h4 class="text-success mb-1">
+      <i class="fa fa-comment me-2"></i>Manajemen Pesan
+    </h4>
+    <div class="text-muted">Pantau antrean, status kirim, retry, dan opt-in pesan.</div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-4">
+    <div class="stat-card message-insight-card">
+      <h5 class="mb-3"><i class="fa fa-chart-pie me-2"></i>Komposisi 7 Hari</h5>
+      <div class="message-chart-box">
+        <canvas id="messageStatusChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="stat-card message-insight-card">
+      <h5 class="mb-3"><i class="fa fa-gauge-high me-2"></i>Progress Pengiriman</h5>
+      <div class="insight-progress-label mb-1">
+        <span>Success rate 7 hari</span>
+        <strong id="successRateLabel">0%</strong>
+      </div>
+      <div class="progress mb-3" style="height: 10px">
+        <div id="successRateBar" class="progress-bar bg-success" style="width: 0%"></div>
+      </div>
+      <div class="insight-progress-label mb-1">
+        <span>Queue health</span>
+        <strong id="queueHealthLabel">0 antrean</strong>
+      </div>
+      <div class="progress" style="height: 10px">
+        <div id="queuePendingBar" class="progress-bar bg-secondary" style="width: 0%"></div>
+        <div id="queueProcessingBar" class="progress-bar bg-warning" style="width: 0%"></div>
+        <div id="queueFailedBar" class="progress-bar bg-danger" style="width: 0%"></div>
+      </div>
+      <small class="text-muted d-block mt-3">Pending, processing, dan failed membantu melihat antrean macet.</small>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="stat-card message-insight-card">
+      <h5 class="mb-3"><i class="fa fa-triangle-exclamation me-2"></i>Alasan Gagal 7 Hari</h5>
+      <div id="failedReasonList" class="failed-reason-list">
+        <div class="text-muted small">Memuat data...</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Statistik Pesan -->
-<div class="row mb-4">
+<div class="row g-3 mb-4">
   <div class="col-md-3">
-    <div class="stat-card">
-      <h5>Total Pesan Dikirim</h5>
+    <div class="stat-card message-kpi">
+      <h5><i class="fa fa-check-circle text-success me-2"></i>Total Terkirim</h5>
       <h2 class="text-success" id="totalSent">0/0</h2>
+      <small class="kpi-sub">Sent / total data</small>
     </div>
   </div>
   <div class="col-md-3">
-    <div class="stat-card">
-      <h5>Pesan Tertunda</h5>
+    <div class="stat-card message-kpi">
+      <h5><i class="fa fa-clock text-secondary me-2"></i>Pesan Tertunda</h5>
       <h2 class="text-secondary" id="pendingCount">0</h2>
+      <small class="kpi-sub">Menunggu diproses cron</small>
     </div>
   </div>
   <div class="col-md-3">
-    <div class="stat-card">
-      <h5>Pesan Diproses</h5>
+    <div class="stat-card message-kpi">
+      <h5><i class="fa fa-spinner text-warning me-2"></i>Pesan Diproses</h5>
       <h2 class="text-warning" id="processingCount">0</h2>
+      <small class="kpi-sub">Sedang dikirim</small>
     </div>
   </div>
   <div class="col-md-3">
-    <div class="stat-card">
-      <h5>Pesan Gagal</h5>
+    <div class="stat-card message-kpi">
+      <h5><i class="fa fa-triangle-exclamation text-danger me-2"></i>Pesan Gagal</h5>
       <h2 class="text-danger" id="failedCount">0</h2>
+      <small class="kpi-sub">Perlu retry atau cek device</small>
     </div>
   </div>
 </div>
@@ -35,10 +243,18 @@
 <div class="row">
   <div class="col-md-12">
     <div class="stat-card">
-      <h5 class="mb-4"><i class="fa fa-envelope me-2"></i>Daftar Pesan</h5>
+      <div class="message-card-header mb-3">
+        <h5 class="mb-0"><i class="fa fa-envelope me-2"></i>Daftar Pesan</h5>
+        <div class="d-flex align-items-center gap-2">
+          <label class="form-check-label small text-muted" for="autoRefreshCheckbox">Auto refresh</label>
+          <div class="form-check form-switch m-0">
+            <input class="form-check-input" type="checkbox" id="autoRefreshCheckbox" onchange="toggleAutoRefresh()" checked />
+          </div>
+        </div>
+      </div>
 
       <!-- Tabs -->
-      <ul class="nav nav-tabs mb-3">
+      <ul class="nav nav-tabs message-tabs mb-3">
         <li class="nav-item">
           <a
             class="nav-link active"
@@ -87,32 +303,82 @@
       </ul>
       <div class="row mb-3">
         <div class="col-md-12">
-          <input
-            type="text"
-            id="searchInput"
-            class="form-control"
-            placeholder="Cari Nomor Tujuan, Isi Pesan, Tipe, atau Status..."
-            onkeyup="filterPesan()"
-          />
+          <div class="message-search">
+            <i class="fa fa-search"></i>
+            <input
+              type="text"
+              id="searchInput"
+              class="form-control"
+              placeholder="Cari nomor, device key, isi pesan, tipe, atau status..."
+              onkeyup="filterPesan()"
+            />
+          </div>
         </div>
       </div>
 
       <!-- Tabel Pesan -->
-      <table class="table table-striped table-hover" id="pesanTable">
-        <thead>
-          <tr>
-            <th>Waktu</th>
-            <th>Nomor Tujuan</th>
-            <th>Isi Pesan</th>
-            <th>Tipe</th>
-            <th>Status</th>
-            <th style="width: 100px">Aksi</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle message-table" id="pesanTable">
+          <thead>
+            <tr>
+              <th class="message-time">Waktu</th>
+              <th class="message-recipient">Tujuan</th>
+              <th>Isi Pesan</th>
+              <% if (showOptInColumn) { %>
+              <th style="width: 92px">Opt-In</th>
+              <% } %>
+              <th style="width: 86px">Tipe</th>
+              <th style="width: 92px">Status</th>
+              <th style="width: 96px" class="text-end">Aksi</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
 
       <div id="pagination" class="d-flex justify-content-center mt-3"></div>
+    </div>
+  </div>
+</div>
+
+<div id="retryMessageModal" class="modal" style="display: none">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Retry Pesan</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="retryMessageId" />
+        <div class="alert alert-warning small">
+          Pesan akan dikembalikan ke status pending dan dikirim ulang oleh cron. Anda bisa mengganti perangkat tujuan sebelum retry.
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Nomor Tujuan</label>
+          <input type="text" id="retryNumber" class="form-control" readonly />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Isi Pesan</label>
+          <textarea id="retryText" class="form-control" rows="3" readonly></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Perangkat Tujuan</label>
+          <select id="retryDeviceKey" class="form-control">
+            <% devices.forEach(device=> { %>
+              <option value="<%= device.device_key %>">
+                <%= device.name %> (<%= device.phone || '-' %> - <%= device.device_key %>)
+              </option>
+            <% }) %>
+          </select>
+          <small class="text-muted">Pilih device connected/shared yang akan dipakai untuk retry.</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="button" id="retryMessageButton" class="btn btn-success" onclick="submitRetryMessage()">
+          Retry Pesan
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -178,6 +444,13 @@
               placeholder="Tulis pesan Anda..."
               required
             ></textarea>
+            <div class="form-group mt-2">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="isOptInInvitation">
+                <label class="form-check-label" for="isOptInInvitation">Kirim sebagai Undangan Opt-In (Lewati blokir)</label>
+              </div>
+              <small class="text-muted">Gunakan ini hanya untuk mengajak user menyetujui notifikasi.</small>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -201,6 +474,8 @@
 
   let currentPage = 1;
   const limit = 30;
+  const showOptInColumn = <%= showOptInColumn ? "true" : "false" %>;
+  let messageStatusChart = null;
 
   function setActiveTab(element, status) {
     document
@@ -220,6 +495,7 @@
 
   async function filterPesan(page = 1) {
     try {
+      currentPage = page;
       const activeStatus = $("#tabActive").val();
 
       const searchKeyword = document
@@ -236,36 +512,92 @@
       const tbody = document.querySelector("#pesanTable tbody");
       tbody.innerHTML = "";
 
-      if (data.messages.length === 0) {
+      const messages = (data.messages || []).filter((message) => {
+        if (!searchKeyword) return true;
+        return [
+          message.number,
+          message.device_key,
+          message.message,
+          message.type,
+          message.status,
+          message.opt_in_status,
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(searchKeyword);
+      });
+
+      if (messages.length === 0) {
         tbody.innerHTML =
-          '<tr><td colspan="6" class="text-center">Tidak ada pesan terdaftar</td></tr>';
+          `<tr><td colspan="${showOptInColumn ? 7 : 6}" class="text-center text-muted py-4"><i class="fa fa-inbox me-2"></i>Tidak ada pesan terdaftar</td></tr>`;
       } else {
-        data.messages.forEach((message) => {
+        messages.forEach((message) => {
           const statusClass =
             {
               processing: "warning",
               sent: "success",
               failed: "danger",
               pending: "secondary",
-            }[message.status] || "default";
+            }[message.status] || "secondary";
+          const optInStatus = message.opt_in_status || "pending";
+          const optInClass =
+            {
+              approved: "success",
+              blocked: "danger",
+              pending: "warning text-dark",
+            }[optInStatus] || "secondary";
+          const optInText =
+            {
+              approved: "approved",
+              blocked: "menolak",
+              pending: "pending",
+            }[optInStatus] || optInStatus;
+          const optInTitle = message.opt_in_source
+            ? `Sumber: ${message.opt_in_source}`
+            : "Belum ada status persetujuan";
 
           const formattedTime = moment(
             message.updated_at || message.created_at
           ).format("YYYY/MM/DD HH:mm");
+          const safeNumber = escapeHtml(message.number || "-");
+          const safeDeviceKey = escapeHtml(message.device_key);
+          const safeMessage = escapeHtml(message.message);
+          const safeType = escapeHtml(message.type);
+          const safeStatus = escapeHtml(message.status);
+          const safeOptInText = escapeHtml(optInText);
+          const safeOptInTitle = escapeHtml(optInTitle);
+          const retryPayload = encodeURIComponent(JSON.stringify({
+            id: message.id,
+            number: message.number || "",
+            text: message.message || "",
+            deviceKey: message.device_key || "",
+          }));
+          const optInColumn = showOptInColumn
+            ? `<td><span class="badge bg-${optInClass}" title="${safeOptInTitle}">${safeOptInText}</span></td>`
+            : "";
           const row = `
           <tr data-status="${message.status}">
-            <td>${formattedTime}</td>
-            <td>${message.number} - ${message.device_key}</td>
-            <td>${message.message}</td>
-            <td>${message.type}</td>
-            <td><span class="badge bg-${statusClass}">${message.status}</span></td>
+            <td class="message-time">${formattedTime}</td>
+            <td class="message-recipient">
+              <strong>${safeNumber}</strong>
+              <div class="message-meta"><i class="fa fa-mobile-screen me-1"></i>${safeDeviceKey || "-"}</div>
+            </td>
+            <td class="message-body-cell">
+              <div class="message-preview" title="${safeMessage}">${safeMessage || "-"}</div>
+              <div class="message-meta">ID #${message.id}</div>
+            </td>
+            ${optInColumn}
+            <td><span class="badge bg-light text-dark border">${safeType}</span></td>
+            <td><span class="badge bg-${statusClass} badge-status">${safeStatus}</span></td>
             <td>
-              <button class="btn btn-sm btn-secondary btn-action" onclick="confirmRetry('${message.id}')">
+              <div class="message-actions">
+              <button class="btn btn-sm btn-outline-secondary btn-action" onclick="openRetryModal('${retryPayload}')" title="Retry / ganti device">
                 <i class="fa fa-undo"></i>
               </button>
-              <button class="btn btn-sm btn-danger btn-action" onclick="confirmDelete('${message.id}')">
+              <button class="btn btn-sm btn-outline-danger btn-action" onclick="confirmDelete('${message.id}')" title="Hapus pesan">
                 <i class="fa fa-trash"></i>
               </button>
+              </div>
             </td>
           </tr>`;
           tbody.innerHTML += row;
@@ -282,13 +614,13 @@
       document.getElementById("failedCount").innerText = data.counts.failed;
 
       // Pagination render
-      renderPagination(data.pagination, status);
+      renderPagination(data.pagination);
     } catch (error) {
       console.error("Error fetching messages:", error);
     }
   }
 
-  function renderPagination(pagination, status) {
+  function renderPagination(pagination) {
     const container = document.getElementById("pagination");
     container.innerHTML = "";
 
@@ -300,7 +632,7 @@
     if (pagination.page > 1) {
       html += `<li class="page-item"><a class="page-link" href="#" onclick="filterPesan(${
         pagination.page - 1
-      })">«</a></li>`;
+      })">&laquo;</a></li>`;
     }
 
     // Numbered pages
@@ -314,7 +646,7 @@
     if (pagination.page < pagination.totalPages) {
       html += `<li class="page-item"><a class="page-link" href="#" onclick="filterPesan(${
         pagination.page + 1
-      })">»</a></li>`;
+      })">&raquo;</a></li>`;
     }
 
     html += `</ul></nav>`;
@@ -323,6 +655,10 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     filterPesan();
+    loadMessageInsights();
+    if (document.getElementById("autoRefreshCheckbox")?.checked) {
+      startAutoRefresh();
+    }
   });
 
   function toggleAutoRefresh() {
@@ -335,14 +671,113 @@
   }
 
   function startAutoRefresh() {
+    stopAutoRefresh();
     refreshInterval = setInterval(() => {
-      filterPesan(); // Panggil filterPesan berdasarkan tab yang aktif
+      filterPesan(currentPage);
+      loadMessageInsights();
     }, 15000); // 15 detik
   }
 
   function stopAutoRefresh() {
     clearInterval(refreshInterval);
   }
+
+  async function loadMessageInsights() {
+    try {
+      const response = await fetch("/client/message/insights");
+      const data = await response.json();
+      if (!data.success) return;
+      renderMessageInsights(data.insights || {});
+    } catch (error) {
+      console.error("Error loading message insights:", error);
+    }
+  }
+
+  function renderMessageInsights(insights) {
+    const week = insights.week || {};
+    const sent = Number(week.sent || 0);
+    const pending = Number(week.pending || 0);
+    const processing = Number(week.processing || 0);
+    const failed = Number(week.failed || 0);
+    const total = Number(week.total || sent + pending + processing + failed);
+    const successRate = Number(week.successRate || 0);
+
+    $("#successRateLabel").text(`${successRate}%`);
+    $("#successRateBar")
+      .css("width", `${successRate}%`)
+      .toggleClass("bg-danger", successRate < 70 && total > 0)
+      .toggleClass("bg-warning", successRate >= 70 && successRate < 90)
+      .toggleClass("bg-success", successRate >= 90 || total === 0);
+
+    const queueTotal = pending + processing + failed;
+    $("#queueHealthLabel").text(`${queueTotal} antrean`);
+    const pct = (value) => queueTotal > 0 ? `${Math.round((value / queueTotal) * 100)}%` : "0%";
+    $("#queuePendingBar").css("width", pct(pending));
+    $("#queueProcessingBar").css("width", pct(processing));
+    $("#queueFailedBar").css("width", pct(failed));
+
+    renderStatusChart({ sent, pending, processing, failed });
+    renderFailedReasons(insights.failedReasons || []);
+  }
+
+  function renderStatusChart(counts) {
+    const canvas = document.getElementById("messageStatusChart");
+    if (!canvas || typeof Chart === "undefined") return;
+
+    const chartData = [counts.sent, counts.pending, counts.processing, counts.failed];
+    if (messageStatusChart) {
+      messageStatusChart.data.datasets[0].data = chartData;
+      messageStatusChart.update();
+      return;
+    }
+
+    messageStatusChart = new Chart(canvas.getContext("2d"), {
+      type: "doughnut",
+      data: {
+        labels: ["Sent", "Pending", "Processing", "Failed"],
+        datasets: [{
+          data: chartData,
+          backgroundColor: ["#198754", "#6c757d", "#ffc107", "#dc3545"],
+          borderWidth: 0,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "bottom" },
+        },
+        cutout: "68%",
+      },
+    });
+  }
+
+  function renderFailedReasons(reasons) {
+    const container = document.getElementById("failedReasonList");
+    if (!container) return;
+
+    if (!reasons.length) {
+      container.innerHTML = '<div class="text-muted small">Tidak ada failed message dalam 7 hari.</div>';
+      return;
+    }
+
+    container.innerHTML = reasons.map((row) => `
+      <div class="failed-reason-item">
+        <span>${escapeHtml(row.reason || "-")}</span>
+        <strong class="text-danger">${Number(row.total || 0)}</strong>
+      </div>
+    `).join("");
+  }
+
+  $("#isOptInInvitation").change(function() {
+    if (this.checked) {
+      const oldText = $("#text").val().trim();
+      const template = "Halo, ini adalah layanan notifikasi otomatis. Balas pesan ini dengan ketik 'SETUJU' untuk menerima informasi dan pembaruan dari kami secara otomatis melalui WhatsApp. Balas 'STOP' jika ingin berhenti berlangganan. Terima kasih!";
+      if (oldText === "") {
+        $("#text").val(template);
+      }
+    }
+  });
 
   $("#sendMessageForm").submit(async function (event) {
     event.preventDefault();
@@ -372,6 +807,7 @@
         to: to,
         text: text,
         isGroup: group,
+        tags: $("#isOptInInvitation").is(":checked") ? "opt-in" : "",
       }),
       success: function (response) {
         showToast(response.message, "success");
@@ -382,7 +818,12 @@
         filterPesan();
       },
       error: function (xhr, status, error) {
-        showToast("Terjadi kesalahan saat mengirim pesan.", "danger");
+        let errorMsg = "Terjadi kesalahan saat mengirim pesan.";
+        try {
+          const response = JSON.parse(xhr.responseText);
+          if (response && response.message) errorMsg = response.message;
+        } catch (e) {}
+        showToast(errorMsg, "danger");
         console.error("Gagal mengirim pesan:", xhr.responseText || error);
       },
       complete: function () {
@@ -417,8 +858,7 @@
           ? activeTab.getAttribute("data-status")
           : "all";
 
-        // Filter pesan berdasarkan status tab yang aktif
-        filterPesan(activeStatus);
+        filterPesan(currentPage);
       } else {
         throw new Error(result.message || "Gagal menghapus pesan");
       }
@@ -429,39 +869,63 @@
     }
   }
 
-  async function confirmRetry(id) {
-    if (!confirm(`Apakah Anda yakin ingin retry pesan ${id}?`)) return;
-    const apiKey = document.getElementById("apiKey").value;
+  function openRetryModal(encodedPayload) {
+    let payload = {};
     try {
-      const response = await fetch(
-        `/client/message/retry?apiKey=${encodeURIComponent(
-          apiKey
-        )}&id=${encodeURIComponent(id)}`,
-        {
-          method: "POST",
-        }
-      );
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
+      payload = JSON.parse(decodeURIComponent(encodedPayload));
+    } catch (error) {
+      showToast("Data pesan retry tidak valid.", "danger");
+      return;
+    }
+
+    $("#retryMessageId").val(payload.id || "");
+    $("#retryNumber").val(payload.number || "");
+    $("#retryText").val(payload.text || "");
+    if (payload.deviceKey && $(`#retryDeviceKey option[value="${payload.deviceKey}"]`).length) {
+      $("#retryDeviceKey").val(payload.deviceKey);
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById("retryMessageModal"));
+    modal.show();
+  }
+
+  async function submitRetryMessage() {
+    const id = $("#retryMessageId").val();
+    const deviceKey = $("#retryDeviceKey").val();
+    const btn = $("#retryMessageButton");
+    const oldText = btn.html();
+
+    if (!id || !deviceKey) {
+      showToast("Pesan dan perangkat tujuan wajib dipilih.", "danger");
+      return;
+    }
+
+    if (!confirm(`Retry pesan ${id} ke perangkat ${deviceKey}?`)) return;
+
+    btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Memproses...');
+
+    try {
+      const response = await fetch("/client/message/retry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, deviceKey }),
+      });
       const result = await response.json();
-      if (result.status) {
+      if (response.ok && result.status) {
         showToast("Pesan berhasil diretry!", "success");
 
-        // Ambil status tab yang aktif
-        const activeTab = document.querySelector(".nav-tabs .nav-link.active");
-        const activeStatus = activeTab
-          ? activeTab.getAttribute("data-status")
-          : "all";
-
-        // Filter pesan berdasarkan status tab yang aktif
-        filterPesan(activeStatus);
+        const modalEl = document.getElementById("retryMessageModal");
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+        filterPesan(currentPage);
       } else {
         throw new Error(result.message || "Gagal retry pesan");
       }
     } catch (error) {
       console.error("Error:", error);
       showToast(`Error: ${error.message}`, "danger");
+    } finally {
+      btn.prop("disabled", false).html(oldText);
     }
   }
 
@@ -469,17 +933,20 @@
   window.addEventListener("beforeunload", function () {
     clearInterval(refreshInterval);
   });
+
+  $(document).ready(function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const to = urlParams.get('to');
+      if (to) {
+          $("#to").val(to);
+          const contactModal = new bootstrap.Modal(document.getElementById('formKirimPesan'));
+          contactModal.show();
+          
+          // Clean URL without refresh
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+      }
+  });
 </script>
 
-<!-- HTML untuk Judul Daftar Pesan -->
-<div style="display: flex; justify-content: flex-start; align-items: center">
-  <label style="margin-left: 15px">
-    <input
-      type="checkbox"
-      id="autoRefreshCheckbox"
-      onchange="toggleAutoRefresh()"
-      checked
-    />
-    Auto Refresh
-  </label>
-</div>
+

@@ -37,45 +37,235 @@
           <%= device.status === 'tersambung' ? 'Tersambung' : 'Terputus' %>
         </p>
       </div>
+      <% if (device.session_parent) { %>
+      <div class="mb-3">
+        <label>Tipe Session</label>
+        <p><span class="badge bg-info text-white">Sub Session (Backup)</span></p>
+      </div>
+      <% } %>
     </div>
 
     <div class="stat-card">
-      <h5 class="mb-4"><i class="fa fa-box me-2"></i>Paket & Fitur</h5>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="mb-0"><i class="fa fa-box me-2"></i>Paket & Fitur</h5>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-success"
+          data-bs-toggle="modal"
+          data-bs-target="#upgradePackageModal"
+        >
+          <i class="fa fa-arrow-up me-1"></i> Upgrade Paket
+        </button>
+      </div>
+      
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="text-muted small">Paket Aktif</label>
+          <p class="mb-0"><strong><%= device.package_name || 'Regular' %></strong></p>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="text-muted small">Masa Aktif</label>
+          <p class="mb-0"><strong><%= device.life_time %> Hari Lagi</strong></p>
+        </div>
+      </div>
+
+      <hr class="my-2">
+
+      <div class="mb-3 mt-3">
+        <label class="text-muted small d-block mb-2">Limit Pesan Hari Ini</label>
+        <% 
+          const msgCount = device.message_count_today || { total: 0 };
+          const sent = msgCount.total || 0;
+          const limit = device.limit_daily || 0;
+          const percent = limit > 0 ? Math.min((sent / limit) * 100, 100) : 0;
+          const progressClass = percent > 90 ? 'bg-danger' : (percent > 70 ? 'bg-warning' : 'bg-success');
+        %>
+        <div class="progress" style="height: 10px;">
+          <div class="progress-bar <%= progressClass %>" role="progressbar" style="width: <%= percent + '%' %>;" aria-valuenow="<%= percent %>" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <small class="text-muted mt-1 d-block"><%= sent %> dari <%= limit %> pesan terkirim hari ini</small>
+      </div>
 
       <div class="mb-3">
-        <label>Paket</label>
-        <p><strong>Premium</strong></p>
+        <label class="text-muted small d-block mb-2">Fitur Aktif</label>
+        <div class="package-features p-2 bg-light rounded" style="max-height: 150px; overflow-y: auto; font-size: 0.85rem;">
+          <% if (device.package_description) { %>
+            <%- device.package_description %>
+          <% } else { %>
+            <p class="text-muted mb-0">Fitur standar aktif</p>
+          <% } %>
+        </div>
       </div>
-      <div class="mb-3">
-        <label>Masa Aktif</label>
-        <p><strong>30 Hari Lagi</strong></p>
-      </div>
-      <div class="mb-3">
-        <label>Otomatis Baca?</label>
-        <p>
-          <span id="otomatisBaca">Ya</span>
+
+      <div class="mb-0">
+        <label class="text-muted small">Otomatis Baca Pesan</label>
+        <div class="d-flex justify-content-between align-items-center mt-1">
+          <span id="otomatisBaca" class="badge bg-secondary">Fitur Segera Hadir</span>
           <button
-            class="btn btn-sm btn-outline-primary"
+            class="btn btn-xs btn-outline-secondary disabled"
             onclick="toggleFitur('otomatisBaca')"
-          >
-            Nonaktifkan
-          </button>
-        </p>
-      </div>
-      <div class="mb-3">
-        <label>Otomatis Perpanjang?</label>
-        <p>
-          <span id="otomatisPerpanjang">Tidak</span>
-          <button
-            class="btn btn-sm btn-outline-primary"
-            onclick="toggleFitur('otomatisPerpanjang')"
           >
             Aktifkan
           </button>
-        </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub Sessions Section -->
+    <% if (!device.session_parent) { %>
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5><i class="fa fa-layer-group me-2"></i>Sub Sessions (Backup)</h5>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Device Key</th>
+              <th>Nama / Nomor</th>
+              <th>Status</th>
+              <th>Last Active</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="subSessionTableBody">
+            <% if (subDevices && subDevices.length > 0) { %>
+              <% subDevices.forEach(sub => { %>
+                <tr>
+                  <td><code><%= sub.device_key %></code></td>
+                  <td>
+                    <%= sub.name || 'N/A' %><br>
+                    <small class="text-muted"><%= sub.phone || 'Belum discan' %></small>
+                  </td>
+                  <td>
+                    <span class="badge bg-<%= sub.status === 'connected' ? 'success' : (sub.status === 'disconnected' ? 'warning' : 'danger') %>">
+                      <%= sub.status %>
+                    </span>
+                  </td>
+                  <td><%= sub.last_active %></td>
+                  <td>
+                    <a href="/client/device/status?deviceKey=<%= sub.device_key %>" class="btn btn-xs btn-outline-primary">
+                      <i class="fa fa-eye"></i>
+                    </a>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr>
+                <td colspan="5" class="text-center py-4">
+                  <p class="text-muted mb-0">Belum ada sub session. Tambahkan sebagai cadangan jika session utama gangguan.</p>
+                </td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <% } %>
+  </div>
+
+  <div class="modal fade" id="upgradePackageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Upgrade Paket Device</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning small">
+            Paket lama akan hangus setelah upgrade berhasil. Masa aktif dan limit harian device akan diganti mengikuti paket baru.
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Device</label>
+            <input type="text" class="form-control" value="<%= device.name || device.device_key %> (<%= device.device_key %>)" readonly>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Paket aktif saat ini</label>
+            <input type="text" class="form-control" value="<%= device.package_name || 'Regular' %> - <%= device.life_time || 0 %> hari - <%= device.limit_daily || 0 %> pesan/hari" readonly>
+          </div>
+
+          <div class="mb-3">
+            <label for="upgradePackageId" class="form-label">Pilih paket baru</label>
+            <select class="form-select" id="upgradePackageId" required>
+              <% packages.forEach(pkg => { %>
+                <option value="<%= pkg.id %>" <%= device.packageId == pkg.id ? 'selected' : '' %>>
+                  <%= pkg.name %> - Rp <%= Number(pkg.price || 0).toLocaleString('id-ID') %> - <%= pkg.limit_daily || pkg.message_limit || 0 %> pesan/hari - <%= pkg.life_time || pkg.duration || 0 %> hari
+                </option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="confirmUpgradePackage">
+            <label class="form-check-label" for="confirmUpgradePackage">
+              Saya paham paket lama akan hangus dan saldo akan dipotong sesuai harga paket baru.
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="button" id="upgradePackageButton" class="btn btn-success" onclick="submitUpgradePackage()">
+            Upgrade Paket
+          </button>
+        </div>
       </div>
     </div>
   </div>
+
+  <% if (!device.session_parent) { %>
+  <button class="floating-button" data-bs-toggle="modal" data-bs-target="#addSubSessionModal" title="Tambah Sub Session">
+    <i class="fas fa-plus"></i>
+  </button>
+  <% } %>
+
+  <!-- Modal Tambah Sub Session -->
+  <% if (!device.session_parent) { %>
+  <div class="modal fade" id="addSubSessionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Tambah Sub Session</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formAddSubSession">
+            <input type="hidden" name="apiKey" value="<%= apiKey %>">
+            <input type="hidden" name="sessionParent" value="<%= deviceKey %>">
+            
+            <div class="mb-3">
+              <label class="form-label">Nama Device Cadangan</label>
+              <input type="text" class="form-control" name="deviceName" placeholder="Contoh: Backup Admin 1" required>
+              <small class="text-muted">Gunakan nama yang berbeda untuk memudahkan identifikasi.</small>
+            </div>
+            
+            <div class="mb-3">
+              <label class="form-label">Nomor WhatsApp (Opsional)</label>
+              <input type="text" class="form-control" name="phoneNumber" placeholder="628xxx">
+            </div>
+
+            <div class="mb-3">
+              <label for="packageId">Paket (<a href="/client/package">Lihat detail package</a>):</label>
+              <select class="form-select" id="packageId" name="packageId" required>
+                <% packages.forEach(pkg => { %>
+                <option value="<%= pkg.id %>" <%= device.packageId == pkg.id ? 'selected' : '' %>>
+                  <%= pkg.name %> - Rp <%= pkg.price %>/bulan
+                </option>
+                <% }) %>
+              </select>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-success" onclick="submitSubSession()">Simpan & Generate QR</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% } %>
 
   <!-- Box Kanan -->
   <div class="col-md-4">
@@ -254,6 +444,121 @@
     }
   });
 
+  function submitSubSession() {
+    const form = document.getElementById('formAddSubSession');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    if (!data.deviceName) {
+      alert('Nama device harus diisi');
+      return;
+    }
+
+    // Disable button
+    const btn = event.target;
+    const oldText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Memproses...';
+
+    $.ajax({
+      url: '/client/sub-session/register',
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify(data),
+      success: function(response) {
+        if (response.status) {
+          alert('Sub session berhasil didaftarkan! Silakan scan QR code di halaman status device tersebut.');
+          window.location.href = `/client/device/status?deviceKey=${response.data.device_key}`;
+        } else {
+          alert('Gagal: ' + response.message);
+          if (response.redirect) {
+            window.location.href = response.redirect;
+          }
+          btn.disabled = false;
+          btn.innerHTML = oldText;
+        }
+      },
+      error: function(xhr) {
+        let response = xhr.responseJSON;
+        if (response && response.message) {
+          alert(response.message);
+          if (response.redirect) {
+            window.location.href = response.redirect;
+          }
+        } else {
+          alert('Terjadi kesalahan pada server');
+        }
+        btn.disabled = false;
+        btn.innerHTML = oldText;
+      }
+    });
+  }
+
+  function submitUpgradePackage() {
+    const packageId = $("#upgradePackageId").val();
+    const confirmed = $("#confirmUpgradePackage").is(":checked");
+    const btn = $("#upgradePackageButton");
+    const oldText = btn.html();
+
+    if (!packageId) {
+      showToast("Paket baru wajib dipilih.", "danger");
+      return;
+    }
+
+    if (!confirmed) {
+      showToast("Centang konfirmasi paket lama hangus terlebih dahulu.", "warning");
+      return;
+    }
+
+    btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Memproses...');
+
+    $.ajax({
+      url: "/client/device/upgrade-package",
+      method: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({
+        deviceKey: key,
+        packageId,
+      }),
+      success: function(response) {
+        if (response.status) {
+          showToast(response.message || "Paket berhasil diupgrade.", "success");
+          setTimeout(() => window.location.reload(), 700);
+        } else {
+          showToast(response.message || "Gagal upgrade paket.", "danger");
+          if (response.redirect) {
+            setTimeout(() => {
+              const go = confirm(
+                (response.message || "Saldo tidak cukup.") +
+                  "\n\nKlik OK untuk menuju Billing/Top Up, atau Cancel untuk tetap di halaman ini.",
+              );
+              if (go) window.location.href = response.redirect;
+            }, 350);
+          }
+          btn.prop("disabled", false).html(oldText);
+        }
+      },
+      error: function(xhr) {
+        const response = xhr.responseJSON || {};
+        showToast(response.message || "Terjadi kesalahan saat upgrade paket.", "danger");
+        if (response.redirect) {
+          setTimeout(() => {
+            const go = confirm(
+              (response.message || "Saldo tidak cukup.") +
+                "\n\nKlik OK untuk menuju Billing/Top Up, atau Cancel untuk tetap di halaman ini.",
+            );
+            if (go) window.location.href = response.redirect;
+          }, 350);
+        }
+        btn.prop("disabled", false).html(oldText);
+      }
+    });
+  }
+
   // Initial load
   fetchSessionStatus();
 </script>
+</div> <!-- close col-md-4 -->
+</div> <!-- close row -->
+
+</content>

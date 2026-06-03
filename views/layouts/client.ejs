@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="<%= csrfToken || '' %>" />
 
     <title><%= title %></title>
     <link
@@ -126,21 +127,48 @@
         width: var(--sidebar-width);
         background: #f4f6f9;
         border-right: 2px solid #c9c4c4;
-        padding: 40px 0;
+        padding: 24px 0 0;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        overflow: hidden;
+      }
+
+      .sidebar .brand {
+        flex-shrink: 0;
       }
 
       .sidebar-menu {
         list-style: none;
-        padding: 0;
+        padding: 0 0 12px;
         margin: 0;
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: thin;
+        scrollbar-color: #b9c5c0 transparent;
+      }
+
+      .sidebar-menu::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .sidebar-menu::-webkit-scrollbar-thumb {
+        background: #b9c5c0;
+        border-radius: 999px;
       }
 
       .sidebar-menu a {
-        display: block;
-        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        padding: 10px 20px;
         color: #495057;
         text-decoration: none;
         transition: all 0.3s;
+        white-space: nowrap;
       }
 
       .sidebar-menu a:hover {
@@ -151,24 +179,88 @@
       .sidebar-menu i {
         width: 25px;
         margin-right: 10px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+
+      .sidebar-section {
+        margin: 14px 16px 6px;
+        padding-top: 12px;
+        border-top: 1px solid #dde4e0;
+        color: #7a8580;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .sidebar-section:first-child {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: 0;
+      }
+
+      .sidebar-toggle-area {
+        flex-shrink: 0;
+        border-top: 1px solid #d9dedb;
+        padding: 10px;
+        background: #eef2f0;
+      }
+
+      .sidebar-toggle-bottom {
+        width: 100%;
+        border: 0;
+        border-radius: 8px;
+        background: #e1ebe6;
+        color: #495057;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s;
+      }
+
+      .sidebar-toggle-bottom:hover {
+        background: #d6e7df;
+        color: var(--wa-green);
       }
 
       /* Responsive Sidebar */
       @media (max-width: 768px) {
         .sidebar {
-          width: 60px;
-          /* Lebar mini sidebar */
+          width: 68px;
           transition: width 0.3s;
         }
 
         .sidebar .menu-text {
           display: none;
-          /* Sembunyikan teks menu */
         }
 
         .sidebar .brand h4 {
           display: none;
-          /* Sembunyikan brand text */
+        }
+
+        .sidebar-menu a {
+          justify-content: center;
+          padding: 12px 0;
+        }
+
+        .sidebar-menu i {
+          margin-right: 0;
+        }
+
+        .sidebar-section {
+          margin: 10px 16px;
+          padding-top: 10px;
+          height: 1px;
+          overflow: hidden;
+          color: transparent;
+        }
+
+        .sidebar-toggle-bottom .menu-text {
+          display: none;
         }
       }
 
@@ -179,18 +271,36 @@
         }
 
         .sidebar.mini {
-          width: 60px;
-          /* Lebar mini sidebar */
+          width: 68px;
         }
 
         .sidebar.mini .menu-text {
           display: none;
-          /* Sembunyikan teks menu */
         }
 
         .sidebar.mini .brand h4 {
           display: none;
-          /* Sembunyikan brand text */
+        }
+
+        .sidebar.mini .sidebar-menu a {
+          justify-content: center;
+          padding: 12px 0;
+        }
+
+        .sidebar.mini .sidebar-menu i {
+          margin-right: 0;
+        }
+
+        .sidebar.mini .sidebar-section {
+          margin: 10px 16px;
+          padding-top: 10px;
+          height: 1px;
+          overflow: hidden;
+          color: transparent;
+        }
+
+        .sidebar.mini .sidebar-toggle-bottom .menu-text {
+          display: none;
         }
       }
     </style>
@@ -220,12 +330,15 @@
         </div>
 
         <ul class="sidebar-menu">
+          <li class="sidebar-section"><span class="menu-text">Utama</span></li>
           <li>
             <a href="/client">
               <i class="fa fa-home"></i>
               <span class="menu-text">Dashboard</span>
             </a>
           </li>
+
+          <li class="sidebar-section"><span class="menu-text">Akun & Billing</span></li>
           <li>
             <a href="/client/package">
               <i class="fa fa-box"></i> <span class="menu-text">Package</span>
@@ -237,10 +350,24 @@
               <span class="menu-text">Billing</span>
             </a>
           </li>
+
+          <li class="sidebar-section"><span class="menu-text">Operasional WA</span></li>
           <li>
             <a href="/client/device">
               <i class="fa fa-mobile-alt"></i>
               <span class="menu-text">Device</span>
+            </a>
+          </li>
+          <li>
+            <a href="/client/campaign">
+              <i class="fa fa-bullhorn"></i>
+              <span class="menu-text">Campaign</span>
+            </a>
+          </li>
+          <li>
+            <a href="/client/queue">
+              <i class="fa fa-list-check"></i>
+              <span class="menu-text">Queue</span>
             </a>
           </li>
           <li>
@@ -250,9 +377,63 @@
             </a>
           </li>
           <li>
+            <a href="/client/inbox">
+              <i class="fa fa-inbox"></i>
+              <span class="menu-text">Inbox</span>
+            </a>
+          </li>
+
+          <li class="sidebar-section"><span class="menu-text">Data & Otomasi</span></li>
+          <li>
+            <a href="/client/contact">
+              <i class="fa fa-address-book"></i>
+              <span class="menu-text">Contacts</span>
+            </a>
+          </li>
+          <li>
+            <a href="/client/templates">
+              <i class="fa fa-file-lines"></i>
+              <span class="menu-text">Templates</span>
+            </a>
+          </li>
+          <li>
+            <a href="/client/webhook">
+              <i class="fas fa-gears"></i>
+              <span class="menu-text">Webhook</span>
+            </a>
+          </li>
+          <li>
+            <a href="/client/optin">
+              <i class="fa fa-user-check"></i>
+              <span class="menu-text">Opt-In List</span>
+            </a>
+          </li>
+          <li>
             <a href="/client/autoreply">
               <i class="fa fa-reply"></i>
               <span class="menu-text">Auto Reply</span>
+            </a>
+          </li>
+          <li>
+            <a href="/client/ai">
+              <i class="fa fa-robot"></i>
+              <span class="menu-text">AI Integration</span>
+            </a>
+          </li>
+
+          <li class="sidebar-section"><span class="menu-text">Analitik</span></li>
+          <li>
+            <a href="/client/reports">
+              <i class="fa fa-chart-line"></i>
+              <span class="menu-text">Reports</span>
+            </a>
+          </li>
+
+          <li class="sidebar-section"><span class="menu-text">Bantuan & API</span></li>
+          <li>
+            <a href="/client/developer">
+              <i class="fa fa-code"></i>
+              <span class="menu-text">Developer API</span>
             </a>
           </li>
           <li>
@@ -267,6 +448,8 @@
               <span class="menu-text">Documentation</span>
             </a>
           </li>
+
+          <li class="sidebar-section"><span class="menu-text">Pengguna</span></li>
           <li>
             <a href="/client/profile">
               <i class="fa fa-user"></i>
@@ -280,12 +463,54 @@
             </a>
           </li>
         </ul>
+        <div class="sidebar-toggle-area">
+          <button
+            type="button"
+            id="toggleSidebarBottom"
+            class="sidebar-toggle-bottom"
+            title="Toggle sidebar"
+          >
+            <i class="fa fa-angles-left"></i>
+            <span class="menu-text">Minimize Menu</span>
+          </button>
+        </div>
       </div>
       <!-- Main Content -->
       <div class="main-content" id="mainContent"><%- body %></div>
     </div>
 
     <script>
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
+      if (window.$) {
+        $.ajaxSetup({
+          beforeSend: function (xhr, settings) {
+            const method = String(settings.type || settings.method || "GET").toUpperCase();
+            if (csrfToken && !["GET", "HEAD", "OPTIONS"].includes(method)) {
+              xhr.setRequestHeader("X-CSRF-Token", csrfToken);
+            }
+          },
+        });
+      }
+      const originalFetch = window.fetch.bind(window);
+      window.fetch = function (resource, options = {}) {
+        const method = String(options.method || "GET").toUpperCase();
+        if (csrfToken && !["GET", "HEAD", "OPTIONS"].includes(method)) {
+          const headers = new Headers(options.headers || {});
+          headers.set("X-CSRF-Token", csrfToken);
+          options = { ...options, headers };
+        }
+        return originalFetch(resource, options);
+      };
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
       function aksiLogout() {
         if (confirm("Yakin ingin logout?")) {
           window.location.href = "/auth/logout";
@@ -293,6 +518,7 @@
       }
 
       const toggleSidebarButton = document.getElementById("toggleSidebar");
+      const toggleSidebarBottom = document.getElementById("toggleSidebarBottom");
       const sidebar = document.getElementById("sidebar");
       const mainContent = document.getElementById("mainContent");
 
@@ -300,16 +526,58 @@
       function toggleSidebar() {
         sidebar.classList.toggle("mini");
         mainContent.classList.toggle("with-mini-sidebar");
+        syncSidebarToggle();
+        localStorage.setItem(
+          "clientSidebarMini",
+          sidebar.classList.contains("mini") ? "1" : "0",
+        );
+      }
+
+      function syncSidebarToggle() {
+        if (!toggleSidebarBottom) return;
+        const isMini = sidebar.classList.contains("mini");
+        const icon = toggleSidebarBottom.querySelector("i");
+        const text = toggleSidebarBottom.querySelector(".menu-text");
+        if (icon) {
+          icon.className = isMini ? "fa fa-angles-right" : "fa fa-angles-left";
+        }
+        if (text) {
+          text.textContent = isMini ? "Expand Menu" : "Minimize Menu";
+        }
+      }
+
+      function setMenuTitles() {
+        document.querySelectorAll(".sidebar-menu a").forEach((link) => {
+          const label = link.querySelector(".menu-text");
+          if (label && !link.getAttribute("title")) {
+            link.setAttribute("title", label.textContent.trim());
+          }
+        });
       }
 
       // Event listener untuk tombol toggle
-      toggleSidebarButton.addEventListener("click", toggleSidebar);
+      if (toggleSidebarButton) {
+        toggleSidebarButton.addEventListener("click", toggleSidebar);
+      }
+      if (toggleSidebarBottom) {
+        toggleSidebarBottom.addEventListener("click", toggleSidebar);
+      }
+
+      setMenuTitles();
+      if (localStorage.getItem("clientSidebarMini") === "1") {
+        sidebar.classList.add("mini");
+        mainContent.classList.add("with-mini-sidebar");
+      }
+      syncSidebarToggle();
 
       // Toggle sidebar saat layar di-resize
       window.addEventListener("resize", () => {
         if (window.innerWidth >= 769) {
-          sidebar.classList.remove("mini");
-          mainContent.classList.remove("with-mini-sidebar");
+          if (localStorage.getItem("clientSidebarMini") !== "1") {
+            sidebar.classList.remove("mini");
+            mainContent.classList.remove("with-mini-sidebar");
+          }
+          syncSidebarToggle();
         }
       });
 
@@ -323,7 +591,7 @@
         <div id="${toastId}" class="toast align-items-center text-bg-${type} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
                 <div class="toast-body">
-                    ${message}
+                    ${escapeHtml(message)}
                 </div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>

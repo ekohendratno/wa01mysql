@@ -1,0 +1,493 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="text-success mb-1"><i class="fa fa-heart-pulse me-2"></i>System Health</h4>
+    <div class="text-muted">Status runtime, database, antrean, webhook, dan konfigurasi penting.</div>
+  </div>
+  <a href="/health" target="_blank" class="btn btn-outline-success btn-sm">
+    <i class="fa fa-up-right-from-square me-1"></i> JSON health
+  </a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card h-100">
+      <h5>Database</h5>
+      <h2 class="<%= health.database === 'connected' ? 'text-success' : 'text-danger' %>"><%= health.database %></h2>
+      <small class="text-muted"><%= health.databaseVersion || '-' %></small>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card h-100">
+      <h5>Sessions</h5>
+      <h2><%= health.activeSessions %>/<%= health.loadedSessions %></h2>
+      <small class="text-muted">Connected / loaded</small>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card h-100">
+      <h5>Queue Pending</h5>
+      <h2 class="<%= health.queuePending > 100 ? 'text-warning' : '' %>"><%= health.queuePending %></h2>
+      <small class="text-muted"><%= health.queueProcessing %> processing</small>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card h-100">
+      <h5>Memory RSS</h5>
+      <h2><%= health.memoryUsedMb %> MB</h2>
+      <small class="text-muted"><%= health.freeMemoryMb %> MB free dari <%= health.totalMemoryMb %> MB</small>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-5">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-lightbulb me-2"></i>Saran Sistem</h5>
+      <ul class="list-group list-group-flush">
+        <% (health.recommendations || []).forEach(function(item) { %>
+          <li class="list-group-item px-0"><%= item %></li>
+        <% }) %>
+      </ul>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-sliders me-2"></i>Environment Check</h5>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Status</th>
+              <th>Detail</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% (health.envChecks || []).forEach(function(check) { %>
+              <tr>
+                <td><code><%= check.name %></code></td>
+                <td><span class="badge <%= check.ok ? 'bg-success' : 'bg-warning text-dark' %>"><%= check.ok ? 'OK' : 'Perlu cek' %></span></td>
+                <td><%= check.detail %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-7">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0"><i class="fa fa-clock-rotate-left me-2"></i>Cron Jobs</h5>
+        <span class="badge bg-success"><%= health.cronTaskCount || 0 %> task aktif</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Job</th>
+              <th>Jadwal</th>
+              <th>Eksekusi Berikutnya</th>
+              <th>Fungsi</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.cronJobs && health.cronJobs.length) { %>
+              <% health.cronJobs.forEach(function(job) { %>
+                <tr>
+                  <td>
+                    <strong><%= job.name %></strong><br>
+                    <small class="text-muted"><code><%= job.schedule %></code></small>
+                  </td>
+                  <td><small><%= job.frequency %></small></td>
+                  <td style="min-width: 180px">
+                    <div
+                      class="cron-countdown"
+                      data-next-run="<%= job.nextRunAt || '' %>"
+                      data-interval="<%= job.intervalSeconds || 60 %>"
+                    >
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Sisa</small>
+                        <small class="fw-semibold cron-countdown-text">-</small>
+                      </div>
+                      <div class="progress" style="height: 8px">
+                        <div class="progress-bar bg-success cron-countdown-bar" style="width: 0%"></div>
+                      </div>
+                      <small class="text-muted cron-next-run d-block mt-1">-</small>
+                    </div>
+                  </td>
+                  <td><small><%= job.task %></small></td>
+                  <td><span class="badge <%= job.status === 'registered' ? 'bg-success' : 'bg-secondary' %>"><%= job.status %></span></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="5" class="text-muted">Belum ada data cron.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-broom me-2"></i>Preview Cleanup Harian</h5>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th class="text-end">Calon Hapus</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.cleanupPreview && health.cleanupPreview.length) { %>
+              <% health.cleanupPreview.forEach(function(row) { %>
+                <tr>
+                  <td><small><%= row.item %></small></td>
+                  <td class="text-end"><span class="badge <%= Number(row.cnt || 0) > 0 ? 'bg-warning text-dark' : 'bg-secondary' %>"><%= row.cnt || 0 %></span></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="2" class="text-muted">Tidak ada preview cleanup.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+      <small class="text-muted d-block mt-3">Data <code>opt_ins</code> dan <code>contacts</code> tidak masuk cleanup otomatis.</small>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    function formatDuration(totalSeconds) {
+      const seconds = Math.max(0, Math.floor(totalSeconds));
+      const days = Math.floor(seconds / 86400);
+      const hours = Math.floor((seconds % 86400) / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+
+      if (days > 0) return `${days}h ${hours}j ${minutes}m`;
+      if (hours > 0) return `${hours}j ${minutes}m ${secs}d`;
+      if (minutes > 0) return `${minutes}m ${secs}d`;
+      return `${secs}d`;
+    }
+
+    function advanceNextRun(nextRun, intervalSeconds) {
+      const intervalMs = Math.max(1, intervalSeconds) * 1000;
+      let next = nextRun.getTime();
+      const now = Date.now();
+      while (next <= now) next += intervalMs;
+      return new Date(next);
+    }
+
+    function updateCronCountdowns() {
+      document.querySelectorAll(".cron-countdown").forEach(function (el) {
+        const nextRunRaw = el.getAttribute("data-next-run");
+        const intervalSeconds = parseInt(el.getAttribute("data-interval") || "60", 10);
+        if (!nextRunRaw) return;
+
+        let nextRun = new Date(nextRunRaw);
+        if (Number.isNaN(nextRun.getTime())) return;
+
+        nextRun = advanceNextRun(nextRun, intervalSeconds);
+        el.setAttribute("data-next-run", nextRun.toISOString());
+
+        const remainingSeconds = (nextRun.getTime() - Date.now()) / 1000;
+        const percent = Math.max(
+          0,
+          Math.min(100, 100 - (remainingSeconds / Math.max(1, intervalSeconds)) * 100)
+        );
+
+        const text = el.querySelector(".cron-countdown-text");
+        const bar = el.querySelector(".cron-countdown-bar");
+        const nextLabel = el.querySelector(".cron-next-run");
+
+        if (text) text.textContent = formatDuration(remainingSeconds);
+        if (bar) bar.style.width = `${percent}%`;
+        if (nextLabel) nextLabel.textContent = `Next: ${nextRun.toLocaleString("id-ID")}`;
+      });
+    }
+
+    updateCronCountdowns();
+    setInterval(updateCronCountdowns, 1000);
+  })();
+</script>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-4">
+    <div class="stat-card h-100">
+      <h5 class="mb-3">Runtime</h5>
+      <dl class="row mb-0">
+        <dt class="col-5">Host</dt>
+        <dd class="col-7"><%= health.host %></dd>
+        <dt class="col-5">Node</dt>
+        <dd class="col-7"><%= health.nodeVersion %></dd>
+        <dt class="col-5">Platform</dt>
+        <dd class="col-7"><%= health.platform %></dd>
+        <dt class="col-5">Environment</dt>
+        <dd class="col-7"><%= health.nodeEnv %></dd>
+        <dt class="col-5">Port</dt>
+        <dd class="col-7"><%= health.serverPort %></dd>
+        <dt class="col-5">Server URL</dt>
+        <dd class="col-7"><%= health.serverUrl || '-' %></dd>
+        <dt class="col-5">Uptime</dt>
+        <dd class="col-7"><%= Math.floor((health.uptime || 0) / 3600) %> jam <%= Math.floor(((health.uptime || 0) % 3600) / 60) %> menit</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="stat-card h-100">
+      <h5 class="mb-3">Database Detail</h5>
+      <dl class="row mb-0">
+        <dt class="col-5">DB Time</dt>
+        <dd class="col-7"><%= health.databaseTime ? new Date(health.databaseTime).toLocaleString('id-ID') : '-' %></dd>
+        <dt class="col-5">SQL Mode</dt>
+        <dd class="col-7"><small><%= health.sqlMode || '-' %></small></dd>
+        <dt class="col-5">Oldest Queue</dt>
+        <dd class="col-7"><%= health.queueOldestPending ? new Date(health.queueOldestPending).toLocaleString('id-ID') : '-' %></dd>
+        <dt class="col-5">Webhook Failed</dt>
+        <dd class="col-7"><%= health.webhookFailed24h %> dalam 24 jam</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="stat-card h-100">
+      <h5 class="mb-3">Distribusi Cepat</h5>
+      <div class="mb-3">
+        <strong>Device</strong>
+        <div class="mt-2">
+          <% (health.deviceStatus || []).forEach(function(row) { %>
+            <span class="badge bg-secondary me-1"><%= row.status || 'unknown' %>: <%= row.cnt %></span>
+          <% }) %>
+        </div>
+      </div>
+      <div class="mb-3">
+        <strong>Messages</strong>
+        <div class="mt-2">
+          <% (health.messageStatus || []).forEach(function(row) { %>
+            <span class="badge bg-secondary me-1"><%= row.status || 'unknown' %>: <%= row.cnt %></span>
+          <% }) %>
+        </div>
+      </div>
+      <div>
+        <strong>Transactions</strong>
+        <div class="mt-2">
+          <% (health.transactionStatus || []).forEach(function(row) { %>
+            <span class="badge bg-secondary me-1"><%= row.status || 'unknown' %>: <%= row.cnt %></span>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-6">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Top User 30 Hari</h5>
+        <a href="/admin/users" class="btn btn-sm btn-outline-secondary">Users</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Total</th>
+              <th>Sent</th>
+              <th>Failed</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.topUsers && health.topUsers.length) { %>
+              <% health.topUsers.forEach(function(user) { %>
+                <tr>
+                  <td><%= user.name || '-' %><br><small class="text-muted"><%= user.email || '-' %></small></td>
+                  <td><%= user.total_messages || 0 %></td>
+                  <td class="text-success"><%= user.sent_messages || 0 %></td>
+                  <td class="text-danger"><%= user.failed_messages || 0 %></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="4" class="text-muted">Belum ada aktivitas user.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Pesan Failed Terbaru</h5>
+        <a href="/admin/messages?status=failed" class="btn btn-sm btn-outline-secondary">Failed</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>User / Device</th>
+              <th>Nomor</th>
+              <th>Response</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.recentFailures && health.recentFailures.length) { %>
+              <% health.recentFailures.forEach(function(row) { %>
+                <tr>
+                  <td><small><%= row.created_at ? new Date(row.created_at).toLocaleString('id-ID') : '-' %></small></td>
+                  <td><%= row.user_name || '-' %><br><small class="text-muted"><%= row.device_name || '-' %></small></td>
+                  <td><%= row.number || '-' %></td>
+                  <td><small><%= (row.response || '').length > 80 ? (row.response.substring(0, 80) + '...') : (row.response || '-') %></small></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="4" class="text-muted">Tidak ada pesan failed terbaru.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-list-check me-2"></i>Log Aplikasi Terbaru</h5>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>User</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.recentAppLogs && health.recentAppLogs.length) { %>
+              <% health.recentAppLogs.forEach(function(row) { %>
+                <tr>
+                  <td><small><%= row.created_at ? new Date(row.created_at).toLocaleString('id-ID') : '-' %></small></td>
+                  <td><%= row.user_name || '-' %></td>
+                  <td><small><%= (row.action || '').length > 100 ? (row.action.substring(0, 100) + '...') : (row.action || '-') %></small></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="3" class="text-muted">Belum ada log aplikasi.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0"><i class="fa fa-tower-broadcast me-2"></i>Webhook Log Terbaru</h5>
+        <a href="/admin/webhooks" class="btn btn-sm btn-outline-secondary">Semua</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Event</th>
+              <th>Status</th>
+              <th>User / Device</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.recentWebhookLogs && health.recentWebhookLogs.length) { %>
+              <% health.recentWebhookLogs.forEach(function(row) { %>
+                <tr>
+                  <td><small><%= row.created_at ? new Date(row.created_at).toLocaleString('id-ID') : '-' %></small></td>
+                  <td><%= row.event || '-' %></td>
+                  <td>
+                    <span class="badge <%= row.status === 'success' ? 'bg-success' : 'bg-danger' %>"><%= row.status || '-' %></span>
+                    <% if (row.http_status) { %><small class="text-muted">HTTP <%= row.http_status %></small><% } %>
+                  </td>
+                  <td><small><%= row.user_name || '-' %> / <%= row.device_name || '-' %></small></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="4" class="text-muted">Belum ada webhook log.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mt-1">
+  <div class="col-lg-5">
+    <div class="stat-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Webhook Failed Terbaru</h5>
+        <a href="/admin/webhooks?status=failed" class="btn btn-sm btn-outline-secondary">Webhook</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Event</th>
+              <th>Error</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.recentWebhookFailures && health.recentWebhookFailures.length) { %>
+              <% health.recentWebhookFailures.forEach(function(row) { %>
+                <tr>
+                  <td><small><%= row.created_at ? new Date(row.created_at).toLocaleString('id-ID') : '-' %></small></td>
+                  <td><%= row.event || '-' %><br><small class="text-muted"><%= row.user_name || '-' %> / <%= row.device_name || '-' %></small></td>
+                  <td><small><%= row.http_status ? ('HTTP ' + row.http_status + ' - ') : '' %><%= (row.error_message || '').length > 80 ? (row.error_message.substring(0, 80) + '...') : (row.error_message || '-') %></small></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="3" class="text-muted">Tidak ada webhook failed terbaru.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="stat-card h-100">
+      <h5 class="mb-3">Database Tables</h5>
+      <div class="table-responsive" style="max-height: 420px">
+        <table class="table table-sm table-bordered align-middle">
+          <thead>
+            <tr>
+              <th>Table</th>
+              <th>Rows</th>
+              <th>Data</th>
+              <th>Index</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.tables && health.tables.length) { %>
+              <% health.tables.forEach(function(t) { %>
+                <tr>
+                  <td><%= t.TABLE_NAME || t.table_name %></td>
+                  <td><%= t.TABLE_ROWS || t.table_rows || 0 %></td>
+                  <td><%= Math.round(((t.DATA_LENGTH || t.data_length || 0) / 1024)) %> KB</td>
+                  <td><%= Math.round(((t.INDEX_LENGTH || t.index_length || 0) / 1024)) %> KB</td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="4" class="text-muted">Tidak ada data tabel.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
