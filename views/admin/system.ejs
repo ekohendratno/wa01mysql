@@ -8,6 +8,145 @@
   </a>
 </div>
 
+<script>
+  let dbPurgeModalInstance = null;
+  let dbPurgeRequiredConfirm = "";
+  let dbPurgeLastPreview = null;
+
+  function openDbPurgeModal(tableName, action) {
+    const modalEl = document.getElementById("dbPurgeModal");
+    dbPurgeModalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+    dbPurgeRequiredConfirm = "";
+    dbPurgeLastPreview = null;
+
+    document.getElementById("dbPurgeTable").value = tableName;
+    document.getElementById("dbPurgeAction").value = action || "delete";
+    document.getElementById("dbPurgeScope").value = action === "truncate" ? "all" : "older30";
+    document.getElementById("dbPurgeScope").disabled = action === "truncate";
+    document.getElementById("dbPurgePreview").textContent = "Klik preview dulu.";
+    document.getElementById("dbPurgeConfirm").value = "";
+    document.getElementById("dbPurgeConfirm").placeholder = "Ketik kode konfirmasi setelah preview";
+    document.getElementById("dbPurgeConfirmHelp").textContent = "Kode akan muncul setelah preview.";
+    document.getElementById("dbPurgeExecuteBtn").disabled = true;
+
+    dbPurgeModalInstance.show();
+  }
+
+  async function previewDbPurge() {
+    const table = document.getElementById("dbPurgeTable").value;
+    const action = document.getElementById("dbPurgeAction").value;
+    const scope = action === "truncate" ? "all" : document.getElementById("dbPurgeScope").value;
+    const previewEl = document.getElementById("dbPurgePreview");
+
+    previewEl.textContent = "Menghitung...";
+    document.getElementById("dbPurgeExecuteBtn").disabled = true;
+    document.getElementById("dbPurgeConfirm").value = "";
+
+    try {
+      const params = new URLSearchParams({ table, action, scope });
+      const response = await fetch(`/admin/system/database/preview?${params.toString()}`);
+      const data = await response.json();
+      if (!data.status) throw new Error(data.message || "Preview gagal.");
+
+      dbPurgeLastPreview = data;
+      dbPurgeRequiredConfirm = data.confirmText;
+      previewEl.textContent = `${data.affectedRows} row akan terdampak (${data.scopeLabel}${data.dateColumn ? `, kolom ${data.dateColumn}` : ""}).`;
+      document.getElementById("dbPurgeConfirm").placeholder = data.confirmText;
+      document.getElementById("dbPurgeConfirmHelp").innerHTML = `Ketik persis: <code>${data.confirmText}</code>`;
+      validateDbPurgeConfirm();
+    } catch (error) {
+      dbPurgeLastPreview = null;
+      dbPurgeRequiredConfirm = "";
+      previewEl.textContent = error.message || "Preview gagal.";
+      alert(error.message || "Preview gagal.");
+    }
+  }
+
+  function validateDbPurgeConfirm() {
+    const typed = document.getElementById("dbPurgeConfirm").value.trim();
+    const executeBtn = document.getElementById("dbPurgeExecuteBtn");
+    executeBtn.disabled = !dbPurgeLastPreview || !dbPurgeRequiredConfirm || typed !== dbPurgeRequiredConfirm;
+  }
+
+  async function executeDbPurge() {
+    if (!dbPurgeLastPreview) {
+      alert("Jalankan preview dulu.");
+      return;
+    }
+
+    const table = document.getElementById("dbPurgeTable").value;
+    const action = document.getElementById("dbPurgeAction").value;
+    const scope = action === "truncate" ? "all" : document.getElementById("dbPurgeScope").value;
+    const confirmText = document.getElementById("dbPurgeConfirm").value.trim();
+    const affectedRows = Number(dbPurgeLastPreview.affectedRows || 0);
+
+    const firstWarning = confirm(
+      `Anda akan ${action === "truncate" ? "TRUNCATE" : "MENGHAPUS"} data tabel ${table}.\n\nJumlah terdampak: ${affectedRows} row.\nAksi ini permanen. Lanjut?`
+    );
+    if (!firstWarning) return;
+
+    const secondWarning = confirm(
+      `Konfirmasi terakhir.\n\nPastikan backup sudah ada dan tabel ${table} memang boleh dibersihkan.\n\nTetap eksekusi?`
+    );
+    if (!secondWarning) return;
+
+    const button = document.getElementById("dbPurgeExecuteBtn");
+    button.disabled = true;
+    button.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i>Memproses...';
+
+    try {
+      const response = await fetch("/admin/system/database/purge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ table, action, scope, confirmText }),
+      });
+      const data = await response.json();
+      if (!data.status) throw new Error(data.message || "Eksekusi gagal.");
+
+      alert(`${data.message}\nTabel: ${data.table}\nTerhapus: ${data.affectedRows} row`);
+      window.location.reload();
+    } catch (error) {
+      alert(error.message || "Eksekusi gagal.");
+      button.disabled = false;
+      button.innerHTML = '<i class="fa fa-trash me-1"></i>Eksekusi';
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const actionEl = document.getElementById("dbPurgeAction");
+    const scopeEl = document.getElementById("dbPurgeScope");
+    const confirmEl = document.getElementById("dbPurgeConfirm");
+    const previewBtn = document.getElementById("dbPurgePreviewBtn");
+    const executeBtn = document.getElementById("dbPurgeExecuteBtn");
+
+    if (actionEl) {
+      actionEl.addEventListener("change", function () {
+        const isTruncate = actionEl.value === "truncate";
+        scopeEl.disabled = isTruncate;
+        if (isTruncate) scopeEl.value = "all";
+        dbPurgeLastPreview = null;
+        dbPurgeRequiredConfirm = "";
+        document.getElementById("dbPurgePreview").textContent = "Klik preview dulu.";
+        document.getElementById("dbPurgeConfirm").value = "";
+        document.getElementById("dbPurgeConfirmHelp").textContent = "Kode akan muncul setelah preview.";
+        executeBtn.disabled = true;
+      });
+    }
+    if (scopeEl) {
+      scopeEl.addEventListener("change", function () {
+        dbPurgeLastPreview = null;
+        dbPurgeRequiredConfirm = "";
+        document.getElementById("dbPurgePreview").textContent = "Klik preview dulu.";
+        document.getElementById("dbPurgeConfirm").value = "";
+        executeBtn.disabled = true;
+      });
+    }
+    if (confirmEl) confirmEl.addEventListener("input", validateDbPurgeConfirm);
+    if (previewBtn) previewBtn.addEventListener("click", previewDbPurge);
+    if (executeBtn) executeBtn.addEventListener("click", executeDbPurge);
+  });
+</script>
+
 <div class="row g-3 mb-4">
   <div class="col-md-3">
     <div class="stat-card h-100">
@@ -461,7 +600,13 @@
   </div>
   <div class="col-lg-7">
     <div class="stat-card h-100">
-      <h5 class="mb-3">Database Tables</h5>
+      <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+        <div>
+          <h5 class="mb-1">Database Tables</h5>
+          <small class="text-muted">Aksi bersih data hanya tersedia untuk tabel log/operasional. Master data dikunci.</small>
+        </div>
+        <span class="badge bg-warning text-dark">Konfirmasi berlapis</span>
+      </div>
       <div class="table-responsive" style="max-height: 420px">
         <table class="table table-sm table-bordered align-middle">
           <thead>
@@ -470,23 +615,126 @@
               <th>Rows</th>
               <th>Data</th>
               <th>Index</th>
+              <th>Aksi</th>
             </tr>
           </thead>
           <tbody>
             <% if (health.tables && health.tables.length) { %>
               <% health.tables.forEach(function(t) { %>
+                <%
+                  const tableName = t.TABLE_NAME || t.table_name;
+                  const canPurge = (health.purgeableTables || []).includes(tableName);
+                  const isProtected = (health.protectedTables || []).includes(tableName);
+                %>
                 <tr>
-                  <td><%= t.TABLE_NAME || t.table_name %></td>
+                  <td>
+                    <%= tableName %>
+                    <% if (isProtected) { %>
+                      <span class="badge bg-secondary ms-1">protected</span>
+                    <% } else if (canPurge) { %>
+                      <span class="badge bg-info text-dark ms-1">cleanup</span>
+                    <% } %>
+                  </td>
                   <td><%= t.TABLE_ROWS || t.table_rows || 0 %></td>
                   <td><%= Math.round(((t.DATA_LENGTH || t.data_length || 0) / 1024)) %> KB</td>
                   <td><%= Math.round(((t.INDEX_LENGTH || t.index_length || 0) / 1024)) %> KB</td>
+                  <td style="min-width: 150px">
+                    <% if (canPurge) { %>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-danger me-1"
+                        onclick="openDbPurgeModal('<%= tableName %>', 'delete')"
+                      >
+                        <i class="fa fa-trash me-1"></i>Hapus
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-danger"
+                        onclick="openDbPurgeModal('<%= tableName %>', 'truncate')"
+                      >
+                        <i class="fa fa-broom me-1"></i>Truncate
+                      </button>
+                    <% } else { %>
+                      <small class="text-muted">Dikunci</small>
+                    <% } %>
+                  </td>
                 </tr>
               <% }) %>
             <% } else { %>
-              <tr><td colspan="4" class="text-muted">Tidak ada data tabel.</td></tr>
+              <tr><td colspan="5" class="text-muted">Tidak ada data tabel.</td></tr>
             <% } %>
           </tbody>
         </table>
+      </div>
+      <small class="text-muted d-block mt-2">
+        Saran: gunakan <strong>Lebih lama dari 30/90 hari</strong> untuk log. Jangan pakai truncate kecuali benar-benar ingin mengosongkan tabel operasional.
+      </small>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="dbPurgeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title mb-1"><i class="fa fa-triangle-exclamation text-danger me-2"></i>Bersihkan Data Tabel</h5>
+          <small class="text-muted">Aksi ini permanen. Backup database disarankan sebelum menjalankan.</small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning">
+          <strong>Peringatan 1:</strong> data yang dihapus tidak bisa dikembalikan dari aplikasi.
+          <br>
+          <strong>Peringatan 2:</strong> pastikan bukan tabel transaksi, kontak, opt-in, user, device, atau saldo.
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Tabel</label>
+            <input type="text" id="dbPurgeTable" class="form-control" readonly>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Aksi</label>
+            <select id="dbPurgeAction" class="form-select">
+              <option value="delete">Hapus data sesuai scope</option>
+              <option value="truncate">Truncate semua data tabel</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Scope waktu</label>
+            <select id="dbPurgeScope" class="form-select">
+              <option value="older30" selected>Lebih lama dari 30 hari</option>
+              <option value="older90">Lebih lama dari 90 hari</option>
+              <option value="older7">Lebih lama dari 7 hari</option>
+              <option value="today">Hari ini</option>
+              <option value="yesterday">Kemarin</option>
+              <option value="last7">7 hari terakhir</option>
+              <option value="all">Semua data</option>
+            </select>
+            <small class="text-muted">Truncate otomatis memakai scope semua data.</small>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Preview terdampak</label>
+            <div class="form-control bg-light" id="dbPurgePreview">Klik preview dulu.</div>
+          </div>
+          <div class="col-12">
+            <button type="button" class="btn btn-outline-secondary" id="dbPurgePreviewBtn">
+              <i class="fa fa-eye me-1"></i>Preview Jumlah Data
+            </button>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Konfirmasi manual</label>
+            <input type="text" id="dbPurgeConfirm" class="form-control" placeholder="Ketik kode konfirmasi setelah preview">
+            <small class="text-muted" id="dbPurgeConfirmHelp">Kode akan muncul setelah preview.</small>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-danger" id="dbPurgeExecuteBtn" disabled>
+          <i class="fa fa-trash me-1"></i>Eksekusi
+        </button>
       </div>
     </div>
   </div>

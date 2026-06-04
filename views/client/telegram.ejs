@@ -1,0 +1,468 @@
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <h4 class="text-success mb-1"><i class="fa fa-paper-plane me-2"></i>Telegram Integration</h4>
+    <div class="text-muted">Hubungkan Telegram Bot, terima inbox, balas manual, atau gunakan AI auto reply.</div>
+  </div>
+  <span class="badge bg-success">Multi-channel</span>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-5">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-gear me-2"></i>Provider Bot</h5>
+      <form id="telegramBotForm">
+        <input type="hidden" name="id" id="telegramBotId">
+        <div class="mb-3">
+          <label class="form-label">Nama Integrasi</label>
+          <input type="text" name="name" id="telegramBotName" class="form-control" value="Telegram CS">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Bot Token</label>
+          <input type="password" name="bot_token" id="telegramBotToken" class="form-control" placeholder="123456:ABC dari BotFather">
+          <small class="text-muted">Untuk edit bot lama, kosongkan jika token tidak diganti.</small>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Mode Balasan</label>
+            <select name="mode" id="telegramMode" class="form-select">
+              <option value="manual">Manual / inbox saja</option>
+              <option value="ai_draft">AI draft only</option>
+              <option value="ai_auto">AI auto reply</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Operator Chat ID</label>
+            <input type="text" name="operator_chat_id" id="telegramOperatorChatId" class="form-control" placeholder="Opsional">
+          </div>
+        </div>
+        <div class="form-check form-switch mt-3">
+          <input class="form-check-input" type="checkbox" name="bridge_wa_enabled" id="telegramBridgeWa">
+          <label class="form-check-label" for="telegramBridgeWa">Siapkan bridge WA ke Telegram operator</label>
+        </div>
+        <div class="alert alert-info mt-3 mb-0">
+          Mode bridge disiapkan sebagai konfigurasi. Pengalihan penuh WA ke Telegram akan memakai bot/operator ini saat listener WA sudah disambungkan ke channel rules.
+        </div>
+        <div class="mt-3">
+          <button type="submit" class="btn btn-success">
+            <i class="fa fa-save me-1"></i>Simpan Bot
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-list me-2"></i>Bot Terhubung</h5>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Bot</th>
+              <th>Mode</th>
+              <th>Status</th>
+              <th>Webhook</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (bots && bots.length) { %>
+              <% bots.forEach(function(bot) { %>
+                <tr>
+                  <td>
+                    <strong><%= bot.name %></strong><br>
+                    <small class="text-muted">@<%= bot.bot_username || '-' %> · <%= bot.access_type || 'owner' %></small>
+                  </td>
+                  <td><span class="badge bg-secondary"><%= bot.mode %></span></td>
+                  <td><span class="badge <%= bot.status === 'active' ? 'bg-success' : bot.status === 'error' ? 'bg-danger' : 'bg-secondary' %>"><%= bot.status %></span></td>
+                  <td>
+                    <code class="small"><%= webhookBaseUrl %>/<%= bot.webhook_secret %></code>
+                    <% if (bot.last_error) { %><br><small class="text-danger"><%= bot.last_error %></small><% } %>
+                  </td>
+                  <td>
+                    <% if ((bot.access_type || 'owner') === 'owner') { %>
+                      <button class="btn btn-sm btn-outline-primary me-1" data-bot="<%= encodeURIComponent(JSON.stringify(bot)) %>" onclick="editTelegramBotFromButton(this)">
+                        <i class="fa fa-pen"></i>
+                      </button>
+                      <button class="btn btn-sm btn-success" onclick="setTelegramWebhook(<%= bot.id %>)">
+                        <i class="fa fa-link me-1"></i>Set Webhook
+                      </button>
+                      <button class="btn btn-sm btn-outline-info" onclick="showTelegramWebhookInfo(<%= bot.id %>)">
+                        <i class="fa fa-circle-info"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-warning" onclick="disableTelegramBot(<%= bot.id %>, '<%= String(bot.name || '').replace(/'/g, '&#39;') %>')">
+                        <i class="fa fa-power-off"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" onclick="deleteTelegramBot(<%= bot.id %>, '<%= String(bot.name || '').replace(/'/g, '&#39;') %>')">
+                        <i class="fa fa-trash"></i>
+                      </button>
+                    <% } else { %>
+                      <span class="badge bg-info text-dark">shared</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="5" class="text-muted">Belum ada bot Telegram.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+      <small class="text-muted">Buat bot dari BotFather, simpan token, lalu klik Set Webhook.</small>
+    </div>
+  </div>
+</div>
+
+<% const activeTelegramBots = (bots || []).filter(function(bot) { return bot.status === 'active' && bot.bot_username; }); %>
+<% if (activeTelegramBots.length) { %>
+  <div class="stat-card mb-4">
+    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+      <div>
+        <h5 class="mb-1"><i class="fa fa-bullhorn me-2"></i>Info untuk WhatsApp</h5>
+        <div class="text-muted">
+          Gunakan pesan ini untuk memberi tahu penerima WA bahwa layanan juga tersedia di Telegram.
+        </div>
+      </div>
+      <span class="badge bg-info text-dark">Handoff WA → Telegram</span>
+    </div>
+    <div class="row g-3">
+        <% activeTelegramBots.forEach(function(bot, index) { %>
+        <% const telegramLink = 'https://t.me/' + bot.bot_username; %>
+        <% const telegramLinkWithPhone = telegramLink + '?start={{nomor_wa}}'; %>
+        <% const handoffText = `Halo, selain melalui WhatsApp, layanan kami juga tersedia di Telegram agar informasi dan bantuan bisa lebih mudah diakses.\n\nSelain melalui WhatsApp, kami sarankan untuk menghubungkan dengan Telegram Kami agar informasi dan bantuan bisa lebih mudah diakses, juga sebagai backup apabila terjadi gangguan pada WhatsApp.\n\nSilakan hubungkan bot Telegram kami:\n${telegramLinkWithPhone}\n\nJika tetap ingin memakai WhatsApp, Anda tetap bisa membalas pesan ini seperti biasa. Terima kasih.`; %>
+        <div class="col-lg-6">
+          <div class="border rounded p-3 h-100 bg-light">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <strong><%= bot.name %></strong><br>
+                <a href="<%= telegramLink %>" target="_blank" class="small"><%= telegramLink %></a>
+              </div>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-success"
+                data-copy-text="<%= encodeURIComponent(handoffText) %>"
+                onclick="copyTelegramHandoff(this)"
+              >
+                <i class="fa fa-copy me-1"></i>Copy
+              </button>
+            </div>
+            <textarea class="form-control small" rows="6" readonly><%= handoffText %></textarea>
+            <small class="text-muted d-block mt-2">
+              Saran: kirim template ini lewat w@pi agar <code>{{nomor_wa}}</code> otomatis diganti dengan nomor penerima. Untuk broadcast massal, gunakan campaign bertahap agar WA tidak terlimit.
+            </small>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+<% } %>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-inbox me-2"></i>Inbox Telegram</h5>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Pengirim</th>
+              <th>Pesan</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (messages && messages.length) { %>
+              <% messages.forEach(function(msg) { %>
+                <tr>
+                  <td><small><%= msg.created_at ? new Date(msg.created_at).toLocaleString('id-ID') : '-' %></small></td>
+                  <td>
+                    <%= msg.from_name || msg.chat_id %><br>
+                    <small class="text-muted"><%= msg.bot_name %> / chat <%= msg.chat_id %></small>
+                  </td>
+                  <td>
+                    <%= msg.message || '-' %>
+                    <% if (msg.response && msg.status === 'draft') { %>
+                      <div class="alert alert-success py-2 mt-2 mb-0"><strong>Draft AI:</strong> <%= msg.response %></div>
+                    <% } %>
+                  </td>
+                  <td><span class="badge bg-secondary"><%= msg.direction %> / <%= msg.status %></span></td>
+                  <td>
+                    <% if (msg.direction === 'in') { %>
+                      <button class="btn btn-sm btn-outline-success" onclick="openTelegramReply('<%= msg.bot_id %>', '<%= msg.chat_id %>', '<%= (msg.response || '').replace(/'/g, '&#39;') %>')">
+                        <i class="fa fa-reply"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-secondary" onclick="copyTelegramChatId('<%= msg.chat_id %>')">
+                        <i class="fa fa-copy"></i>
+                      </button>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="5" class="text-muted">Belum ada inbox Telegram.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-share-nodes me-2"></i>Share Telegram</h5>
+      <form id="telegramShareForm" class="mb-3">
+        <label class="form-label">Bot</label>
+        <select name="bot_id" class="form-select mb-2" required>
+          <option value="">Pilih bot</option>
+          <% (bots || []).filter(function(bot) { return (bot.access_type || 'owner') === 'owner'; }).forEach(function(bot) { %>
+            <option value="<%= bot.id %>"><%= bot.name %> @<%= bot.bot_username || '-' %></option>
+          <% }) %>
+        </select>
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label">Hari</label>
+            <input type="number" name="expires_in_days" class="form-control" value="7" min="1" max="90">
+          </div>
+          <div class="col-6">
+            <label class="form-label">AI Share</label>
+            <select name="ai_reply_mode" class="form-select">
+              <option value="off">off</option>
+              <option value="draft">draft</option>
+              <option value="auto">auto</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-success btn-sm mt-2" type="submit">
+          <i class="fa fa-plus me-1"></i>Buat Kode Share
+        </button>
+      </form>
+
+      <form id="telegramAcceptShareForm" class="mb-3">
+        <label class="form-label">Terima Kode Share</label>
+        <div class="input-group">
+          <input type="text" name="invite_code" class="form-control" placeholder="KODE">
+          <button class="btn btn-outline-success" type="submit">Terima</button>
+        </div>
+      </form>
+
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Kode</th>
+              <th>Penerima</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (shares && shares.length) { %>
+              <% shares.forEach(function(share) { %>
+                <tr>
+                  <td><code><%= share.invite_code %></code><br><small><%= share.bot_name %></small></td>
+                  <td><small><%= share.shared_name || share.shared_email || '-' %></small></td>
+                  <td><span class="badge bg-secondary"><%= share.status %></span><br><small>AI: <%= share.ai_reply_mode %></small></td>
+                  <td>
+                    <% if (share.status !== 'revoked') { %>
+                      <button class="btn btn-sm btn-outline-danger" onclick="revokeTelegramShare(<%= share.id %>)">
+                        <i class="fa fa-ban"></i>
+                      </button>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="4" class="text-muted">Belum ada share Telegram.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="telegramReplyModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Balas Telegram</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="replyBotId">
+        <label class="form-label">Chat ID</label>
+        <input type="text" id="replyChatId" class="form-control mb-3" readonly>
+        <label class="form-label">Pesan</label>
+        <textarea id="replyMessage" class="form-control" rows="5"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="sendTelegramReply()">Kirim</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  $("#telegramBotForm").on("submit", async function (event) {
+    event.preventDefault();
+    const payload = Object.fromEntries(new FormData(this).entries());
+    payload.bridge_wa_enabled = $("#telegramBridgeWa").is(":checked") ? 1 : 0;
+    const response = await fetch("/client/telegram/bot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    alert(data.message || (data.status ? "Berhasil" : "Gagal"));
+    if (data.status) window.location.reload();
+  });
+
+  function editTelegramBotFromButton(button) {
+    const bot = JSON.parse(decodeURIComponent(button.getAttribute("data-bot") || "{}"));
+    $("#telegramBotId").val(bot.id);
+    $("#telegramBotName").val(bot.name || "");
+    $("#telegramBotToken").val("");
+    $("#telegramMode").val(bot.mode || "manual");
+    $("#telegramOperatorChatId").val(bot.operator_chat_id || "");
+    $("#telegramBridgeWa").prop("checked", Number(bot.bridge_wa_enabled || 0) === 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function setTelegramWebhook(id) {
+    const response = await fetch(`/client/telegram/bot/${id}/webhook`, { method: "POST" });
+    const data = await response.json();
+    alert(data.message || (data.status ? "Berhasil" : "Gagal"));
+    if (data.status) window.location.reload();
+  }
+
+  async function showTelegramWebhookInfo(id) {
+    const response = await fetch(`/client/telegram/bot/${id}/webhook-info`);
+    const data = await response.json();
+    if (!data.status) {
+      alert(data.message || "Gagal cek webhook.");
+      return;
+    }
+    const info = data.data.info || {};
+    alert([
+      "Telegram Webhook Info",
+      "",
+      `Expected: ${data.data.expectedUrl}`,
+      `Active URL: ${info.url || "-"}`,
+      `Pending update: ${info.pending_update_count ?? 0}`,
+      `Last error: ${info.last_error_message || "-"}`,
+      `Last error date: ${info.last_error_date ? new Date(info.last_error_date * 1000).toLocaleString("id-ID") : "-"}`,
+    ].join("\n"));
+  }
+
+  async function disableTelegramBot(id, name) {
+    if (!confirm(`Nonaktifkan bot Telegram "${name}"?\n\nWebhook akan dicabut, tetapi data bot dan inbox tetap disimpan.`)) return;
+    const response = await fetch(`/client/telegram/bot/${id}/disable`, { method: "POST" });
+    const data = await response.json();
+    alert(data.message || (data.status ? "Berhasil" : "Gagal"));
+    if (data.status) window.location.reload();
+  }
+
+  async function deleteTelegramBot(id, name) {
+    const required = `HAPUS ${name}`;
+    const first = confirm(`Hapus bot Telegram "${name}"?\n\nWebhook akan dicabut dan data inbox/share bot ini akan ikut terhapus. Aksi ini permanen.`);
+    if (!first) return;
+    const typed = prompt(`Konfirmasi terakhir.\nKetik persis: ${required}`);
+    if (typed !== required) {
+      alert("Konfirmasi tidak sesuai. Hapus bot dibatalkan.");
+      return;
+    }
+    const second = confirm("Yakin eksekusi hapus bot sekarang?");
+    if (!second) return;
+
+    const response = await fetch(`/client/telegram/bot/${id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirmText: typed }),
+    });
+    const data = await response.json();
+    alert(data.message || (data.status ? "Berhasil" : "Gagal"));
+    if (data.status) window.location.reload();
+  }
+
+  async function copyTelegramHandoff(button) {
+    const text = decodeURIComponent(button.getAttribute("data-copy-text") || "");
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Template info Telegram disalin.");
+    } catch (error) {
+      const temp = document.createElement("textarea");
+      temp.value = text;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand("copy");
+      document.body.removeChild(temp);
+      alert("Template info Telegram disalin.");
+    }
+  }
+
+  function openTelegramReply(botId, chatId, draft) {
+    $("#replyBotId").val(botId);
+    $("#replyChatId").val(chatId);
+    $("#replyMessage").val(draft || "");
+    bootstrap.Modal.getOrCreateInstance(document.getElementById("telegramReplyModal")).show();
+  }
+
+  async function copyTelegramChatId(chatId) {
+    try {
+      await navigator.clipboard.writeText(chatId);
+      alert(`Chat ID disalin: ${chatId}`);
+    } catch (error) {
+      alert(`Chat ID: ${chatId}`);
+    }
+  }
+
+  async function sendTelegramReply() {
+    const response = await fetch("/client/telegram/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bot_id: $("#replyBotId").val(),
+        chat_id: $("#replyChatId").val(),
+        message: $("#replyMessage").val(),
+      }),
+    });
+    const data = await response.json();
+    alert(data.message || (data.status ? "Berhasil" : "Gagal"));
+    if (data.status) window.location.reload();
+  }
+
+  $("#telegramShareForm").on("submit", async function (event) {
+    event.preventDefault();
+    const payload = Object.fromEntries(new FormData(this).entries());
+    const response = await fetch("/client/telegram/share", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    alert(data.status ? `Kode share: ${data.data.invite_code}` : data.message);
+    if (data.status) window.location.reload();
+  });
+
+  $("#telegramAcceptShareForm").on("submit", async function (event) {
+    event.preventDefault();
+    const payload = Object.fromEntries(new FormData(this).entries());
+    const response = await fetch("/client/telegram/share/accept", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    alert(data.message || (data.status ? "Berhasil" : "Gagal"));
+    if (data.status) window.location.reload();
+  });
+
+  async function revokeTelegramShare(id) {
+    if (!confirm("Cabut share Telegram ini?")) return;
+    const response = await fetch(`/client/telegram/share/${id}/revoke`, { method: "POST" });
+    const data = await response.json();
+    alert(data.message || (data.status ? "Berhasil" : "Gagal"));
+    if (data.status) window.location.reload();
+  }
+</script>

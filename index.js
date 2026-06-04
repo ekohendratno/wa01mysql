@@ -40,6 +40,7 @@ const DeviceManager = require("./lib/DeviceManager.js");
 const AutoReplyManager = require("./lib/AutoReplyManager.js");
 const UserManager = require("./lib/UserManager.js");
 const AiManager = require("./lib/AiManager.js");
+const TelegramManager = require("./lib/TelegramManager.js");
 const { requireRole, redirectIfLoggedIn } = require("./lib/Utils.js");
 const {
   attachCsrfToken,
@@ -105,17 +106,8 @@ app.use(
   }),
 );
 
-app.use(attachCsrfToken);
-app.use(csrfProtection);
-
 const moment = require("moment");
 const momentTimezone = require("moment-timezone");
-app.use((req, res, next) => {
-  res.locals.moment = moment;
-  res.locals.momentTimezone = momentTimezone;
-  res.locals.adminImpersonator = req.session?.adminImpersonator || null;
-  next();
-});
 
 const folderSession = "./.sessions";
 
@@ -142,7 +134,24 @@ const messageManager = new MessageManager(pool, sessionManager);
 const userManager = new UserManager(pool);
 const autoreplyManager = new AutoReplyManager(pool);
 const aiManager = new AiManager(pool);
+const telegramManager = new TelegramManager(pool, aiManager);
 sessionManager.setAiManager(aiManager);
+
+const telegramWebhookRoutes = require("./routes/telegramWebhookRoutes.js")({
+  telegramManager,
+});
+app.use("/telegram", telegramWebhookRoutes);
+
+app.use(attachCsrfToken);
+app.use(csrfProtection);
+
+app.use((req, res, next) => {
+  res.locals.moment = moment;
+  res.locals.momentTimezone = momentTimezone;
+  res.locals.adminImpersonator = req.session?.adminImpersonator || null;
+  next();
+});
+
 const cronManager = new CronManager(
   pool,
   messageManager,
@@ -339,6 +348,9 @@ const contactClientRoutes = require("./routes/client/contactRoutes")({
 const aiClientRoutes = require("./routes/client/aiRoutes")({
   aiManager,
 });
+const telegramClientRoutes = require("./routes/client/telegramRoutes")({
+  telegramManager,
+});
 
 app.use("/client", requireRole("client"), indexClientRoutes);
 app.use("/client/package", requireRole("client"), packageClientRoutes);
@@ -360,6 +372,7 @@ app.use("/client/optin", requireRole("client"), optinClientRoutes);
 app.use("/client/contact", requireRole("client"), contactClientRoutes);
 app.use("/client/sub-session", requireRole("client"), subSessionClientRoutes);
 app.use("/client/ai", requireRole("client"), aiClientRoutes);
+app.use("/client/telegram", requireRole("client"), telegramClientRoutes);
 
 const webhookClientRoutes = require("./routes/client/webhookRoutes")({
   deviceManager,

@@ -20,7 +20,7 @@
   <div class="col-md-6">
     <div class="stat-card">
       <h5>Broadcast</h5>
-      <p class="mb-0 text-muted">Masukkan nomor per baris atau pisahkan dengan koma. Pesan masuk antrean dan dikirim oleh cron.</p>
+      <p class="mb-0 text-muted">Masukkan nomor manual atau ambil otomatis dari Opt-In approved/pending. Status blocked tidak ikut. Pesan masuk antrean dan dikirim oleh cron.</p>
     </div>
   </div>
 </div>
@@ -108,8 +108,26 @@
           </div>
 
           <div class="mb-3">
-            <label class="form-label">Penerima</label>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+              <label class="form-label mb-0">Penerima</label>
+              <div class="d-flex flex-wrap gap-2">
+                <select id="optInRecipientStatus" class="form-select form-select-sm" style="width: auto">
+                  <option value="approved_pending">Approved + Pending</option>
+                  <option value="approved">Approved saja</option>
+                  <option value="pending">Pending saja</option>
+                </select>
+                <button type="button" class="btn btn-sm btn-outline-success" id="loadOptInRecipientsBtn">
+                  <i class="fa fa-user-check me-1"></i>Ambil Opt-In
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="appendOptInRecipientsBtn">
+                  <i class="fa fa-plus me-1"></i>Tambah Opt-In
+                </button>
+              </div>
+            </div>
             <textarea id="campaignRecipients" class="form-control" rows="7" placeholder="6281234567890&#10;6289876543210" required></textarea>
+            <small class="text-muted" id="optInRecipientHelp">
+              Mengambil nomor dari Daftar Opt-In akun ini. Status blocked tidak akan ikut.
+            </small>
           </div>
 
           <div class="mb-3">
@@ -138,6 +156,61 @@
   document.getElementById("campaignTemplate").addEventListener("change", function () {
     const selected = templates.find((template) => String(template.id) === this.value);
     if (selected) document.getElementById("campaignMessage").value = selected.content || "";
+  });
+
+  function uniqueRecipientsFromText(text) {
+    return [...new Set(
+      String(text || "")
+        .split(/[\n,;]+/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )];
+  }
+
+  async function fetchOptInRecipients() {
+    const status = document.getElementById("optInRecipientStatus").value;
+    const button = document.getElementById("loadOptInRecipientsBtn");
+    const appendButton = document.getElementById("appendOptInRecipientsBtn");
+    button.disabled = true;
+    appendButton.disabled = true;
+    const oldText = button.innerHTML;
+    button.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i>Mengambil...';
+    try {
+      const response = await fetch(`/client/campaign/optin-recipients?status=${encodeURIComponent(status)}`);
+      const result = await response.json();
+      if (!result.status) throw new Error(result.message || "Gagal mengambil opt-in.");
+      return result;
+    } finally {
+      button.disabled = false;
+      appendButton.disabled = false;
+      button.innerHTML = oldText;
+    }
+  }
+
+  document.getElementById("loadOptInRecipientsBtn").addEventListener("click", async function () {
+    try {
+      const result = await fetchOptInRecipients();
+      document.getElementById("campaignRecipients").value = result.recipients.join("\n");
+      document.getElementById("optInRecipientHelp").textContent =
+        `Terisi ${result.recipients.length} nomor valid. Approved: ${result.counts.approved || 0}, Pending: ${result.counts.pending || 0}, LID dikonversi: ${result.counts.mapped_lid || 0}, LID dilewati: ${result.counts.skipped_lid || 0}, invalid: ${result.counts.skipped_invalid || 0}, Blocked: 0.`;
+      showToast(`Berhasil mengambil ${result.recipients.length} nomor opt-in.`, "success");
+    } catch (error) {
+      showToast(error.message || "Gagal mengambil opt-in.", "danger");
+    }
+  });
+
+  document.getElementById("appendOptInRecipientsBtn").addEventListener("click", async function () {
+    try {
+      const result = await fetchOptInRecipients();
+      const current = uniqueRecipientsFromText(document.getElementById("campaignRecipients").value);
+      const merged = [...new Set([...current, ...result.recipients])];
+      document.getElementById("campaignRecipients").value = merged.join("\n");
+      document.getElementById("optInRecipientHelp").textContent =
+        `Ditambahkan dari opt-in. Total unik ${merged.length} nomor valid. Approved: ${result.counts.approved || 0}, Pending: ${result.counts.pending || 0}, LID dikonversi: ${result.counts.mapped_lid || 0}, LID dilewati: ${result.counts.skipped_lid || 0}, invalid: ${result.counts.skipped_invalid || 0}, Blocked: 0.`;
+      showToast(`Total penerima sekarang ${merged.length} nomor unik.`, "success");
+    } catch (error) {
+      showToast(error.message || "Gagal mengambil opt-in.", "danger");
+    }
   });
 
   document.getElementById("campaignForm").addEventListener("submit", async (event) => {

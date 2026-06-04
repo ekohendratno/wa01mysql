@@ -13,6 +13,17 @@ function parseRecipients(input) {
   ];
 }
 
+function normalizePhone(value) {
+  let phone = String(value || "").split("@")[0].replace(/\D/g, "");
+  if (phone.startsWith("08")) phone = `628${phone.slice(2)}`;
+  else if (phone.startsWith("0")) phone = `62${phone.slice(1)}`;
+  return phone;
+}
+
+function isValidCampaignPhone(value) {
+  return /^62\d{8,15}$/.test(String(value || ""));
+}
+
 module.exports = ({ pool, messageManager, deviceManager }) => {
   router.get("/", authMiddleware, async (req, res) => {
     try {
@@ -52,6 +63,86 @@ module.exports = ({ pool, messageManager, deviceManager }) => {
     } catch (error) {
       console.error("Campaign view error:", error);
       res.status(500).send("Internal Server Error");
+    }
+  });
+
+  router.get("/optin-recipients", authMiddleware, async (req, res) => {
+    try {
+      const uid = req.session.user.uid;
+      const statusMode = String(req.query.status || "approved_pending").trim();
+      let statuses = ["approved", "pending"];
+      if (statusMode === "approved") statuses = ["approved"];
+      if (statusMode === "pending") statuses = ["pending"];
+
+      const [rows] = await pool.query(
+        `SELECT
+            oi.number,
+            oi.status,
+            oi.updated_at,
+            COALESCE(
+              NULLIF(REPLACE(REPLACE(REPLACE(c_exact.phone, '+', ''), ' ', ''), '-', ''), ''),
+              NULLIF(REPLACE(REPLACE(REPLACE(c_device.phone, '+', ''), ' ', ''), '-', ''), ''),
+              NULLIF(REPLACE(REPLACE(REPLACE(c_uid.phone, '+', ''), ' ', ''), '-', ''), '')
+            ) AS mapped_phone
+         FROM opt_ins oi
+         LEFT JOIN contacts c_exact
+           ON c_exact.uid = oi.uid
+          AND c_exact.device_id = oi.device_id
+          AND c_exact.jid = oi.number
+         LEFT JOIN contacts c_device
+           ON c_device.uid = oi.uid
+          AND c_device.device_id = oi.device_id
+          AND SUBSTRING_INDEX(c_device.jid, '@', 1) = SUBSTRING_INDEX(oi.number, '@', 1)
+         LEFT JOIN contacts c_uid
+           ON c_uid.uid = oi.uid
+          AND SUBSTRING_INDEX(c_uid.jid, '@', 1) = SUBSTRING_INDEX(oi.number, '@', 1)
+         WHERE oi.uid = ?
+           AND oi.status IN (${statuses.map(() => "?").join(",")})
+           AND oi.number IS NOT NULL
+           AND oi.number != ''
+         ORDER BY FIELD(oi.status, 'approved', 'pending'), oi.updated_at DESC
+         LIMIT 3000`,
+        [uid, ...statuses],
+      );
+
+      const recipients = [];
+      const seen = new Set();
+      const counts = { approved: 0, pending: 0, skipped_lid: 0, skipped_invalid: 0, mapped_lid: 0 };
+      for (const row of rows) {
+        const directPhone = normalizePhone(row.number);
+        const mappedPhone = normalizePhone(row.mapped_phone);
+        const phone = isValidCampaignPhone(directPhone)
+          ? directPhone
+          : isValidCampaignPhone(mappedPhone)
+            ? mappedPhone
+            : "";
+
+        if (!phone) {
+          if (String(row.number || "").includes("@")) counts.skipped_lid += 1;
+          else counts.skipped_invalid += 1;
+          continue;
+        }
+
+        if (!isValidCampaignPhone(directPhone) && isValidCampaignPhone(mappedPhone)) {
+          counts.mapped_lid += 1;
+        }
+
+        if (!seen.has(phone)) {
+          seen.add(phone);
+          recipients.push(phone);
+          counts[row.status] = (counts[row.status] || 0) + 1;
+        }
+        if (recipients.length >= 1000) break;
+      }
+
+      res.json({
+        status: true,
+        recipients,
+        counts,
+      });
+    } catch (error) {
+      console.error("Campaign opt-in recipients error:", error);
+      res.status(500).json({ status: false, message: "Gagal mengambil daftar opt-in." });
     }
   });
 

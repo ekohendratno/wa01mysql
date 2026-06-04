@@ -14,10 +14,68 @@ module.exports = ({ sessionManager, messageManager, deviceManager }) => {
         "SELECT opt_in_required FROM users WHERE uid = ? LIMIT 1",
         [uid],
       );
+      const [telegramBots] = await messageManager.pool.query(
+        `SELECT
+            tb.id, tb.name, tb.bot_username,
+            CASE WHEN tb.uid = ? THEN 'owner' ELSE 'shared' END AS access_type
+         FROM telegram_bots tb
+         LEFT JOIN telegram_shares ts
+           ON ts.bot_id = tb.id
+          AND ts.shared_uid = ?
+          AND ts.status = 'active'
+          AND ts.permission_send = 1
+          AND (ts.expires_at IS NULL OR ts.expires_at > NOW())
+         WHERE tb.status = 'active'
+           AND (tb.uid = ? OR ts.id IS NOT NULL)
+         ORDER BY tb.name ASC`,
+        [uid, uid, uid],
+      );
+      const [telegramChats] = await messageManager.pool.query(
+        `SELECT
+            tm.chat_id,
+            MAX(tm.from_name) AS from_name,
+            MAX(tb.name) AS bot_name,
+            NULL AS phone,
+            tm.bot_id,
+            MAX(tm.created_at) AS last_message_at
+         FROM telegram_messages tm
+         JOIN telegram_bots tb ON tb.id = tm.bot_id
+         LEFT JOIN telegram_shares ts
+           ON ts.bot_id = tb.id
+          AND ts.shared_uid = ?
+          AND ts.status = 'active'
+          AND ts.permission_send = 1
+          AND (ts.expires_at IS NULL OR ts.expires_at > NOW())
+         WHERE tm.direction = 'in'
+           AND (tb.uid = ? OR ts.id IS NOT NULL)
+         GROUP BY tm.bot_id, tm.chat_id
+         UNION ALL
+         SELECT
+            tc.chat_id,
+            tc.from_name,
+            tb.name AS bot_name,
+            tc.phone,
+            tc.bot_id,
+            tc.updated_at AS last_message_at
+         FROM telegram_contacts tc
+         JOIN telegram_bots tb ON tb.id = tc.bot_id
+         LEFT JOIN telegram_shares ts
+           ON ts.bot_id = tb.id
+          AND ts.shared_uid = ?
+          AND ts.status = 'active'
+          AND ts.permission_send = 1
+          AND (ts.expires_at IS NULL OR ts.expires_at > NOW())
+         WHERE tb.uid = ? OR ts.id IS NOT NULL
+         ORDER BY last_message_at DESC
+         LIMIT 100`,
+        [uid, uid, uid, uid],
+      );
 
       res.render("client/message", {
         apiKey,
         devices: devices || [],
+        telegramBots: telegramBots || [],
+        telegramChats: telegramChats || [],
         showOptInColumn: Number(userOptIn?.opt_in_required || 0) === 1,
         title: "Messages - w@pi",
         layout: "layouts/client",

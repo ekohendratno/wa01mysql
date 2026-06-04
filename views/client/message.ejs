@@ -408,6 +408,14 @@
         </div>
         <div class="modal-body">
           <div class="mb-3">
+            <label>Channel</label>
+            <select id="sendChannel" class="form-control">
+              <option value="whatsapp">WhatsApp</option>
+              <option value="telegram">Telegram</option>
+            </select>
+            <small class="text-muted">WhatsApp memakai nomor WA. Telegram memakai chat ID bot.</small>
+          </div>
+          <div class="mb-3 wa-field">
             <label>Perangkat</label>
             <select id="device" class="form-control">
               <% devices.forEach(device=> { %>
@@ -418,7 +426,16 @@
               <% }) %>
             </select>
           </div>
-          <div class="form-group">
+          <div class="mb-3 telegram-field d-none">
+            <label>Bot Telegram</label>
+            <select id="telegramBot" class="form-control">
+              <% (telegramBots || []).forEach(function(bot) { %>
+                <option value="<%= bot.id %>"><%= bot.name %> @<%= bot.bot_username || '-' %> (<%= bot.access_type %>)</option>
+              <% }) %>
+            </select>
+            <small class="text-muted">Chat ID bisa diambil dari Inbox Telegram setelah user mengirim pesan ke bot.</small>
+          </div>
+          <div class="form-group wa-field">
             <label>Tipe Pesan:</label>
             <select id="group" class="form-control" required>
               <option value="false">Pribadi</option>
@@ -426,14 +443,23 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Tujuan:</label>
+            <label id="sendTargetLabel">Tujuan:</label>
             <input
               type="text"
               id="to"
               class="form-control"
               placeholder="Nomor telepon atau ID grup (pisahkan dengan koma)"
+              list="telegramChatOptions"
               required
             />
+            <datalist id="telegramChatOptions">
+              <% (telegramChats || []).forEach(function(chat) { %>
+                <option value="<%= chat.phone || chat.chat_id %>"><%= chat.phone ? (chat.phone + ' → ') : '' %><%= chat.from_name || chat.chat_id %> - <%= chat.bot_name || 'Telegram' %></option>
+              <% }) %>
+            </datalist>
+            <small class="text-muted telegram-field d-none">
+              Boleh isi nomor WA jika user sudah klik link Telegram personal, atau pilih chat ID dari inbox Telegram.
+            </small>
           </div>
           <div class="form-group">
             <label>Isi Pesan:</label>
@@ -444,7 +470,7 @@
               placeholder="Tulis pesan Anda..."
               required
             ></textarea>
-            <div class="form-group mt-2">
+            <div class="form-group mt-2 wa-field">
               <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="isOptInInvitation">
                 <label class="form-check-label" for="isOptInInvitation">Kirim sebagai Undangan Opt-In (Lewati blokir)</label>
@@ -779,16 +805,36 @@
     }
   });
 
+  function updateSendChannelUI() {
+    const channel = $("#sendChannel").val();
+    const isTelegram = channel === "telegram";
+    $(".telegram-field").toggleClass("d-none", !isTelegram);
+    $(".wa-field").toggleClass("d-none", isTelegram);
+    $("#sendTargetLabel").text(isTelegram ? "Chat ID Telegram:" : "Tujuan:");
+    $("#to").attr(
+      "placeholder",
+      isTelegram
+        ? "Nomor WA yang sudah terhubung atau chat ID Telegram"
+        : "Nomor telepon atau ID grup (pisahkan dengan koma)"
+    );
+    $("#isOptInInvitation").prop("checked", false);
+  }
+
+  $("#sendChannel").on("change", updateSendChannelUI);
+  updateSendChannelUI();
+
   $("#sendMessageForm").submit(async function (event) {
     event.preventDefault();
     const apiKey = $("#apiKey").val();
+    const channel = $("#sendChannel").val();
     const deviceKey = $("#device").val();
+    const telegramBotId = $("#telegramBot").val();
     const to = $("#to").val().trim();
     const text = $("#text").val().trim();
     const group = $("#group").val() === "true";
     const sendMessageButton = document.getElementById("sendMessageButton");
 
-    if (!deviceKey || !to || !text) {
+    if ((channel === "whatsapp" && !deviceKey) || (channel === "telegram" && !telegramBotId) || !to || !text) {
       showToast("Semua field harus diisi!", "danger");
       return;
     }
@@ -797,18 +843,32 @@
     sendMessageButton.innerHTML =
       '<i class="fa fa-spinner fa-spin"></i> Memproses...';
 
+    const ajaxOptions = channel === "telegram"
+      ? {
+          url: "/client/telegram/send",
+          data: JSON.stringify({
+            bot_id: telegramBotId,
+            chat_id: to,
+            message: text,
+          }),
+        }
+      : {
+          url: "/bot/message",
+          data: JSON.stringify({
+            apiKey: apiKey,
+            deviceKey: deviceKey,
+            to: to,
+            text: text,
+            isGroup: group,
+            tags: $("#isOptInInvitation").is(":checked") ? "opt-in" : "",
+          }),
+        };
+
     $.ajax({
-      url: "/bot/message",
+      url: ajaxOptions.url,
       type: "POST",
       contentType: "application/json",
-      data: JSON.stringify({
-        apiKey: apiKey,
-        deviceKey: deviceKey,
-        to: to,
-        text: text,
-        isGroup: group,
-        tags: $("#isOptInInvitation").is(":checked") ? "opt-in" : "",
-      }),
+      data: ajaxOptions.data,
       success: function (response) {
         showToast(response.message, "success");
         console.log("Pesan berhasil dikirim:", response);

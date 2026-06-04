@@ -3,6 +3,163 @@ const router = express.Router();
 const { authMiddleware } = require("../../lib/Utils.js");
 const os = require("os");
 
+const PURGEABLE_TABLES = new Set([
+  "messages",
+  "inbox_messages",
+  "webhook_logs",
+  "logs",
+  "ai_logs",
+  "telegram_messages",
+  "sessions",
+  "opt_in_deleted",
+  "groups",
+  "campaigns",
+]);
+
+const PROTECTED_TABLES = new Set([
+  "admin",
+  "users",
+  "devices",
+  "device_shares",
+  "contacts",
+  "opt_ins",
+  "balances",
+  "packages",
+  "transactions",
+  "ai_settings",
+  "ai_knowledge_sources",
+  "telegram_bots",
+  "telegram_shares",
+  "autoreply",
+  "webhook",
+]);
+
+const DATE_COLUMN_CANDIDATES = [
+  "created_at",
+  "updated_at",
+  "received_at",
+  "deleted_at",
+  "expires",
+];
+
+const PURGE_SCOPES = {
+  all: {
+    label: "Semua data",
+    whereSql: "",
+    params: [],
+  },
+  today: {
+    label: "Hari ini",
+    whereSql: "DATE({column}) = CURDATE()",
+    params: [],
+  },
+  yesterday: {
+    label: "Kemarin",
+    whereSql: "DATE({column}) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)",
+    params: [],
+  },
+  last7: {
+    label: "7 hari terakhir",
+    whereSql: "{column} >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
+    params: [],
+  },
+  older7: {
+    label: "Lebih lama dari 7 hari",
+    whereSql: "{column} < DATE_SUB(NOW(), INTERVAL 7 DAY)",
+    params: [],
+  },
+  older30: {
+    label: "Lebih lama dari 30 hari",
+    whereSql: "{column} < DATE_SUB(NOW(), INTERVAL 30 DAY)",
+    params: [],
+  },
+  older90: {
+    label: "Lebih lama dari 90 hari",
+    whereSql: "{column} < DATE_SUB(NOW(), INTERVAL 90 DAY)",
+    params: [],
+  },
+};
+
+function isSafeTableName(tableName) {
+  return /^[A-Za-z0-9_]+$/.test(String(tableName || ""));
+}
+
+function quoteId(identifier) {
+  if (!isSafeTableName(identifier)) {
+    throw new Error("Nama tabel/kolom tidak valid.");
+  }
+  return `\`${identifier}\``;
+}
+
+async function getTableColumns(pool, tableName) {
+  const [columns] = await pool.query(
+    `SELECT column_name, data_type
+     FROM information_schema.columns
+     WHERE table_schema = DATABASE()
+       AND table_name = ?`,
+    [tableName],
+  );
+  return columns || [];
+}
+
+function pickDateColumn(columns) {
+  const byName = new Map(
+    columns.map((column) => [
+      String(column.COLUMN_NAME || column.column_name || "").toLowerCase(),
+      column,
+    ]),
+  );
+
+  for (const name of DATE_COLUMN_CANDIDATES) {
+    if (byName.has(name)) return name;
+  }
+
+  return null;
+}
+
+async function buildPurgeTarget(pool, tableName, scope) {
+  if (!isSafeTableName(tableName)) {
+    throw new Error("Nama tabel tidak valid.");
+  }
+  if (!PURGEABLE_TABLES.has(tableName) || PROTECTED_TABLES.has(tableName)) {
+    throw new Error("Tabel ini dikunci dan tidak boleh dibersihkan manual dari halaman system.");
+  }
+
+  const columns = await getTableColumns(pool, tableName);
+  if (!columns.length) {
+    throw new Error("Tabel tidak ditemukan.");
+  }
+
+  const selectedScope = PURGE_SCOPES[scope] ? scope : "older30";
+  const scopeConfig = PURGE_SCOPES[selectedScope];
+  const dateColumn = pickDateColumn(columns);
+
+  if (selectedScope !== "all" && !dateColumn) {
+    throw new Error("Tabel ini tidak punya kolom tanggal yang bisa dipakai untuk filter waktu.");
+  }
+
+  const tableSql = quoteId(tableName);
+  const dateExpression =
+    tableName === "sessions" && dateColumn === "expires"
+      ? "FROM_UNIXTIME(CASE WHEN `expires` > 9999999999 THEN `expires` / 1000 ELSE `expires` END)"
+      : dateColumn
+        ? quoteId(dateColumn)
+        : null;
+  const whereSql =
+    selectedScope === "all"
+      ? ""
+      : `WHERE ${scopeConfig.whereSql.replace("{column}", dateExpression)}`;
+
+  return {
+    tableName,
+    tableSql,
+    scope: selectedScope,
+    scopeLabel: scopeConfig.label,
+    dateColumn,
+    whereSql,
+  };
+}
+
 function nextIntervalRun(seconds) {
   const now = new Date();
   const current = now.getTime();
@@ -132,6 +289,94 @@ function buildCronJobs(cronManager, cronGroupManager) {
 }
 
 module.exports = ({ pool, sessionManager, cronManager, cronGroupManager } = {}) => {
+  router.get("/database/preview", authMiddleware, async (req, res) => {
+    try {
+      const tableName = String(req.query.table || "").trim();
+      const scope = String(req.query.scope || "older30").trim();
+      const action = String(req.query.action || "delete").trim();
+      const target = await buildPurgeTarget(pool, tableName, scope);
+      const [[row]] = await pool.query(
+        `SELECT COUNT(*) AS total FROM ${target.tableSql} ${target.whereSql}`,
+      );
+
+      res.json({
+        status: true,
+        table: target.tableName,
+        action,
+        scope: target.scope,
+        scopeLabel: target.scopeLabel,
+        dateColumn: target.dateColumn,
+        affectedRows: Number(row?.total || 0),
+        confirmText:
+          action === "truncate"
+            ? `TRUNCATE ${target.tableName}`
+            : `HAPUS ${target.tableName}`,
+      });
+    } catch (error) {
+      res.status(400).json({
+        status: false,
+        message: error.message || "Gagal membaca preview database.",
+      });
+    }
+  });
+
+  router.post("/database/purge", authMiddleware, async (req, res) => {
+    try {
+      const tableName = String(req.body.table || "").trim();
+      const scope = String(req.body.scope || "older30").trim();
+      const action = String(req.body.action || "delete").trim();
+      const confirmText = String(req.body.confirmText || "").trim();
+
+      if (!["delete", "truncate"].includes(action)) {
+        throw new Error("Aksi tidak valid.");
+      }
+
+      if (action === "truncate" && scope !== "all") {
+        throw new Error("TRUNCATE hanya boleh untuk scope semua data.");
+      }
+
+      const target = await buildPurgeTarget(pool, tableName, scope);
+      const requiredConfirm =
+        action === "truncate"
+          ? `TRUNCATE ${target.tableName}`
+          : `HAPUS ${target.tableName}`;
+
+      if (confirmText !== requiredConfirm) {
+        throw new Error(`Konfirmasi tidak sesuai. Ketik persis: ${requiredConfirm}`);
+      }
+
+      const [[preview]] = await pool.query(
+        `SELECT COUNT(*) AS total FROM ${target.tableSql} ${target.whereSql}`,
+      );
+      const affectedBefore = Number(preview?.total || 0);
+
+      let affectedRows = 0;
+      if (action === "truncate") {
+        await pool.query(`TRUNCATE TABLE ${target.tableSql}`);
+        affectedRows = affectedBefore;
+      } else {
+        const [result] = await pool.query(
+          `DELETE FROM ${target.tableSql} ${target.whereSql}`,
+        );
+        affectedRows = Number(result?.affectedRows || 0);
+      }
+
+      res.json({
+        status: true,
+        message: `${action === "truncate" ? "Truncate" : "Hapus data"} berhasil.`,
+        table: target.tableName,
+        scope: target.scope,
+        scopeLabel: target.scopeLabel,
+        affectedRows,
+      });
+    } catch (error) {
+      res.status(400).json({
+        status: false,
+        message: error.message || "Gagal membersihkan tabel.",
+      });
+    }
+  });
+
   router.get("/", authMiddleware, async (req, res) => {
     const memory = process.memoryUsage();
     const health = {
@@ -224,6 +469,8 @@ module.exports = ({ pool, sessionManager, cronManager, cronGroupManager } = {}) 
          ORDER BY table_name ASC`
       );
       health.tables = tables || [];
+      health.purgeableTables = Array.from(PURGEABLE_TABLES);
+      health.protectedTables = Array.from(PROTECTED_TABLES);
     } catch (error) {
       health.tableError = error.message;
     }
