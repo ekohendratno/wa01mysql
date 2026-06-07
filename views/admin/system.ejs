@@ -497,7 +497,7 @@
 </div>
 
 <div class="row g-3">
-  <div class="col-lg-6">
+  <div class="col-lg-4">
     <div class="stat-card h-100">
       <h5 class="mb-3"><i class="fa fa-list-check me-2"></i>Log Aplikasi Terbaru</h5>
       <div class="table-responsive">
@@ -526,7 +526,42 @@
       </div>
     </div>
   </div>
-  <div class="col-lg-6">
+  <div class="col-lg-4">
+    <div class="stat-card h-100">
+      <h5 class="mb-3"><i class="fa fa-shield-halved me-2"></i>Audit Admin Terbaru</h5>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Aktor</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (health.recentAuditLogs && health.recentAuditLogs.length) { %>
+              <% health.recentAuditLogs.forEach(function(row) { %>
+                <tr>
+                  <td><small><%= row.created_at ? new Date(row.created_at).toLocaleString('id-ID') : '-' %></small></td>
+                  <td>
+                    <%= row.actor_name || '-' %>
+                    <br><small class="text-muted"><%= row.actor_role || '-' %> #<%= row.actor_uid || '-' %></small>
+                  </td>
+                  <td>
+                    <small><%= row.action || '-' %></small>
+                    <br><small class="text-muted"><%= row.target_type || '-' %>: <%= row.target_id || '-' %></small>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="3" class="text-muted">Belum ada audit admin.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
     <div class="stat-card h-100">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0"><i class="fa fa-tower-broadcast me-2"></i>Webhook Log Terbaru</h5>

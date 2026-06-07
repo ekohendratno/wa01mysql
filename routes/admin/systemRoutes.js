@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { authMiddleware } = require("../../lib/Utils.js");
+const { logAudit } = require("../../lib/AuditLogger.js");
 const os = require("os");
 
 const PURGEABLE_TABLES = new Set([
@@ -361,6 +362,17 @@ module.exports = ({ pool, sessionManager, cronManager, cronGroupManager } = {}) 
         affectedRows = Number(result?.affectedRows || 0);
       }
 
+      await logAudit(pool, req, "admin.database_purge", {
+        targetType: "database_table",
+        targetId: target.tableName,
+        metadata: {
+          action,
+          scope: target.scope,
+          scopeLabel: target.scopeLabel,
+          affectedRows,
+        },
+      });
+
       res.json({
         status: true,
         message: `${action === "truncate" ? "Truncate" : "Hapus data"} berhasil.`,
@@ -409,6 +421,7 @@ module.exports = ({ pool, sessionManager, cronManager, cronGroupManager } = {}) 
       recentFailures: [],
       recentWebhookFailures: [],
       recentAppLogs: [],
+      recentAuditLogs: [],
       recentWebhookLogs: [],
       cronJobs: buildCronJobs(cronManager, cronGroupManager),
       cronTaskCount: cronManager && Array.isArray(cronManager.tasks) ? cronManager.tasks.length : 0,
@@ -561,6 +574,18 @@ module.exports = ({ pool, sessionManager, cronManager, cronGroupManager } = {}) 
       health.recentAppLogs = rows || [];
     } catch (error) {
       health.recentAppLogsError = error.message;
+    }
+
+    try {
+      const [rows] = await pool.query(
+        `SELECT id, actor_role, actor_uid, actor_name, action, target_type, target_id, created_at
+         FROM audit_logs
+         ORDER BY created_at DESC
+         LIMIT 10`
+      );
+      health.recentAuditLogs = rows || [];
+    } catch (error) {
+      health.recentAuditLogsError = error.message;
     }
 
     try {

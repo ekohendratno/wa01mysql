@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { authMiddleware } = require("../../lib/Utils.js");
-const { hashPassword } = require("../../lib/Password.js");
+const { hashPasswordAsync } = require("../../lib/Password.js");
 
 module.exports = ({ pool }) => {
   // Helper to get fresh user data
@@ -53,7 +53,7 @@ module.exports = ({ pool }) => {
         if (password && password.trim().length > 0) {
           query =
             "UPDATE users SET name = ?, phone = ?, password = ?, template_invitation = ?, template_invitation_shared = ?, opt_in_required = ? WHERE uid = ?";
-          params = [name, phone, hashPassword(password), template_invitation, template_invitation_shared, optInRequired, uid];
+          params = [name, phone, await hashPasswordAsync(password), template_invitation, template_invitation_shared, optInRequired, uid];
         } else {
           query =
             "UPDATE users SET name = ?, phone = ?, template_invitation = ?, template_invitation_shared = ?, opt_in_required = ? WHERE uid = ?";

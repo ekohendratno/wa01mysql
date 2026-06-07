@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const { authMiddleware } = require("../../lib/Utils.js");
 const { generateAPIKey } = require("../../lib/Generate.js");
-const { hashPassword } = require("../../lib/Password.js");
+const { hashPasswordAsync } = require("../../lib/Password.js");
+const { logAudit } = require("../../lib/AuditLogger.js");
 
 module.exports = ({ pool } = {}) => {
   // List Users
@@ -131,6 +132,11 @@ module.exports = ({ pool } = {}) => {
       };
 
       req.session.save(() => {
+        logAudit(pool, req, "admin.impersonate_user", {
+          targetType: "user",
+          targetId: target.uid,
+          metadata: { targetName: target.name, targetEmail: target.email },
+        }).catch((error) => console.error("Audit log error:", error));
         res.json({
           status: true,
           message: `Masuk sebagai ${target.name || target.email}.`,
@@ -167,9 +173,14 @@ module.exports = ({ pool } = {}) => {
         if (password && password.trim() !== "") {
           query =
             "UPDATE users SET name=?, email=?, phone=?, active=?, password=? WHERE uid=?";
-          params = [name, email, phone, active, hashPassword(password), uid];
+          params = [name, email, phone, active, await hashPasswordAsync(password), uid];
         }
         await connection.query(query, params);
+        await logAudit(pool, req, "admin.update_user", {
+          targetType: "user",
+          targetId: uid,
+          metadata: { email, active, passwordChanged: Boolean(password && password.trim() !== "") },
+        });
       } else {
         if (!password || password.trim() === "") {
           throw new Error("Password wajib diisi untuk user baru");
@@ -187,8 +198,13 @@ module.exports = ({ pool } = {}) => {
         // Include template_invitation column with empty default to avoid missing column errors
         await connection.query(
           "INSERT INTO users (name, email, phone, password, api_key, template_invitation, active) VALUES (?, ?, ?, ?, ?, ?, ?)",
-          [name, email, phone, hashPassword(password), apiKey, "", active]
+          [name, email, phone, await hashPasswordAsync(password), apiKey, "", active]
         );
+        await logAudit(pool, req, "admin.create_user", {
+          targetType: "user",
+          targetId: email,
+          metadata: { email, active },
+        });
       }
 
       await connection.commit();
@@ -231,7 +247,7 @@ module.exports = ({ pool } = {}) => {
     try {
       const [result] = await pool.query(
         "UPDATE users SET password = ? WHERE uid = ?",
-        [hashPassword(password), uid],
+        [await hashPasswordAsync(password), uid],
       );
       if (result.affectedRows === 0) {
         return res.status(404).json({
@@ -239,6 +255,10 @@ module.exports = ({ pool } = {}) => {
           message: "User tidak ditemukan.",
         });
       }
+      await logAudit(pool, req, "admin.reset_user_password", {
+        targetType: "user",
+        targetId: uid,
+      });
       res.json({ status: true, message: "Password user berhasil direset." });
     } catch (e) {
       console.error("Reset user password error:", e);
@@ -256,6 +276,10 @@ module.exports = ({ pool } = {}) => {
       await connection.query("DELETE FROM users WHERE uid = ?", [
         req.params.uid,
       ]);
+      await logAudit(pool, req, "admin.delete_user", {
+        targetType: "user",
+        targetId: req.params.uid,
+      });
       await connection.commit();
       res.json({ status: true });
     } catch (e) {

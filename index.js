@@ -17,6 +17,8 @@ const { Boom } = require("@hapi/boom");
 // ERR_REQUIRE_ESM when running under CommonJS.
 const pino = require("pino");
 const express = require("express");
+const helmet = require("helmet");
+const compression = require("compression");
 // body-parser deprecated: prefer built-in express middleware
 const qrcode = require("qrcode");
 const http = require("http");
@@ -65,8 +67,16 @@ const io = socketIO(server, {
   pingInterval: 25000,
 });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
+app.use(compression());
+app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || "1mb" }));
+app.use(express.urlencoded({
+  extended: true,
+  limit: process.env.FORM_BODY_LIMIT || "1mb",
+}));
 app.use(expressLayouts);
 app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "ejs");
@@ -410,6 +420,14 @@ app.use((err, req, res, next) => {
 
   if (res.headersSent) {
     return next(err);
+  }
+
+  if (err.message === "Origin not allowed by CORS" || err.statusCode === 403) {
+    return res.status(403).json({
+      status: false,
+      error: "Forbidden",
+      message: "Origin tidak diizinkan. Tambahkan domain ini ke ALLOWED_ORIGINS.",
+    });
   }
 
   res.status(500).json({

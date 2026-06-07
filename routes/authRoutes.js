@@ -2,9 +2,11 @@ const express = require("express");
 const router = express.Router();
 const { redirectIfLoggedIn } = require("../lib/Utils.js");
 const MailManager = require("../lib/MailManager.js");
+const AuthLockout = require("../lib/AuthLockout.js");
 
 module.exports = ({ sessionManager, userManager }) => {
   const mailManager = new MailManager();
+  const authLockout = new AuthLockout(userManager.pool);
 
   router.get("/login", redirectIfLoggedIn, (req, res) => {
     res.render("auth/login", {
@@ -16,8 +18,10 @@ module.exports = ({ sessionManager, userManager }) => {
   });
 
   router.post("/login", redirectIfLoggedIn, async (req, res) => {
+    const username = String(req.body.username || "").trim();
     try {
-      const { username, password } = req.body;
+      const { password } = req.body;
+      await authLockout.assertAllowed(username, req);
       const user = await userManager.loginUser(username, password);
       const role = user && (user.role === "admin" || user.role === "client")
         ? user.role
@@ -37,8 +41,14 @@ module.exports = ({ sessionManager, userManager }) => {
         api_key: user.api_key,
       };
 
+      await authLockout.recordSuccess(username, req);
       res.redirect(`/${role}`);
     } catch (error) {
+      if (username) {
+        await authLockout.recordFailure(username, req).catch((lockError) =>
+          console.error("Auth lockout record error:", lockError)
+        );
+      }
       res.render("auth/login", {
         path: req.originalUrl,
         error: error.message || "Login gagal",
