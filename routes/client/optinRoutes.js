@@ -102,6 +102,24 @@ module.exports = ({ messageManager, deviceManager }) => {
     }
   });
 
+  router.post("/sync-inbox", authMiddleware, async (req, res) => {
+    try {
+      const uid = req.session.user.uid;
+      const result = await messageManager.syncOptInsFromInbox(uid);
+      res.json({
+        status: true,
+        message: `Sync selesai. Approved: ${result.approved || 0}, blocked: ${result.blocked || 0}.`,
+        data: result,
+      });
+    } catch (error) {
+      console.error("Error syncing opt-ins from inbox:", error);
+      res.status(500).json({
+        status: false,
+        message: error.message || "Gagal sync jawaban opt-in.",
+      });
+    }
+  });
+
   router.delete("/remove/:id", authMiddleware, async (req, res) => {
     try {
       const uid = req.session.user.uid;

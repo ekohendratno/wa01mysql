@@ -279,6 +279,14 @@ function buildCronJobs(cronManager, cronGroupManager) {
       ...nextDailyRun(["03:30"]),
     },
     {
+      name: "Pending Opt-In Guard",
+      schedule: "15 * * * *",
+      frequency: "Setiap jam menit ke-15",
+      task: "Mengirim pengingat opt-in pending > 7 hari dan block sistem jika 1x24 jam tetap tanpa respons.",
+      status: cronManager ? "registered" : "unknown",
+      ...nextMinuteIntervalRun(60),
+    },
+    {
       name: "Group Register Sync",
       schedule: "*/1 * * * *",
       frequency: "Setiap menit",

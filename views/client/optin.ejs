@@ -2,9 +2,14 @@
     <h4 class="text-success">
         <i class="fa fa-user-check me-2"></i>Daftar Opt-In (Persetujuan)
     </h4>
-    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalImport">
-        <i class="fa fa-file-import me-1"></i> Import Bulk
-    </button>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-success" type="button" onclick="syncOptInInbox(this)">
+            <i class="fa fa-rotate me-1"></i> Sync Jawaban Opt-In
+        </button>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalImport">
+            <i class="fa fa-file-import me-1"></i> Import Bulk
+        </button>
+    </div>
 </div>
 
 <div class="stat-card">
@@ -16,6 +21,7 @@
                     <th>Device</th>
                     <th>Status</th>
                     <th>Sumber</th>
+                    <th>Keterangan</th>
                     <th>Disetujui Pada</th>
                     <th>Aksi</th>
                 </tr>
@@ -31,7 +37,21 @@
                                     <%= opt.status.toUpperCase() %>
                                 </span>
                             </td>
-                            <td><small class="text-muted"><%= opt.source %></small></td>
+                            <td>
+                                <small class="text-muted"><%= opt.source %></small>
+                                <% if (opt.source === 'system_no_response') { %>
+                                    <br><span class="badge bg-secondary">blocked sistem</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (opt.block_reason) { %>
+                                    <small class="text-danger"><%= opt.block_reason %></small>
+                                <% } else if (opt.reminder_sent_at && opt.status === 'pending') { %>
+                                    <small class="text-warning">Reminder terkirim <%= moment(opt.reminder_sent_at).format('DD/MM/YYYY HH:mm') %></small>
+                                <% } else { %>
+                                    <small class="text-muted">-</small>
+                                <% } %>
+                            </td>
                             <td><%= opt.agreed_at ? moment(opt.agreed_at).format('DD/MM/YYYY HH:mm') : '-' %></td>
                             <td>
                                 <button class="btn btn-sm btn-outline-primary" onclick='editOptIn(<%= JSON.stringify(opt) %>)'>
@@ -45,7 +65,7 @@
                     <% }) %>
                 <% } else { %>
                     <tr>
-                        <td colspan="6" class="text-center py-4">Belum ada nomor yang melakukan Opt-In.</td>
+                        <td colspan="7" class="text-center py-4">Belum ada nomor yang melakukan Opt-In.</td>
                     </tr>
                 <% } %>
             </tbody>
@@ -181,6 +201,35 @@
 </div>
 
 <script>
+    function syncOptInInbox(btn) {
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Sync...';
+
+        $.ajax({
+            url: '/client/optin/sync-inbox',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({}),
+            success: function(res) {
+                if (res.status) {
+                    showToast(res.message || 'Sync selesai', 'success');
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast(res.message || 'Sync gagal', 'danger');
+                    btn.disabled = false;
+                    btn.innerHTML = original;
+                }
+            },
+            error: function(xhr) {
+                const message = xhr.responseJSON?.message || 'Gagal sync jawaban opt-in';
+                showToast(message, 'danger');
+                btn.disabled = false;
+                btn.innerHTML = original;
+            }
+        });
+    }
+
     function submitAdd() {
         const formData = new FormData(document.getElementById('formAdd'));
         const data = Object.fromEntries(formData.entries());

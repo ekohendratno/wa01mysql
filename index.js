@@ -146,6 +146,7 @@ const autoreplyManager = new AutoReplyManager(pool);
 const aiManager = new AiManager(pool);
 const telegramManager = new TelegramManager(pool, aiManager);
 sessionManager.setAiManager(aiManager);
+sessionManager.setMessageManager(messageManager);
 
 const telegramWebhookRoutes = require("./routes/telegramWebhookRoutes.js")({
   telegramManager,
